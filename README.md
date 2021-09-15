@@ -1,5 +1,5 @@
 
-# MouseDickWhatever
+# ThingsAroundYourMouse
 
 Draws mouse-cursor-following text, cursor coordinates, color of pixel under cursor, pictures or a clock - for when you really need to keep an eye on the time. Uses PyGame for low resource usage. Works by creating a transparent full-screen window that is click-through, on top of the z-order. (But not on top of the context menu.)
 
