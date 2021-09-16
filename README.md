@@ -22,7 +22,7 @@ Special features:
 - It's at least something. *shrugs*
 
 
-Performance: (single core)
+Performance Clock.py: (single core)
 - Laptop with AMD A4-6210: 1 to 4% CPU usage, reaches up to 400 fps (Too slow for OpenGL)
 - Desktop with AMD Ryzen 5 2600 @4Ghz: 0 to 0.5% CPU usage, reaches 2500 to 3333 fps (Might try OpenGL soon)
 
