@@ -39,12 +39,14 @@ simpleParticle01.py
 transparentColor = "#000000"
 particleSize = 2
 particleAge = 120  # age in frames
-particleColor = "#ffa020"  # "#c78217"
-particleRainbow = True
-velocityMod = 2.0  # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
-velocityClamp = 100  # max. velocity
-GRAVITY = (0, .1)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
-drag = .9  # particle drag, higher equals less drag: (drag * particle speed) per frame
+particleColor = "#ff00ff"#"#ffa020"  # "#c78217"
+particleRainbow = False
+ageColor = True  # Change hue based on age. (Works with and without rainbow)
+ageColorSpeed = 2.2  # Hue aging factor
+velocityMod = 1.6  # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
+velocityClamp = 200  # max. velocity
+GRAVITY = (0, .025)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
+drag = .85  # particle drag, higher equals less drag: (drag * particle speed) per frame
 FPS = 60
 
 # ---------- Non-dynamic:
@@ -56,10 +58,10 @@ randomMod = 6  # adds random motion to particles: mouse speed xy +- randomMod
 
 # ---------- Dynamic:
 dynamic = True  # The faster the movement, the more particles and random motion will be added. For the SCREEEETCH-effect
-randomModDynamic = 4  # adds random motion to particles: velocity / randomModDynamic
+randomModDynamic = 6.0  # adds random motion to particles: velocity / randomModDynamic
 printMouseSpeed = False  # Use for tuning the next parameters. Prints current mouse speed in pixels per frame.
 levelVelocity =     [15, 30, 60, 120, '#']  # at which mouse speed in pixels per frame...
-levelNumParticles = [ 1,  2,  4,   6,   8]  # this many particles
+levelNumParticles = [ 1,  4,  9,  16,  24]  # this many particles
 # levels = 5  # may be used in future to make dynamic more dynamic
 
 
@@ -153,26 +155,31 @@ class ParticleSparkle(Particle):
         """
         # Init superclass:
         super(ParticleSparkle, self).__init__(surface, pos, vel, gravity, container, delta, color)
-        self.valueStep = 100.0/float(age)
+        self.brightnessStep = 100.0/float(age)
+        self.hueStep = 360.0/float(age)
 
     def update(self):
         # Override superclass, but call to superclass method first:
         super(ParticleSparkle, self).update()
 
         # Update color, and existance based on color:
-        hsva = self.color.hsva
-        value = hsva[2]
+        hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
+        if ageColor:
+            hue = hsva[0]
+            hue -= self.hueStep * ageColorSpeed
+        brightness = hsva[2]
+        brightness -= self.brightnessStep
         # alpha = hsva[3]  # alpha is not used with pygame.draw
-        value -= self.valueStep
-        # alpha -= self.valueStep
-        if value < 10:
+        # alpha -= self.brightnessStep
+        if brightness < 10:
             # It's possible this particle was removed already by the superclass.
             try:
                 self.container.remove(self)
             except ValueError:
                 pass
         else:
-            self.color.hsva = (int(hsva[0]), int(hsva[1]), value)
+            if hue < 0: hue = 0
+            self.color.hsva = (hue, int(hsva[1]), brightness)  # , alpha)
 
     def draw(self):
         # Draw just a simple point:
@@ -183,6 +190,7 @@ class POINT(Structure): _fields_ = [("x", c_int), ("y", c_int)]
 
 
 drawParticles = True
+delta = 0
 mousePosition = POINT()
 setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
 setFocus = windll.user32.SetFocus  # sets focus to
