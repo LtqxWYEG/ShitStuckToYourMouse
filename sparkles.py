@@ -36,13 +36,16 @@ simpleParticle01.py
 
 # Settings ---------------------------------------------------
 # ---------- General:
-transparentColor = "#000000"
+transparentColor = "#000000"  # global transparent color
 particleSize = 2
-particleAge = 120  # age in frames
-particleColor = "#ff00ff"#"#ffa020"  # "#c78217"
+particleAge = 40  # Modifier for time until brightness < 10 (death) OR max lifetime in frames
+ageBrightnessMod = 6.5  # increase for slower brightness decline (concavity of downward slope)
+particleColor = "#ff0001"#"#ffa020"  # "#c78217"  # Use "#ff0001" for full color when ageColor is True
 particleRainbow = False
-ageColor = True  # Change hue based on age. (Works with and without rainbow)
-ageColorSpeed = 2.2  # Hue aging factor
+ageColor = True  # Change hue linearly, based on age.
+ageColorSpeed = 5.0  # Hue aging factor. Not used if ageColorSlope = True
+ageColorSlope = True  # If ageColor = True: Age like concave downward curve. For more pronounced pink and blue colors (Or whatever is highest hue value of particleColor)
+ageColorSlopeConcavity = 0.3  # increase concavity of downward slope representing values over age
 velocityMod = 1.6  # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
 velocityClamp = 200  # max. velocity
 GRAVITY = (0, .025)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
@@ -54,14 +57,14 @@ offsetX = -12  # offset to mouse cursor position in pixel. (0, 0 = tip of cursor
 offsetY = -28  # offset for Y position
 markPosition = False  # Use for offset tuning
 numParticles = 1  # per frame, if dynamic is False
-randomMod = 6  # adds random motion to particles: mouse speed xy +- randomMod
+randomMod = 5.5  # adds random motion to particles: mouse speed xy +- randomMod
 
 # ---------- Dynamic:
 dynamic = True  # The faster the movement, the more particles and random motion will be added. For the SCREEEETCH-effect
 randomModDynamic = 6.0  # adds random motion to particles: velocity / randomModDynamic
 printMouseSpeed = False  # Use for tuning the next parameters. Prints current mouse speed in pixels per frame.
 levelVelocity =     [15, 30, 60, 120, '#']  # at which mouse speed in pixels per frame...
-levelNumParticles = [ 1,  4,  9,  16,  24]  # this many particles
+levelNumParticles = [ 1,  4,  8,  16,  24]  # this many particles
 # levels = 5  # may be used in future to make dynamic more dynamic
 
 
@@ -149,29 +152,33 @@ class ParticleSparkle(Particle):
     Draw particle 'sparkles'.
     """
 
-    def __init__(self, surface, pos, vel, gravity, container, color, age, delta):
+    def __init__(self, surface, pos, vel, gravity, container, color, delta):
         """
-        age : How many frames the particle will live for.  Will get darker as it gets older.
+        age : How long the particle will live.  Will get darker as it gets older.
         """
         # Init superclass:
         super(ParticleSparkle, self).__init__(surface, pos, vel, gravity, container, delta, color)
-        self.brightnessStep = 100.0/float(age)
-        self.hueStep = 360.0/float(age)
+        self.age = particleAge
 
     def update(self):
         # Override superclass, but call to superclass method first:
         super(ParticleSparkle, self).update()
-
+        self.ageStep = 100.0/float(self.age)
         # Update color, and existance based on color:
         hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         if ageColor:
-            hue = hsva[0]
-            hue -= self.hueStep * ageColorSpeed
+            if ageColorSlope:
+                hue = hsva[0]
+                hue -= self.ageStep / ageColorSlopeConcavity
+            else:
+                hue = hsva[0]
+                hue -= self.ageStep * ageColorSpeed
         brightness = hsva[2]
-        brightness -= self.brightnessStep
+        brightness -= self.ageStep / ageBrightnessMod
+        self.age -= 1
         # alpha = hsva[3]  # alpha is not used with pygame.draw
         # alpha -= self.brightnessStep
-        if brightness < 10:
+        if brightness < 10 or self.age == 0:
             # It's possible this particle was removed already by the superclass.
             try:
                 self.container.remove(self)
@@ -271,7 +278,7 @@ while loop:
     x = 0
     while x < numParticles and drawParticles is True:
         if particleRainbow is True: particleColor = (random.randrange(256), random.randrange(256), random.randrange(256))
-        particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, particleAge, delta))
+        particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, delta))
         x += 1
     for spark in particles:
         spark.update()
