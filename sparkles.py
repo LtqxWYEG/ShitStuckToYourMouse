@@ -40,12 +40,13 @@ transparentColor = "#000000"  # global transparent color
 particleSize = 2
 particleAge = 40  # Modifier for time until brightness < 10 (death) OR max lifetime in frames
 ageBrightnessMod = 6.5  # increase for slower brightness decline (concavity of downward slope)
-particleColor = "#ff0001"#"#ffa020"  # "#c78217"  # Use "#ff0001" for full color when ageColor is True
-particleRainbow = False
+particleColor = "#ff0001"#"#ffa020"#"#c78217"  # Use "#ff0001" for full HSV color when ageColor is True
+particleColorRandom = False  # Randomly colored particles
+hueNoise = 20  # Adds random noise to hue: Between -hueJitter and hueJitter. 0 for no noise
 ageColor = True  # Change hue linearly, based on age.
 ageColorSpeed = 5.0  # Hue aging factor. Not used if ageColorSlope = True
 ageColorSlope = True  # If ageColor = True: Age like concave downward curve. For more pronounced pink and blue colors (Or whatever is highest hue value of particleColor)
-ageColorSlopeConcavity = 0.3  # increase concavity of downward slope representing values over age
+ageColorSlopeConcavity = 0.4  # increase concavity of downward slope representing values over age
 velocityMod = 1.6  # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
 velocityClamp = 200  # max. velocity
 GRAVITY = (0, .025)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
@@ -176,6 +177,10 @@ class ParticleSparkle(Particle):
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
         self.age -= 1
+        hue = hue + random.uniform(-hueNoise, hueNoise)
+        if hue < 0: hue = 0
+        if hue > 359: hue = 359
+        
         # alpha = hsva[3]  # alpha is not used with pygame.draw
         # alpha -= self.brightnessStep
         if brightness < 10 or self.age == 0:
@@ -185,7 +190,6 @@ class ParticleSparkle(Particle):
             except ValueError:
                 pass
         else:
-            if hue < 0: hue = 0
             self.color.hsva = (hue, int(hsva[1]), brightness)  # , alpha)
 
     def draw(self):
@@ -277,7 +281,7 @@ while loop:
             
     x = 0
     while x < numParticles and drawParticles is True:
-        if particleRainbow is True: particleColor = (random.randrange(256), random.randrange(256), random.randrange(256))
+        if particleColorRandom is True: particleColor = (random.randrange(256), random.randrange(256), random.randrange(256))
         particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, delta))
         x += 1
     for spark in particles:
