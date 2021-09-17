@@ -6,7 +6,7 @@
 /\__/ / | | | | |_  /\__/ / |_| |_| | (__|   <    | | (_) |   | | (_) | |_| | |    | |  | | (_) | |_| \__ \  __/
 \____/|_| |_|_|\__| \____/ \__|\__,_|\___|_|\_\   \_/\___/    \_/\___/ \__,_|_|    \_|  |_/\___/ \__,_|___/\___|
 ```
-Yeah, bitch! It's the 90s again! Get some shit stuck to your mouse, like ppl did in the 90s! Yay!!
+Yeah, bitch! It's the 90s again! Get some shit stuck to your mouse, like ppl did in the 90s! Yay!! Waste some CPU-cycles, have visuals... the 90s!! Who cares about 5% CPU! Get this hit stuck to your mouse cursor! woot
 
 Draws mouse-cursor-following text, cursor coordinates, color of pixel under cursor, pictures or a clock - for when you really need to keep an eye on the time. Uses PyGame for low resource usage. Works by creating a transparent full-screen window that is click-through, on top of the z-order. (But not on top of the context menu.)
 
