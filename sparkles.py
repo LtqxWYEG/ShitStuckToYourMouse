@@ -24,48 +24,54 @@ import win32api
 import pygame.gfxdraw
 from pygame.locals import *  # for Color
 import random
-# Vec2D comes from here: http://pygame.org/wiki/2DVectorClass
 from vec2d import Vec2d
 
 
 """
-Sparkly code by Eric Pavey - 2010-06-21
+Other copyrights:
+- Sparkly code idea by Eric Pavey - 2010-06-21
 simpleParticle01.py
+
+- Vec2D.py comes from: http://pygame.org/wiki/2DVectorClass
 """
 
 
 # Settings ---------------------------------------------------
 # ---------- General:
-transparentColor = "#000000"  # global transparent color
-particleSize = 2
-particleAge = 40  # Modifier for time until brightness < 10 (death) OR max lifetime in frames
-ageBrightnessMod = 6.5  # increase for slower brightness decline (concavity of downward slope)
-particleColor = "#ff0001"#"#ffa020"#"#c78217"  # Use "#ff0001" for full HSV color when ageColor is True
-particleColorRandom = False  # Randomly colored particles
-hueNoise = 20  # Adds random noise to hue: Between -hueJitter and hueJitter. 0 for no noise
-ageColor = True  # Change hue linearly, based on age.
-ageColorSpeed = 5.0  # Hue aging factor. Not used if ageColorSlope = True
-ageColorSlope = True  # If ageColor = True: Age like concave downward curve. For more pronounced pink and blue colors (Or whatever is highest hue value of particleColor)
-ageColorSlopeConcavity = 0.4  # increase concavity of downward slope representing values over age
-velocityMod = 1.6  # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
-velocityClamp = 200  # max. velocity
-GRAVITY = (0, .025)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
-drag = .85  # particle drag, higher equals less drag: (drag * particle speed) per frame
+transparentColor =      "#000000"  # global transparent color
+particleSize =          2
+particleAge =           60      # Modifier for time until brightness < 10 (death) OR max lifetime in frames
+ageBrightnessMod =      5.30    # increase for slower brightness decline (concavity of downward slope)
+ageBrightnessNoise =    12      # Adds (twinkling) random noise to age/brightness: Between +-ageBrightnessNoise. 0 for no noise
+velocityMod =           1.60    # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
+velocityClamp =         200     # max. velocity
+GRAVITY =               (0, .025)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
+drag =                  .850    # particle drag, higher equals less drag: (drag * particle speed) per frame
 FPS = 60
 
-# ---------- Non-dynamic:
-offsetX = -12  # offset to mouse cursor position in pixel. (0, 0 = tip of cursor)
-offsetY = -28  # offset for Y position
-markPosition = False  # Use for offset tuning
-numParticles = 1  # per frame, if dynamic is False
-randomMod = 5.5  # adds random motion to particles: mouse speed xy +- randomMod
+# ---------- Color:
+particleColor =         "#ff0001"#"#ffa020"#"#c78217"  # Use "#ff0001" for full HSV color when ageColor is True
+particleColorRandom =   False   # Randomly colored particles
+ageColor =              True    # Change hue linearly, based on age.
+ageColorSpeed =         5.50    # Hue aging speed factor. Not used if ageColorSlope = True
+ageColorSlope =         True    # If ageColor = True: Age like concave downward curve. For more pronounced pink and blue colors (Or whatever is highest hue value of particleColor)
+ageColorSlopeConcavity = 0.42   # increase concavity of downward slope representing values over age. (Think: https://i.stack.imgur.com/bGi9k.jpg)
+ageColorNoise =         12      # Adds random noise to hue: Between +-ageColorNoise. 0 for no noise
+ageColorNoiseMod =      0.500   # (0.0 to 1.0 ) Shifts color noise weight to be more positive or negative: 0 = only positive noise, 0.5 = balanced, 1.0 = only negative noise, etc
 
-# ---------- Dynamic:
-dynamic = True  # The faster the movement, the more particles and random motion will be added. For the SCREEEETCH-effect
-randomModDynamic = 6.0  # adds random motion to particles: velocity / randomModDynamic
-printMouseSpeed = False  # Use for tuning the next parameters. Prints current mouse speed in pixels per frame.
+# ---------- Non-dynamic only:
+offsetX =       -12     # offset to mouse cursor position in pixel. (0, 0 = tip of cursor)
+offsetY =       -28     # offset for Y position
+markPosition =  False   # Use for offset tuning
+numParticles =  1       # per frame, if dynamic is False
+randomMod =     5.50    # adds random motion to particles: mouse speed xy +- randomMod
+
+# ---------- Dynamic only:
+dynamic =           True    # The faster the movement, the more particles and random motion will be added. For the SCREEEETCH-effect
+randomModDynamic =  6.00    # adds random motion to particles: velocity / randomModDynamic
+printMouseSpeed =   False   # Use for tuning the next parameters. Prints current mouse speed in pixels per frame.
 levelVelocity =     [15, 30, 60, 120, '#']  # at which mouse speed in pixels per frame...
-levelNumParticles = [ 1,  4,  8,  16,  24]  # this many particles
+levelNumParticles = [ 2,  5,  8,  14,  20]  # this many particles
 # levels = 5  # may be used in future to make dynamic more dynamic
 
 
@@ -89,7 +95,7 @@ class Particle(object):
     Superclass for other particle types.
     """
 
-    def __init__(self, surface, pos, vel, gravity, container, delta, color='red'):
+    def __init__(self, surface, pos, vel, gravity, container, mouseSpeedPixelPerFrame, color):
         """
         surface : Surface :  The Surface to draw on.
         pos : (x,y) : tuple/list x,y position at time of creation.
@@ -97,18 +103,19 @@ class Particle(object):
         gravity : (x,y) : tuple/list x,y gravity effecting the particle.
         container : list : The passed in list that contains all the particles to draw.
             Used so particles can be deleted.
-        color : str : String color value, default 'red'.
+        color : String color value, default 'red'.
         """
         self.surface = surface
         self.pos = Vec2d(pos)
         if dynamic:
-            vel = [vel[0]+random.uniform(-(delta / randomModDynamic), (delta / randomModDynamic)), vel[1]+random.uniform(-(delta / randomModDynamic), (delta / randomModDynamic))]
+            vel = [vel[0]+random.uniform(-(mouseSpeedPixelPerFrame / randomModDynamic), (mouseSpeedPixelPerFrame / randomModDynamic)),
+                   vel[1]+random.uniform(-(mouseSpeedPixelPerFrame / randomModDynamic), (mouseSpeedPixelPerFrame / randomModDynamic))]
         else:
             vel = [vel[0]+random.uniform(-randomMod, randomMod), vel[1]+random.uniform(-randomMod, randomMod)]
         vel = [vel[0], vel[1]]
         self.vel = Vec2d(vel) / velocityMod
-        # Clamp any huge velocities:
-        if self.vel.length > velocityClamp:
+
+        if self.vel.length > velocityClamp:  # Clamp any huge velocities
             self.vel.length = velocityClamp
 
         self.gravity = Vec2d(gravity)
@@ -153,12 +160,12 @@ class ParticleSparkle(Particle):
     Draw particle 'sparkles'.
     """
 
-    def __init__(self, surface, pos, vel, gravity, container, color, delta):
+    def __init__(self, surface, pos, vel, gravity, container, color, mouseSpeedPixelPerFrame):
         """
         age : How long the particle will live.  Will get darker as it gets older.
         """
         # Init superclass:
-        super(ParticleSparkle, self).__init__(surface, pos, vel, gravity, container, delta, color)
+        super(ParticleSparkle, self).__init__(surface, pos, vel, gravity, container, mouseSpeedPixelPerFrame, color)
         self.age = particleAge
 
     def update(self):
@@ -177,15 +184,19 @@ class ParticleSparkle(Particle):
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
         self.age -= 1
-        hue = hue + random.uniform(-hueNoise, hueNoise)
-        if hue < 0: hue = 0
-        if hue > 359: hue = 359
+        brightness = brightness + random.uniform(-ageBrightnessNoise, ageBrightnessNoise)
+
+        
+        hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
+
+        hue = clamp(hue, 0, 359)  # Clamp Noise within limits
+        brightness = clamp(brightness, 0, 99)
+        
         
         # alpha = hsva[3]  # alpha is not used with pygame.draw
         # alpha -= self.brightnessStep
-        if brightness < 10 or self.age == 0:
-            # It's possible this particle was removed already by the superclass.
-            try:
+        if brightness < 7 or self.age == 0:
+            try:  # It's possible this particle was removed already by the superclass.
                 self.container.remove(self)
             except ValueError:
                 pass
@@ -200,35 +211,54 @@ class ParticleSparkle(Particle):
 class POINT(Structure): _fields_ = [("x", c_int), ("y", c_int)]
 
 
-drawParticles = True
-delta = 0
-mousePosition = POINT()
-setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
-setFocus = windll.user32.SetFocus  # sets focus to
+
+def clamp(val, minval, maxval):
+    if val < minval: return minval
+    if val > maxval: return maxval
+    return val
+
+
+
 pygame.init()
-pygame.display.set_caption('MouseDickWhatever')  # title(stupid)
+pygame.display.set_caption('ShitStuckToYourMouse')  # title(stupid)
 # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
+
+
+# --------- Initiate variables:
+drawParticles = True
+mouseSpeedPixelPerFrame = 0
+mousePosition = POINT()
+particles = []
+firstPos = (mousePosition.x, mousePosition.y)
+secondPos = firstPos
+mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
 clock = pygame.time.Clock()  # for FPS limiting
 info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
+setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
+setFocus = windll.user32.SetFocus  # sets focus to
 flags = pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
 # FULLSCREEN: Create a fullscreen display
 # DOUBLEBUF: Double buffering. Creates a separate block of memory to apply all the draw routines and then copying that block (buffer) to video memory. (Thanks, Foon)
 # HWSURFACE: hardware accelerated window, only in FULLSCREEN. (Uses memory on video card)
 
-display_window = pygame.display.set_mode((info.current_w, info.current_h), flags, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
-display_window.fill(transparentColor)  # fill with tranparent color set in win32gui.SetLayeredWindowAttributes
+
+# ---------- Correct input errors and precalculate things:
+ageColorNoiseMod = clamp(ageColorNoiseMod, 0.0, 1.0)
+ageColorNoiseRange = [x for x in range(-ageColorNoise, ageColorNoise+1)]
+shiftAgeColorNoise = ageColorNoiseRange[round((ageColorNoise * 2) * ageColorNoiseMod)]
 transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
+
+# ---------- Set things up:
+display_window = pygame.display.set_mode((info.current_w, info.current_h), flags, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
+display_window.fill(transparentColor)  # fill with tranparent color set in win32gui.SetLayeredWindowAttributes
 hwnd = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
 setWindowAttributes(hwnd)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
 
+
+# ---------- Start the lööp:
 print("--- To stop overlay, close this window ---")  # notify on what to do to stop program
 setFocus(hwnd)  # sets focus on pygame window
-particles = []
-firstPos = (mousePosition.x, mousePosition.y)
-secondPos = firstPos
-mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
-
 loop = True
 while loop:
     clock.tick(FPS)  # limit the fps of the program
@@ -252,25 +282,25 @@ while loop:
     if dynamic is True:
         offsetX = 0
         offsetY = 0
-        delta = math.sqrt(math.pow(mouseVelocity[0], 2) + math.pow(mouseVelocity[1], 2))
-        if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", delta)
+        mouseSpeedPixelPerFrame = math.sqrt(math.pow(mouseVelocity[0], 2) + math.pow(mouseVelocity[1], 2))
+        if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", mouseSpeedPixelPerFrame)
         drawParticles = False
-        #print(delta)
-        if delta == 0:
+        #print(mouseSpeedPixelPerFrame)
+        if mouseSpeedPixelPerFrame == 0:
             drawParticles = False
-        elif delta < levelVelocity[0]:
+        elif mouseSpeedPixelPerFrame < levelVelocity[0]:
             #print("first")
             numParticles = levelNumParticles[0]
             drawParticles = True
-        elif delta < levelVelocity[1]:
+        elif mouseSpeedPixelPerFrame < levelVelocity[1]:
             #print("second")
             numParticles = levelNumParticles[1]
             drawParticles = True
-        elif delta < levelVelocity[2]:
+        elif mouseSpeedPixelPerFrame < levelVelocity[2]:
             #print("third")
             numParticles = levelNumParticles[2]
             drawParticles = True
-        elif delta < levelVelocity[3]:
+        elif mouseSpeedPixelPerFrame < levelVelocity[3]:
             #print("fourth")
             numParticles = levelNumParticles[3]
             drawParticles = True
@@ -282,7 +312,7 @@ while loop:
     x = 0
     while x < numParticles and drawParticles is True:
         if particleColorRandom is True: particleColor = (random.randrange(256), random.randrange(256), random.randrange(256))
-        particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, delta))
+        particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
         x += 1
     for spark in particles:
         spark.update()
