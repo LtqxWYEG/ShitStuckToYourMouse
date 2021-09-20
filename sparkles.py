@@ -15,18 +15,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ctypes import windll, Structure, c_int, byref
-import pygame
-import math
-import win32gui
-import win32con
-import win32api
-import pygame.gfxdraw
-from pygame.locals import *  # for Color
-import random
-from vec2d import Vec2d
-
-
 """
 Other copyrights:
 - Sparkly code idea by Eric Pavey - 2010-06-21
@@ -36,44 +24,104 @@ simpleParticle01.py
 """
 
 
-# Settings ---------------------------------------------------
-# ---------- General:
-transparentColor =      "#000000"  # global transparent color
-particleSize =          2
-particleAge =           60      # Modifier for time until brightness < 10 (death) OR max lifetime in frames
-ageBrightnessMod =      5.30    # increase for slower brightness decline (concavity of downward slope)
-ageBrightnessNoise =    12      # Adds (twinkling) random noise to age/brightness: Between +-ageBrightnessNoise. 0 for no noise
-velocityMod =           1.60    # lowers velocity added to particle based on mouse speed: mouse speed / velocityMod
-velocityClamp =         200     # max. velocity
-GRAVITY =               (0, .025)  # x, y motion added to any particle. maybe turn negative and simulate smoke or flames
-drag =                  .850    # particle drag, higher equals less drag: (drag * particle speed) per frame
-FPS = 60
+import configparser
+from ctypes import windll, Structure, c_int, byref
+import math
+import pygame
+import pygame.gfxdraw
+from pygame.locals import *  # for Color
+import random
+import win32api
+import win32con
+import win32gui
+from vec2d import Vec2d
 
-# ---------- Color:
-particleColor =         "#ff0001"#"#ffa020"#"#c78217"  # Use "#ff0001" for full HSV color when ageColor is True
-particleColorRandom =   False   # Randomly colored particles
-ageColor =              True    # Change hue linearly, based on age.
-ageColorSpeed =         5.50    # Hue aging speed factor. Not used if ageColorSlope = True
-ageColorSlope =         True    # If ageColor = True: Age like concave downward curve. For more pronounced pink and blue colors (Or whatever is highest hue value of particleColor)
-ageColorSlopeConcavity = 0.42   # increase concavity of downward slope representing values over age. (Think: https://i.stack.imgur.com/bGi9k.jpg)
-ageColorNoise =         12      # Adds random noise to hue: Between +-ageColorNoise. 0 for no noise
-ageColorNoiseMod =      0.500   # (0.0 to 1.0 ) Shifts color noise weight to be more positive or negative: 0 = only positive noise, 0.5 = balanced, 1.0 = only negative noise, etc
 
-# ---------- Non-dynamic only:
-offsetX =       -12     # offset to mouse cursor position in pixel. (0, 0 = tip of cursor)
-offsetY =       -28     # offset for Y position
-markPosition =  False   # Use for offset tuning
-numParticles =  1       # per frame, if dynamic is False
-randomMod =     5.50    # adds random motion to particles: mouse speed xy +- randomMod
+class CaseConfigParser(configparser.ConfigParser):
+    def optionxform(self, optionstr):  # To keep thing's FUCKING case! WTH is the problem, configparser devs?
+        return optionstr
 
-# ---------- Dynamic only:
-dynamic =           True    # The faster the movement, the more particles and random motion will be added. For the SCREEEETCH-effect
-randomModDynamic =  6.00    # adds random motion to particles: velocity / randomModDynamic
-printMouseSpeed =   False   # Use for tuning the next parameters. Prints current mouse speed in pixels per frame.
-levelVelocity =     [15, 30, 60, 120, '#']  # at which mouse speed in pixels per frame...
-levelNumParticles = [ 2,  5,  8,  14,  20]  # this many particles
-# levels = 5  # may be used in future to make dynamic more dynamic
+    def getlist(self, section, option):  # Seriously, what is wrong with them? Why is something so basic not implemented? FF
+        value = self.get(section, option)
+        return list(filter(None, (x.strip() for x in value.split(','))))
 
+    def getlistint(self, section, option):  # It's so annoying.
+        return [int(x) for x in self.getlist(section, option)]
+
+    def getlistfloat(self, section, option):  # No wonder ppl use the horrible JSON... (Although I have no idea if that's better)
+        return [float(x) for x in self.getlist(section, option)]
+
+
+config = CaseConfigParser()
+parseList = CaseConfigParser(converters={'list': lambda x: [i.strip() for i in x.split(',')]})
+config.read("config.ini")  # Read config file
+config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
+
+# Set Defaults and/or write ini-file if it doesn't exist
+if not config.has_section("SETTINGS"):
+    config.add_section("SETTINGS")
+    config.set("SETTINGS", "transparentColor", "#000000")
+    config.set("SETTINGS", "particleSize", "2")
+    config.set("SETTINGS", "particleAge", "60")
+    config.set("SETTINGS", "ageBrightnessMod", "5.30")
+    config.set("SETTINGS", "ageBrightnessNoise", "12")
+    config.set("SETTINGS", "velocityMod", "1.60")
+    config.set("SETTINGS", "velocityClamp", "200")
+    config.set("SETTINGS", "GRAVITY", "0, 0.025")
+    config.set("SETTINGS", "drag", "0.850")
+    config.set("SETTINGS", "FPS", "60")
+    config.set("SETTINGS", "particleColor", "#ff0001")
+    config.set("SETTINGS", "particleColorRandom", "False")
+    config.set("SETTINGS", "ageColor", "True")
+    config.set("SETTINGS", "ageColorSpeed", "5.50")
+    config.set("SETTINGS", "ageColorSlope", "True")
+    config.set("SETTINGS", "ageColorSlopeConcavity", "0.42")
+    config.set("SETTINGS", "ageColorNoise", "12")
+    config.set("SETTINGS", "ageColorNoiseMod", "0.500")
+    config.set("SETTINGS", "offsetX", "-12")
+    config.set("SETTINGS", "offsetY", "-28")
+    config.set("SETTINGS", "markPosition", "False")
+    config.set("SETTINGS", "numParticles", "1")
+    config.set("SETTINGS", "randomMod", "5.50")
+    config.set("SETTINGS", "dynamic", "True")
+    config.set("SETTINGS", "randomModDynamic", "6.00")
+    config.set("SETTINGS", "printMouseSpeed", "False")
+    config.set("SETTINGS", "levelVelocity", "15, 30, 60, 120, -1")
+    config.set("SETTINGS", "levelNumParticles", "2, 5, 8, 14, 20")
+with open("config.ini", 'w') as configfile:
+    config.write(configfile)
+
+# settings = dict(config.items('SETTINGS'))
+# --- I do not like this, but now it's done and I don't care anymore
+transparentColor = str(config.get("SETTINGS", "transparentColor"))
+particleSize = int(config.get("SETTINGS", "particleSize"))
+particleAge = int(config.get("SETTINGS", "particleAge"))
+ageBrightnessMod = float(config.get("SETTINGS", "ageBrightnessMod"))
+ageBrightnessNoise = int(config.get("SETTINGS", "ageBrightnessNoise"))
+velocityMod = float(config.get("SETTINGS", "velocityMod"))
+velocityClamp = int(config.get("SETTINGS", "velocityClamp"))
+GRAVITY = config.getlistfloat("SETTINGS", "GRAVITY")
+drag = float(config.get("SETTINGS", "drag"))
+FPS = int(config.get("SETTINGS", "FPS"))
+particleColor = str(config.get("SETTINGS", "particleColor"))
+particleColorRandom = config.getboolean("SETTINGS", "particleColorRandom")
+ageColor = config.getboolean("SETTINGS", "ageColor")
+ageColorSpeed = float(config.get("SETTINGS", "ageColorSpeed"))
+ageColorSlope = config.getboolean("SETTINGS", "ageColorSlope")
+ageColorSlopeConcavity = float(config.get("SETTINGS", "ageColorSlopeConcavity"))
+ageColorNoise = int(config.get("SETTINGS", "ageColorNoise"))
+ageColorNoiseMod = float(config.get("SETTINGS", "ageColorNoiseMod"))
+offsetX = int(config.get("SETTINGS", "offsetX"))
+offsetY = int(config.get("SETTINGS", "offsetY"))
+markPosition = config.getboolean("SETTINGS", "markPosition")
+numParticles = int(config.get("SETTINGS", "numParticles"))
+randomMod = float(config.get("SETTINGS", "randomMod"))
+dynamic = config.getboolean("SETTINGS", "dynamic")
+randomModDynamic = float(config.get("SETTINGS", "randomModDynamic"))
+printMouseSpeed = config.getboolean("SETTINGS", "printMouseSpeed")
+levelVelocity = config.getlistint("SETTINGS", "levelVelocity")
+levelNumParticles = config.getlistint("SETTINGS", "levelNumParticles")
+# I didn't like this whole ordeal. I suck and expect things to be easy. :P
 
 
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
@@ -103,7 +151,6 @@ class Particle(object):
         gravity : (x,y) : tuple/list x,y gravity effecting the particle.
         container : list : The passed in list that contains all the particles to draw.
             Used so particles can be deleted.
-        color : String color value, default 'red'.
         """
         self.surface = surface
         self.pos = Vec2d(pos)
@@ -195,7 +242,7 @@ class ParticleSparkle(Particle):
         
         # alpha = hsva[3]  # alpha is not used with pygame.draw
         # alpha -= self.brightnessStep
-        if brightness < 7 or self.age == 0:
+        if brightness < 7 or self.age == 0:  # If brightness falls below 7, remove particle
             try:  # It's possible this particle was removed already by the superclass.
                 self.container.remove(self)
             except ValueError:
@@ -321,7 +368,7 @@ while loop:
     if markPosition is True: pygame.draw.circle(display_window, "#ff0000", firstPos, 2)  # used for tuning offset
     secondPos = firstPos  # for getting mouse velocity
     pygame.display.update()
-# while end
+# while ends here
 
 pygame.quit()
 input()
