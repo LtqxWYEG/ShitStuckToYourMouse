@@ -1,39 +1,33 @@
-#
-# Copyright (C) 2021 by Matthias Grommisch <distelzombie@protonmail.com>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
 
-"""
-Other copyrights:
-- Sparkly code idea by Eric Pavey - 2010-06-21
-simpleParticle01.py
-
-- Vec2D.py comes from: http://pygame.org/wiki/2DVectorClass
-"""
-
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+#  Copyright (c) 2021.                                                         \
+#  Matthias Grommisch <distelzombie@protonmail.com>                            \
+#                                                                              \
+#  This program is free software: you can redistribute it and/or modify        \
+#  it under the terms of the GNU General Public License as published by        \
+#  the Free Software Foundation, either version 3 of the License, or           \
+#  (at your option) any later version.                                         \
+#                                                                              \
+#  This program is distributed in the hope that it will be useful,             \
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of              \
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               \
+#  GNU General Public License for more details.                                \
+#                                                                              \
+#  You should have received a copy of the GNU General Public License           \
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.      \
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 import configparser
-from ctypes import windll, Structure, c_int, byref
 import math
+import random
+from ctypes import byref, c_int, Structure, windll
+
 import pygame
 import pygame.gfxdraw
-from pygame.locals import *  # for Color
-import random
 import win32api
 import win32con
 import win32gui
+from pygame.locals import *  # for Color
 from vec2d import Vec2d
 
 
@@ -57,71 +51,49 @@ parseList = CaseConfigParser(converters={'list': lambda x: [i.strip() for i in x
 config.read("config.ini")  # Read config file
 config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
 
-# Set Defaults and/or write ini-file if it doesn't exist
-if not config.has_section("SETTINGS"):
-    config.add_section("SETTINGS")
-    config.set("SETTINGS", "transparentColor", "#000000")
-    config.set("SETTINGS", "particleSize", "2")
-    config.set("SETTINGS", "particleAge", "60")
-    config.set("SETTINGS", "ageBrightnessMod", "5.30")
-    config.set("SETTINGS", "ageBrightnessNoise", "12")
-    config.set("SETTINGS", "velocityMod", "1.60")
-    config.set("SETTINGS", "velocityClamp", "200")
-    config.set("SETTINGS", "GRAVITY", "0, 0.025")
-    config.set("SETTINGS", "drag", "0.850")
-    config.set("SETTINGS", "FPS", "60")
-    config.set("SETTINGS", "particleColor", "#ff0001")
-    config.set("SETTINGS", "particleColorRandom", "False")
-    config.set("SETTINGS", "ageColor", "True")
-    config.set("SETTINGS", "ageColorSpeed", "5.50")
-    config.set("SETTINGS", "ageColorSlope", "True")
-    config.set("SETTINGS", "ageColorSlopeConcavity", "0.42")
-    config.set("SETTINGS", "ageColorNoise", "12")
-    config.set("SETTINGS", "ageColorNoiseMod", "0.500")
-    config.set("SETTINGS", "offsetX", "-12")
-    config.set("SETTINGS", "offsetY", "-28")
-    config.set("SETTINGS", "markPosition", "False")
-    config.set("SETTINGS", "numParticles", "1")
-    config.set("SETTINGS", "randomMod", "5.50")
-    config.set("SETTINGS", "dynamic", "True")
-    config.set("SETTINGS", "randomModDynamic", "6.00")
-    config.set("SETTINGS", "printMouseSpeed", "False")
-    config.set("SETTINGS", "levelVelocity", "15, 30, 60, 120, -1")
-    config.set("SETTINGS", "levelNumParticles", "2, 5, 8, 14, 20")
-with open("config.ini", 'w') as configfile:
-    config.write(configfile)
+
+def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
+    global config
+    config.read("defaults.ini")
+    with open("config.ini", 'w') as configfile:
+        config.write(configfile)
+
 
 # settings = dict(config.items('SETTINGS'))
-# --- I do not like this, but now it's done and I don't care anymore
-transparentColor = str(config.get("SETTINGS", "transparentColor"))
-particleSize = int(config.get("SETTINGS", "particleSize"))
-particleAge = int(config.get("SETTINGS", "particleAge"))
-ageBrightnessMod = float(config.get("SETTINGS", "ageBrightnessMod"))
-ageBrightnessNoise = int(config.get("SETTINGS", "ageBrightnessNoise"))
-velocityMod = float(config.get("SETTINGS", "velocityMod"))
-velocityClamp = int(config.get("SETTINGS", "velocityClamp"))
-GRAVITY = config.getlistfloat("SETTINGS", "GRAVITY")
-drag = float(config.get("SETTINGS", "drag"))
-FPS = int(config.get("SETTINGS", "FPS"))
-particleColor = str(config.get("SETTINGS", "particleColor"))
-particleColorRandom = config.getboolean("SETTINGS", "particleColorRandom")
-ageColor = config.getboolean("SETTINGS", "ageColor")
-ageColorSpeed = float(config.get("SETTINGS", "ageColorSpeed"))
-ageColorSlope = config.getboolean("SETTINGS", "ageColorSlope")
-ageColorSlopeConcavity = float(config.get("SETTINGS", "ageColorSlopeConcavity"))
-ageColorNoise = int(config.get("SETTINGS", "ageColorNoise"))
-ageColorNoiseMod = float(config.get("SETTINGS", "ageColorNoiseMod"))
-offsetX = int(config.get("SETTINGS", "offsetX"))
-offsetY = int(config.get("SETTINGS", "offsetY"))
-markPosition = config.getboolean("SETTINGS", "markPosition")
-numParticles = int(config.get("SETTINGS", "numParticles"))
-randomMod = float(config.get("SETTINGS", "randomMod"))
-dynamic = config.getboolean("SETTINGS", "dynamic")
-randomModDynamic = float(config.get("SETTINGS", "randomModDynamic"))
-printMouseSpeed = config.getboolean("SETTINGS", "printMouseSpeed")
-levelVelocity = config.getlistint("SETTINGS", "levelVelocity")
-levelNumParticles = config.getlistint("SETTINGS", "levelNumParticles")
-# I didn't like this whole ordeal. I suck and expect things to be easy. :P
+def readVariables():  # --- I do not like this, but now it's done and I don't care anymore
+    global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod,\
+        velocityClamp, GRAVITY, drag, FPS, particleColor, particleColorRandom, ageColor, ageColorSpeed, ageColorSlope,\
+        ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, offsetX, offsetY, markPosition, numParticles,\
+        randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
+    transparentColor = str(config.get("SETTINGS", "transparentColor"))
+    particleSize = int(config.get("SETTINGS", "particleSize"))
+    particleAge = int(config.get("SETTINGS", "particleAge"))
+    ageBrightnessMod = float(config.get("SETTINGS", "ageBrightnessMod"))
+    ageBrightnessNoise = int(config.get("SETTINGS", "ageBrightnessNoise"))
+    velocityMod = float(config.get("SETTINGS", "velocityMod"))
+    velocityClamp = int(config.get("SETTINGS", "velocityClamp"))
+    GRAVITY = config.getlistfloat("SETTINGS", "GRAVITY")
+    drag = float(config.get("SETTINGS", "drag"))
+    FPS = int(config.get("SETTINGS", "FPS"))
+    particleColor = str(config.get("SETTINGS", "particleColor"))
+    particleColorRandom = config.getboolean("SETTINGS", "particleColorRandom")
+    ageColor = config.getboolean("SETTINGS", "ageColor")
+    ageColorSpeed = float(config.get("SETTINGS", "ageColorSpeed"))
+    ageColorSlope = config.getboolean("SETTINGS", "ageColorSlope")
+    ageColorSlopeConcavity = float(config.get("SETTINGS", "ageColorSlopeConcavity"))
+    ageColorNoise = int(config.get("SETTINGS", "ageColorNoise"))
+    ageColorNoiseMod = float(config.get("SETTINGS", "ageColorNoiseMod"))
+    offsetX = int(config.get("SETTINGS", "offsetX"))
+    offsetY = int(config.get("SETTINGS", "offsetY"))
+    markPosition = config.getboolean("SETTINGS", "markPosition")
+    numParticles = int(config.get("SETTINGS", "numParticles"))
+    randomMod = float(config.get("SETTINGS", "randomMod"))
+    dynamic = config.getboolean("SETTINGS", "dynamic")
+    randomModDynamic = float(config.get("SETTINGS", "randomModDynamic"))
+    printMouseSpeed = config.getboolean("SETTINGS", "printMouseSpeed")
+    levelVelocity = config.getlistint("SETTINGS", "levelVelocity")
+    levelNumParticles = config.getlistint("SETTINGS", "levelNumParticles")
+    # I didn't like this whole ordeal. I suck and expect things to be more easy. :P
 
 
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
@@ -174,7 +146,7 @@ class Particle(object):
 
     def update(self):
         """
-        Update position and existance per frame.
+        Update position and existence per frame.
         """
         self.vel = (self.vel + self.gravity) * self.drag
         self.pos = self.pos + self.vel
@@ -233,13 +205,11 @@ class ParticleSparkle(Particle):
         self.age -= 1
         brightness = brightness + random.uniform(-ageBrightnessNoise, ageBrightnessNoise)
 
-        
         hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
 
         hue = clamp(hue, 0, 359)  # Clamp Noise within limits
         brightness = clamp(brightness, 0, 99)
-        
-        
+
         # alpha = hsva[3]  # alpha is not used with pygame.draw
         # alpha -= self.brightnessStep
         if brightness < 7 or self.age == 0:  # If brightness falls below 7, remove particle
@@ -255,8 +225,8 @@ class ParticleSparkle(Particle):
         pygame.draw.rect(self.surface, self.color, ((self.pos[0], self.pos[1]), (particleSize, particleSize)))
 
 
-class POINT(Structure): _fields_ = [("x", c_int), ("y", c_int)]
-
+class POINT(Structure):
+    _fields_ = [("x", c_int), ("y", c_int)]
 
 
 def clamp(val, minval, maxval):
@@ -265,13 +235,15 @@ def clamp(val, minval, maxval):
     return val
 
 
-
 pygame.init()
 pygame.display.set_caption('ShitStuckToYourMouse')  # title(stupid)
 # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
 
 # --------- Initiate variables:
+if not config.has_section("SETTINGS"):
+    setDefaults()
+readVariables()
 drawParticles = True
 mouseSpeedPixelPerFrame = 0
 mousePosition = POINT()
