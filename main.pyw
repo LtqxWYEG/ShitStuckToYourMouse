@@ -20,7 +20,6 @@
 import configparser
 import PySimpleGUI as sg
 import subprocess
-import threading
 
 
 class CaseConfigParser(configparser.ConfigParser):
