@@ -1,7 +1,7 @@
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 #  Copyright (c) 2021.                                                         \
-#  Matthias Grommisch <distelzombie@protonmail.com>                            \
+#  LtqxWYEG <distelzombie@protonmail.com>                                      \
 #                                                                              \
 #  This program is free software: you can redistribute it and/or modify        \
 #  it under the terms of the GNU General Public License as published by        \
@@ -63,7 +63,7 @@ def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
 def readVariables():  # --- I do not like this, but now it's done and I don't care anymore
     global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod,\
         velocityClamp, GRAVITY, drag, FPS, particleColor, particleColorRandom, ageColor, ageColorSpeed, ageColorSlope,\
-        ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, offsetX, offsetY, markPosition, numParticles,\
+        ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition, numParticles,\
         randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
     transparentColor = str(config.get("SETTINGS", "transparentColor"))
     particleSize = int(config.get("SETTINGS", "particleSize"))
@@ -83,6 +83,7 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     ageColorSlopeConcavity = float(config.get("SETTINGS", "ageColorSlopeConcavity"))
     ageColorNoise = int(config.get("SETTINGS", "ageColorNoise"))
     ageColorNoiseMod = float(config.get("SETTINGS", "ageColorNoiseMod"))
+    useOffset = config.getboolean("SETTINGS", "useOffset")
     offsetX = int(config.get("SETTINGS", "offsetX"))
     offsetY = int(config.get("SETTINGS", "offsetY"))
     markPosition = config.getboolean("SETTINGS", "markPosition")
@@ -193,21 +194,18 @@ class ParticleSparkle(Particle):
         self.ageStep = 100.0/float(self.age)
         # Update color, and existance based on color:
         hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
+        hue = hsva[0]
         if ageColor:
             if ageColorSlope:
-                hue = hsva[0]
                 hue -= self.ageStep / ageColorSlopeConcavity
             else:
-                hue = hsva[0]
                 hue -= self.ageStep * ageColorSpeed
+            hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
+            hue = clamp(hue, 0, 359)  # Clamp Noise within limits
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
         self.age -= 1
         brightness = brightness + random.uniform(-ageBrightnessNoise, ageBrightnessNoise)
-
-        hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
-
-        hue = clamp(hue, 0, 359)  # Clamp Noise within limits
         brightness = clamp(brightness, 0, 99)
 
         # alpha = hsva[3]  # alpha is not used with pygame.draw
@@ -273,7 +271,9 @@ display_window = pygame.display.set_mode((info.current_w, info.current_h), flags
 display_window.fill(transparentColor)  # fill with tranparent color set in win32gui.SetLayeredWindowAttributes
 hwnd = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
 setWindowAttributes(hwnd)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
-
+if not useOffset:
+    offsetX = 0
+    offsetY = 0
 
 # ---------- Start the lööp:
 print("--- To stop overlay, close this window ---")  # notify on what to do to stop program
@@ -299,8 +299,6 @@ while loop:
 
     # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
     if dynamic is True:
-        offsetX = 0
-        offsetY = 0
         mouseSpeedPixelPerFrame = math.sqrt(math.pow(mouseVelocity[0], 2) + math.pow(mouseVelocity[1], 2))
         if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", mouseSpeedPixelPerFrame)
         drawParticles = False
