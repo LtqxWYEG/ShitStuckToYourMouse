@@ -62,9 +62,9 @@ def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
 # settings = dict(config.items('SETTINGS'))
 def readVariables():  # --- I do not like this, but now it's done and I don't care anymore
     global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod,\
-        velocityClamp, GRAVITY, drag, FPS, particleColor, particleColorRandom, ageColor, ageColorSpeed, ageColorSlope,\
-        ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition, numParticles,\
-        randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
+        velocityClamp, GRAVITY, drag, FPS, interpolateMouseMovement, particleColor, particleColorRandom, ageColor, ageColorSpeed,\
+        ageColorSlope, ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition,\
+    numParticles, randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
     transparentColor = str(config.get("SETTINGS", "transparentColor"))
     particleSize = int(config.get("SETTINGS", "particleSize"))
     particleAge = int(config.get("SETTINGS", "particleAge"))
@@ -75,6 +75,7 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     GRAVITY = config.getlistfloat("SETTINGS", "GRAVITY")
     drag = float(config.get("SETTINGS", "drag"))
     FPS = int(config.get("SETTINGS", "FPS"))
+    interpolateMouseMovement = config.getboolean("SETTINGS", "interpolateMouseMovement")
     particleColor = str(config.get("SETTINGS", "particleColor"))
     particleColorRandom = config.getboolean("SETTINGS", "particleColorRandom")
     ageColor = config.getboolean("SETTINGS", "ageColor")
@@ -128,8 +129,8 @@ class Particle(object):
         self.surface = surface
         self.pos = Vec2d(pos)
         if dynamic:
-            vel = [vel[0]+random.uniform(-(mouseSpeedPixelPerFrame / randomModDynamic), (mouseSpeedPixelPerFrame / randomModDynamic)),
-                   vel[1]+random.uniform(-(mouseSpeedPixelPerFrame / randomModDynamic), (mouseSpeedPixelPerFrame / randomModDynamic))]
+            vel = [vel[0]+random.uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic)),
+                   vel[1]+random.uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic))]
         else:
             vel = [vel[0]+random.uniform(-randomMod, randomMod), vel[1]+random.uniform(-randomMod, randomMod)]
         vel = [vel[0], vel[1]]
@@ -243,10 +244,11 @@ if not config.has_section("SETTINGS"):
     setDefaults()
 readVariables()
 drawParticles = True
+numParticlesBackup = numParticles
 mouseSpeedPixelPerFrame = 0
 mousePosition = POINT()
 particles = []
-firstPos = (mousePosition.x, mousePosition.y)
+firstPos = (mousePosition.x, mousePosition.y)  # Initiate positions
 secondPos = firstPos
 mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
 clock = pygame.time.Clock()  # for FPS limiting
@@ -285,7 +287,12 @@ while loop:
     windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
     firstPos = (mousePosition.x-offsetX, mousePosition.y-offsetY)
     mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
-    # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something
+    if interpolateMouseMovement:
+        firstMiddlePos = (firstPos[0] - (mouseVelocity[0] / 3),
+                          firstPos[1] - (mouseVelocity[1] / 3))  # To triple resolution
+        secondMiddlePos = (firstPos[0] - (mouseVelocity[0] - (mouseVelocity[0] / 3)),
+                           firstPos[1] - (mouseVelocity[1] - (mouseVelocity[1] / 3)))
+    # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
 
     for event in pygame.event.get():
         setFocus(hwnd)  # Brings window back to focus if any key or mouse button is pressed.
@@ -306,30 +313,37 @@ while loop:
         if mouseSpeedPixelPerFrame == 0:
             drawParticles = False
         elif mouseSpeedPixelPerFrame < levelVelocity[0]:
-            #print("first")
             numParticles = levelNumParticles[0]
             drawParticles = True
         elif mouseSpeedPixelPerFrame < levelVelocity[1]:
-            #print("second")
             numParticles = levelNumParticles[1]
             drawParticles = True
         elif mouseSpeedPixelPerFrame < levelVelocity[2]:
-            #print("third")
             numParticles = levelNumParticles[2]
             drawParticles = True
         elif mouseSpeedPixelPerFrame < levelVelocity[3]:
-            #print("fourth")
             numParticles = levelNumParticles[3]
             drawParticles = True
         else:
-            #print("fifth")
-            numParticles = levelNumParticles[4]
+            numParticles = numParticlesBackup
             drawParticles = True
             
     x = 0
+    y = 0
     while x < numParticles and drawParticles is True:
         if particleColorRandom is True: particleColor = (random.randrange(256), random.randrange(256), random.randrange(256))
-        particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+        if not interpolateMouseMovement:
+            particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            y = -1
+        elif y == 0:
+            particles.append(ParticleSparkle(display_window, firstMiddlePos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            y = 1
+        elif y == 1:
+            particles.append(ParticleSparkle(display_window, secondMiddlePos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            y = 2
+        elif y == 2:
+            particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            y = 0
         x += 1
     for spark in particles:
         spark.update()
@@ -337,7 +351,7 @@ while loop:
 
     if markPosition is True: pygame.draw.circle(display_window, "#ff0000", firstPos, 2)  # used for tuning offset
     secondPos = firstPos  # for getting mouse velocity
-    pygame.display.update()
+    pygame.display.flip()
 # while ends here
 
 pygame.quit()
