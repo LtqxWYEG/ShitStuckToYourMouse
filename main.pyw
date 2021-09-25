@@ -18,7 +18,9 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 import configparser
+import os
 import PySimpleGUI as sg
+import signal
 import subprocess
 
 
@@ -171,7 +173,7 @@ def make_window(theme):
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor), size = (25, 2), font=("Segoe UI", 16), k = 'color picker button')],
                     [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue', pad = (10, (0, 15)))],
                     [sg.Checkbox('Randomly colored particles', default = False, k = 'particleColorRandom', enable_events = True)],
-                    [sg.Checkbox('Change hue linearly, based on age.', default = True, k = 'ageColor', enable_events = True)],
+                    [sg.Checkbox('Change hue over time.', default = True, k = 'ageColor', enable_events = True)],
                     [sg.Slider(range = (0.00, 99.99), default_value = 5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
                     [sg.T('Hue aging speed factor. Not used if ageColorSlope = True', pad = (10, (0, 15)))],
@@ -226,7 +228,7 @@ def make_window(theme):
                               sg.Tab('Dynamics', dynamic_layout),
                               sg.Tab('Preview', graphing_layout)]])]]
 
-    return sg.Window('ShitStuckToYourMouse', layout, finalize=True)
+    return sg.Window('ShitStuckToYourMouse configuration', layout, finalize=True)
 
 
 
@@ -248,7 +250,6 @@ def main(config):
         if event in (None, 'Exit1') or event in (None, 'Exit2') or event in (None, 'Exit3'):
             if proc:
                 proc.kill()
-                proc = False
             break
         if not values['ageColor']:
             window['ageColorSpeed'].update(disabled = True)
@@ -268,6 +269,16 @@ def main(config):
             window['ageColorNoise'].update(disabled = False)
             window['ageColorNoiseMod'].update(disabled = False)
             window['ageColorNoiseMod'].Widget.config(troughcolor = sg.theme_slider_color())
+        if values['ageColorSlope']:
+            window['ageColorSpeed'].update(disabled = True)
+            window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_background_color())
+            window['ageColorSlopeConcavity'].update(disabled = False)
+            window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_slider_color())
+        else:
+            window['ageColorSpeed'].update(disabled = False)
+            window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_slider_color())
+            window['ageColorSlopeConcavity'].update(disabled = True)
+            window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_background_color())
         if values['dynamic']:
             window['randomMod'].update(disabled = True)
             window['randomMod'].Widget.config(troughcolor = sg.theme_background_color())
@@ -325,21 +336,25 @@ def main(config):
             updateConfig(values)
             if proc:
                 proc.kill()
-            sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 5, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
-            proc = subprocess.Popen("py sparkles.py", stdout = subprocess.PIPE, creationflags = subprocess.CREATE_NO_WINDOW)
+            sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
+            proc = subprocess.Popen("py sparkles.py", shell = False, stdout = subprocess.PIPE, stdin = subprocess.PIPE, stderr = subprocess.PIPE, creationflags = subprocess.CREATE_NO_WINDOW)
         elif event in (None, 'Close1') or event in (None, 'Close2') or event in (None, 'Close3'):
             if proc:
                 proc.kill()
-            proc = False
+                #subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=proc.pid))
+                #subprocess.Popen("TASKKILL /F /IM ShitStuckToYourMouse")
+                # or use ("TASKKILL /F /IM ShitStuckToYourMouse")
+                #os.pgkill(os.getpgid(proc.pid), signal.SIGTERM)
+            #proc = False
         elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
             if particleColor == "None":
                 particleColor = config.get("SETTINGS", "particleColor")
                 values['particleColor'] = config.get("SETTINGS", "particleColor")
             particleColor = values['particleColor']
             window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
-    proc.kill()
+    if proc:
+        proc.kill()
     window.close()
-    exit(0)
 
 
 if __name__ == '__main__':
