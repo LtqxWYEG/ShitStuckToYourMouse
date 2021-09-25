@@ -313,19 +313,19 @@ while loop:
         if mouseSpeedPixelPerFrame == 0:
             drawParticles = False
         elif mouseSpeedPixelPerFrame < levelVelocity[0]:
-            numParticles = levelNumParticles[0]
+            numParticles = numParticlesBackup
             drawParticles = True
         elif mouseSpeedPixelPerFrame < levelVelocity[1]:
-            numParticles = levelNumParticles[1]
+            numParticles = levelNumParticles[0]
             drawParticles = True
         elif mouseSpeedPixelPerFrame < levelVelocity[2]:
-            numParticles = levelNumParticles[2]
+            numParticles = levelNumParticles[1]
             drawParticles = True
         elif mouseSpeedPixelPerFrame < levelVelocity[3]:
-            numParticles = levelNumParticles[3]
+            numParticles = levelNumParticles[2]
             drawParticles = True
         else:
-            numParticles = numParticlesBackup
+            numParticles = levelNumParticles[3]
             drawParticles = True
             
     x = 0
