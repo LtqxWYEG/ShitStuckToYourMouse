@@ -141,7 +141,13 @@ class Particle(object):
 
         self.gravity = Vec2d(gravity)
         self.container = container
+        
         self.color = Color(color)
+        hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
+        hue = hsva[0]  # unpack hue from hsva tuple
+        hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
+        hue = clamp(hue, 0, 359)  # Clamp hue within limits
+        self.color.hsva = (hue, int(hsva[1]), int(hsva[2]))  # pack new hue value into hsva tuple
 
         self.surfSize = surface.get_size()
         self.drag = drag
@@ -200,17 +206,17 @@ class ParticleSparkle(Particle):
             if ageColorSlope:
                 hue -= self.ageStep / ageColorSlopeConcavity
             else:
-                hue -= self.ageStep * ageColorSpeed
-            hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
-            hue = clamp(hue, 0, 359)  # Clamp Noise within limits
+                hue += self.ageStep * ageColorSpeed
+            #hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
+            
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
-        self.age -= 1
         brightness = brightness + random.uniform(-ageBrightnessNoise, ageBrightnessNoise)
         brightness = clamp(brightness, 0, 99)
-
+        hue = clamp(hue, 0, 359)  # Clamp hue within limits
         # alpha = hsva[3]  # alpha is not used with pygame.draw
         # alpha -= self.brightnessStep
+        self.age -= 1
         if brightness < 7 or self.age == 0:  # If brightness falls below 7, remove particle
             try:  # It's possible this particle was removed already by the superclass.
                 self.container.remove(self)
@@ -218,7 +224,7 @@ class ParticleSparkle(Particle):
                 pass
         else:
             self.color.hsva = (hue, int(hsva[1]), brightness)  # , alpha)
-
+            
     def draw(self):
         # Draw just a simple point:
         pygame.draw.rect(self.surface, self.color, ((self.pos[0], self.pos[1]), (particleSize, particleSize)))

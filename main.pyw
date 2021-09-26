@@ -129,8 +129,7 @@ def updateConfig(values):
 
 
 def make_window(theme):
-    global particleColor
-    variables = ''
+    global particleColor, ageColorSpeed
     sg.theme(theme)
 
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value = 60, font=("Segoe UI", 16), k = 'FPS', enable_events = True),
@@ -149,11 +148,11 @@ def make_window(theme):
                       [sg.T('Increase for slower brightness decline (concavity of downward slope)', pad = (10, (0, 15)))],
                       # [sg.HorizontalSeparator()],
                       [sg.Spin([i for i in range(1, 100)], initial_value = 12, font=("Segoe UI", 16), k = 'ageBrightnessNoise', enable_events = True),
-                       sg.T('Adds (twinkling) random noise to age/brightness: Between +-ageBrightnessNoise. 0 for no noise')],
+                       sg.T('Adds random noise (twinkling) to age/brightness: brightness = random(+|-value). 0 for no noise')],
                       [sg.Slider(range = (0.00, 99.99), default_value = 5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15), orientation = 'horizontal', disabled = False, k = 'randomMod', enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.T('Adds random motion to random direction to particles: mouseSpeed(xy) +- randomMod. Deactivate with 0. Deactivated if dynamic is True', pad = (10, (0, 15)))],
                       # [sg.HorizontalSeparator()],
-                      [sg.Slider(range=(0.0, 9.9), default_value = 1.6, font=("Segoe UI", 14), resolution = .1, size=(70, 15), orientation='horizontal', k = 'velocityMod', enable_events = True)],
+                      [sg.Slider(range=(-9.9, 9.9), default_value = 1.6, font=("Segoe UI", 14), resolution = .1, size=(70, 15), orientation='horizontal', k = 'velocityMod', enable_events = True)],
                       [sg.T('Lowers velocity added to particle based on mouse speed: mouseSpeed / velocityMod', pad = (10, (0, 15)))],
                       # [sg.HorizontalSeparator()],
                       [sg.Spin([i for i in range(1, 1000)], initial_value = 200, font=("Segoe UI", 16), k = 'velocityClamp', enable_events = True),
@@ -173,29 +172,32 @@ def make_window(theme):
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor), size = (25, 2), font=("Segoe UI", 16), k = 'color picker button')],
                     [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue', pad = (10, (0, 15)))],
                     [sg.Checkbox('Randomly colored particles', default = False, k = 'particleColorRandom', enable_events = True)],
-                    [sg.Checkbox('Change hue over time.', default = True, k = 'ageColor', enable_events = True)],
-                    [sg.Slider(range = (0.00, 99.99), default_value = 5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
+                    [sg.Checkbox('Change hue over time. (Hue aging)', default = True, k = 'ageColor', enable_events = True)],
+                    [sg.Slider(range = (-99.99, 99.99), default_value = -5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
-                    [sg.T('Hue aging speed factor. Not used if ageColorSlope = True', pad = (10, (0, 15)))],
+                    [sg.T('Fine adjustment: ', font=("Segoe UI", 14)),
+                     sg.Slider(range = (ageColorSpeed-2.00, ageColorSpeed+2.00), default_value = ageColorSpeed, font=("Segoe UI", 14), resolution = .001, size = (55, 15),
+                               orientation = 'horizontal', k = 'ageColorSpeedFine', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
+                    [sg.T('Hue aging speed factor. Negative values decrease hue [of hsv color] over time. (Not used if ageColorSlope = True)', pad = (10, (0, 15)))],
                     [sg.Checkbox('Age on a concave downward curve. For more pronounced pink and blue colors', default = True, k = 'ageColorSlope', disabled = False, enable_events = True)],
                     [sg.T('(Or whatever is highest hue value of particleColor)', pad = (10, (0, 15)))],
                     [sg.Slider(range = (0.000, 9.999), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorSlopeConcavity', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
-                    [sg.T('Increase concavity of downward slope representing values over age. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad = (10, (0, 15)))],
-                    [sg.Spin([i for i in range(1, 100)], initial_value = 12, font=("Segoe UI", 16), k = 'ageColorNoise', disabled = False, enable_events = True),
-                     sg.T('Adds random noise to hue: Between +-ageColorNoise. 0 for no noise')],
+                    [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad = (10, (0, 15)))],
+                    [sg.Spin([i for i in range(0, 200)], initial_value = 50, font=("Segoe UI", 16), k = 'ageColorNoise', enable_events = True),
+                       sg.T('Add random hue variation to combat too uniform-looking hue-aging: hue = random(+|-value). "0" disables this.')],
                     [sg.Slider(range = (0.000, 1.000), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
-                    [sg.T('Shifts color noise weight to be more positive or negative: 0 = only positive noise, 0.5 = balanced, 1.0 = only negative noise, etc', pad = (10, (0, 15)))],
+                    [sg.T('Hue variation bias towards more positive or negative values: 0 = only positive noise | 0.5 = balanced | 1.0 = only negative noise', pad = (10, (0, 15)))],
                     [sg.HorizontalSeparator()],
                     [sg.Button('Save and Run', k = 'Save2', enable_events = True), sg.T('  '), sg.Button('Close child process',
                                 k = 'Close2', enable_events = True), sg.T('  '), sg.Button('Reset to defaults', k = 'Reset2', enable_events = True)],
                     [sg.Button('Exit', k = 'Exit2', enable_events = True)]]
 
     dynamic_layout = [[sg.Text('Dynamics settings')],
-                      [sg.Checkbox('The faster the movement, the more particles and random motion will be added.', default = True, k = 'dynamic', enable_events = True)],
-                      [sg.Slider(range = (0.00, 0.99), default_value = 0.05, font=("Segoe UI", 14), resolution = .01, size = (70, 15), orientation = 'horizontal', k = 'randomModDynamic', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
-                      [sg.T('Adds random motion to random direction to dynamic particles: +|-mouseSpeed(xy) * randomMod.', pad = (10, (0, 15)))],
+                      [sg.Checkbox('Dynamic behavior: The faster the movement, the more particles are created and the more random motion will be added.', default = True, k = 'dynamic', enable_events = True)],
+                      [sg.Slider(range = (0.00, 0.99), default_value = 0.16, font=("Segoe UI", 14), resolution = .01, size = (70, 15), orientation = 'horizontal', k = 'randomModDynamic', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
+                      [sg.T('Adds random motion to random direction to DYNAMIC particles: mouseSpeed(direction) * randomMod.', pad = (10, (0, 15)))],
                       [sg.Spin([i for i in range(1, 100)], initial_value = 5, font=("Segoe UI", 16), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
                        sg.Spin([i for i in range(1, 100)], initial_value = 8, font=("Segoe UI", 16), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
                        sg.Spin([i for i in range(1, 100)], initial_value = 14, font=("Segoe UI", 16), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
@@ -204,7 +206,7 @@ def make_window(theme):
                        sg.Spin([i for i in range(1, 1000)], initial_value = 30, font=("Segoe UI", 16), k = 'levelVelocity_2', disabled = False, enable_events = True), sg.T('Level 2'),
                        sg.Spin([i for i in range(1, 1000)], initial_value = 60, font=("Segoe UI", 16), k = 'levelVelocity_3', disabled = False, enable_events = True), sg.T('Level 3 '),
                        sg.Spin([i for i in range(1, 1000)], initial_value = 120, font=("Segoe UI", 16), k = 'levelVelocity_4', disabled = False, enable_events = True), sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')],
-                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value in the General tab.')],
+                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')],
                       [sg.HorizontalSeparator()],
                       [sg.Button('Save and Run', k = 'Save3', enable_events = True), sg.T('  '), sg.Button('Close child process',
                                   k = 'Close3', enable_events = True), sg.T('  '), sg.Button('Reset to defaults', k = 'Reset3', enable_events = True)],
@@ -213,7 +215,7 @@ def make_window(theme):
     graphing_layout = [[sg.Text("Anything you would use to graph will display here!")],
                        [sg.Graph((200, 200), (0, 0), (200, 200), background_color = "#123456", enable_events = True)],
                        [sg.Text("Current values of all variables:")],
-                       [sg.Text(variables, k = 'inGUIConsole')],
+                       [sg.Text('none', k = 'inGUIConsole')],
                        [sg.HorizontalSeparator()],
                        [sg.Button('Save and Run', k = 'Save', enable_events = True), sg.T('  '),
                         sg.Button('Close child process', k = 'Close', enable_events = True), sg.T('  '),
@@ -244,9 +246,10 @@ def main(config):
     proc = False  # Initiate variable to check if subprocess.Popen == True
     getVariablesFromConfig(window)
     while True:
-        global particleColor, variables
+        global particleColor, ageColorSpeed
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
+        ageColorSpeedFine = values['ageColorSpeed']
         if event in (None, 'Exit1') or event in (None, 'Exit2') or event in (None, 'Exit3'):
             if proc:
                 proc.kill()
@@ -254,6 +257,8 @@ def main(config):
         if not values['ageColor']:
             window['ageColorSpeed'].update(disabled = True)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_background_color())
+            window['ageColorSpeedFine'].update(disabled = True)
+            window['ageColorSpeedFine'].Widget.config(troughcolor = sg.theme_background_color())
             window['ageColorSlope'].update(disabled = True)
             window['ageColorSlopeConcavity'].update(disabled = True)
             window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_background_color())
@@ -263,20 +268,27 @@ def main(config):
         else:
             window['ageColorSpeed'].update(disabled = False)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_slider_color())
+            window['ageColorSpeedFine'].update(disabled = False)
+            window['ageColorSpeedFine'].Widget.config(troughcolor = sg.theme_slider_color())
             window['ageColorSlope'].update(disabled = False)
             window['ageColorSlopeConcavity'].update(disabled = False)
             window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_slider_color())
             window['ageColorNoise'].update(disabled = False)
             window['ageColorNoiseMod'].update(disabled = False)
             window['ageColorNoiseMod'].Widget.config(troughcolor = sg.theme_slider_color())
+
         if values['ageColorSlope']:
             window['ageColorSpeed'].update(disabled = True)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_background_color())
+            window['ageColorSpeedFine'].update(disabled = True)
+            window['ageColorSpeedFine'].Widget.config(troughcolor = sg.theme_background_color())
             window['ageColorSlopeConcavity'].update(disabled = False)
             window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_slider_color())
         else:
             window['ageColorSpeed'].update(disabled = False)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_slider_color())
+            window['ageColorSpeedFine'].update(disabled = False)
+            window['ageColorSpeedFine'].Widget.config(troughcolor = sg.theme_slider_color())
             window['ageColorSlopeConcavity'].update(disabled = True)
             window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_background_color())
         if values['dynamic']:
@@ -330,9 +342,9 @@ def main(config):
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
             else:
                 continue
-            print("[LOG] Reset to defaults...")
+            #print("[LOG] Reset to defaults...")
         elif event in (None, 'Save1') or event in (None, 'Save2') or event in (None, 'Save3'):
-            print("[LOG] Save to config.ini and run programm...")
+            #print("[LOG] Save to config.ini and run programm...")
             updateConfig(values)
             if proc:
                 proc.kill()
@@ -352,6 +364,13 @@ def main(config):
                 values['particleColor'] = config.get("SETTINGS", "particleColor")
             particleColor = values['particleColor']
             window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+        elif event in (None, 'ageColorSpeed'):  # Update ageColorSpeedFine slider
+            ageColorSpeed = values['ageColorSpeed']
+            values['ageColorSpeedFine'] = ageColorSpeed
+            window['ageColorSpeedFine'].update(ageColorSpeed, range = (ageColorSpeed-2.00, ageColorSpeed+2.00))
+        elif event in (None, 'ageColorSpeedFine'):  # Update ageColorSpeedFine slider
+            values['ageColorSpeed'] = values['ageColorSpeedFine']
+            window['ageColorSpeed'].update(values['ageColorSpeedFine'])
     if proc:
         proc.kill()
     window.close()
@@ -365,4 +384,5 @@ if __name__ == '__main__':
     if not config.has_section("SETTINGS"):
         setDefaults()
     particleColor = str(config.get("SETTINGS", "particleColor"))
+    ageColorSpeed = float(config.get("SETTINGS", "ageColorSpeed"))
     main(config)
