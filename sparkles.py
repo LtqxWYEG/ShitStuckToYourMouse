@@ -200,11 +200,11 @@ class ParticleSparkle(Particle):
         super(ParticleSparkle, self).update()
         self.ageStep = 100.0/float(self.age)
         # Update color, and existance based on color:
-        hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
+        hsva = self.color.hsva  # Limits: H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         hue = hsva[0]
         if ageColor:
             if ageColorSlope:
-                hue -= self.ageStep / ageColorSlopeConcavity
+                hue -= self.ageStep * (self.ageStep * ((self.ageStep / (10 ** ageColorSlopeConcavity)) / (10 ** ageColorSlopeConcavity)))
             else:
                 hue += self.ageStep * ageColorSpeed
             #hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
@@ -214,7 +214,7 @@ class ParticleSparkle(Particle):
         brightness = brightness + random.uniform(-ageBrightnessNoise, ageBrightnessNoise)
         brightness = clamp(brightness, 0, 99)
         hue = clamp(hue, 0, 359)  # Clamp hue within limits
-        # alpha = hsva[3]  # alpha is not used with pygame.draw
+        # alpha = hsva[3]  # alpha is not used with pygame.draw :(
         # alpha -= self.brightnessStep
         self.age -= 1
         if brightness < 7 or self.age == 0:  # If brightness falls below 7, remove particle
