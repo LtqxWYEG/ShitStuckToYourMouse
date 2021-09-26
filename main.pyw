@@ -181,18 +181,18 @@ def make_window(theme):
                     [sg.Checkbox('Change hue over time. (Hue aging)', default = True, k = 'ageColor', enable_events = True)],
 
                     [sg.HorizontalSeparator()],
-                    [sg.T('Hue aging speed factor. Negative values decrease hue [of hsv color] over time. (Not used if ageColorSlope = True)', pad = (10, (15, 0)))],
+                    [sg.T('Hue aging speed factor. Negative values decrease hue [of hsv color] over time, positive increase it. (Neg: towards orange. Pos: towards purple)', pad = (10, (15, 0)))],
                     [sg.Slider(range = (-99.99, 99.99), default_value = -5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
                     [sg.T('Fine adjustment: ', font=("Segoe UI", 14)),
-                     sg.Slider(range = (ageColorSpeed-2.00, ageColorSpeed+2.00), default_value = ageColorSpeed, font=("Segoe UI", 14), resolution = .001, size = (55, 15),
+                     sg.Slider(range = (ageColorSpeed-2.00, ageColorSpeed+2.00), default_value = ageColorSpeed, font=("Segoe UI", 14), resolution = .001, size = (56.9, 15),
                                orientation = 'horizontal', k = 'ageColorSpeedFine', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
-                    [sg.Checkbox('Age on a concave downward curve. For more pronounced pink and blue colors', default = True, k = 'ageColorSlope', disabled = False, enable_events = True)],
-                    [sg.T('(Or whatever is highest hue value of particleColor)', pad = (10, (0, 15)))],
+                    [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster decline of hue value.', default = True, k = 'ageColorSlope', disabled = False, enable_events = True)],
+                    [sg.T('(More pronounced upper colors. [Like purple and blue])', pad = (10, (0, 15)))],
                     [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad = (10, (15, 0)))],
-                    [sg.Slider(range = (0.000, 9.999), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
+                    [sg.Slider(range = (0.000, 1.199), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorSlopeConcavity', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
@@ -311,7 +311,7 @@ def main(config):
                 window['ageColorSpeedFine'].Widget.config(troughcolor = sg.theme_slider_color())
                 window['ageColorSlopeConcavity'].update(disabled = True)
                 window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_background_color())
-                
+
         if values['dynamic']:
             window['randomMod'].update(disabled = True)
             window['randomMod'].Widget.config(troughcolor = sg.theme_background_color())
