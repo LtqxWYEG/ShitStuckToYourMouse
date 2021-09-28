@@ -20,7 +20,6 @@
 import configparser
 import os
 import PySimpleGUI as sg
-import signal
 import subprocess
 
 
@@ -168,12 +167,7 @@ def make_window(theme):
                                  orientation='horizontal', k = 'GRAVITY_Y', enable_events = True)],
                       [sg.T('Particle drag, higher equals less drag: (drag * particle speed) per frame. --If >1 then particles speed up--', pad = (10, (15, 0)))],
                       [sg.Slider(range = (0.000, 2.999), default_value = 0.850, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
-                                 orientation = 'horizontal', k = 'drag', enable_events = True)],
-
-                      [sg.HorizontalSeparator()],
-                      [sg.Button('Save and Run', k = 'Save1', enable_events = True), sg.T('  '), sg.Button('Close child process',
-                                  k = 'Close1', enable_events = True), sg.T('  '), sg.Button('Reset to defaults', k = 'Reset1', enable_events = True)],
-                      [sg.Button('Exit', k = 'Exit1', enable_events = True)]]
+                                 orientation = 'horizontal', k = 'drag', enable_events = True)]]
 
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor), size = (25, 2), font=("Segoe UI", 16), k = 'color picker button')],
                     [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue', pad = (10, (0, 15)))],
@@ -200,12 +194,7 @@ def make_window(theme):
                        sg.T('Add random hue variation to combat too uniform-looking hue-aging: hue = random(+|-value). "0" disables this.')],
                     [sg.T('Hue variation bias towards more positive or negative values: 0 = only positive noise | 0.5 = balanced | 1.0 = only negative noise', pad = (10, (15, 0)))],
                     [sg.Slider(range = (0.000, 1.000), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
-                               orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
-
-                    [sg.HorizontalSeparator()],
-                    [sg.Button('Save and Run', k = 'Save2', enable_events = True), sg.T('  '), sg.Button('Close child process',
-                                k = 'Close2', enable_events = True), sg.T('  '), sg.Button('Reset to defaults', k = 'Reset2', enable_events = True)],
-                    [sg.Button('Exit', k = 'Exit2', enable_events = True)]]
+                               orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())]]
 
     dynamic_layout = [[sg.Text('Dynamics settings')],
                       [sg.Checkbox('Enable dynamic behavior', default = True, k = 'dynamic', enable_events = True)],
@@ -225,39 +214,27 @@ def make_window(theme):
                        sg.Spin([i for i in range(1, 1000)], initial_value = 30, font=("Segoe UI", 16), k = 'levelVelocity_2', disabled = False, enable_events = True), sg.T('Level 2'),
                        sg.Spin([i for i in range(1, 1000)], initial_value = 60, font=("Segoe UI", 16), k = 'levelVelocity_3', disabled = False, enable_events = True), sg.T('Level 3 '),
                        sg.Spin([i for i in range(1, 1000)], initial_value = 120, font=("Segoe UI", 16), k = 'levelVelocity_4', disabled = False, enable_events = True), sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')],
-                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')],
-
-                      [sg.HorizontalSeparator()],
-                      [sg.Button('Save and Run', k = 'Save3', enable_events = True), sg.T('  '), sg.Button('Close child process',
-                                  k = 'Close3', enable_events = True), sg.T('  '), sg.Button('Reset to defaults', k = 'Reset3', enable_events = True)],
-                      [sg.Button('Exit', k = 'Exit3', enable_events = True)]]
+                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')]]
 
     graphing_layout = [[sg.Text("Anything you would use to graph will display here!")],
                        [sg.Graph((200, 200), (0, 0), (200, 200), background_color = "#123456", enable_events = True)],
                        [sg.Text("Current values of all variables:")],
-                       [sg.Text('none', k = 'inGUIConsole')],
+                       [sg.Text('none', k = 'inGUIConsole')]]
 
-                       [sg.HorizontalSeparator()],
-                       [sg.Button('Save and Run', k = 'Save', enable_events = True), sg.T('  '),
-                        sg.Button('Close child process', k = 'Close', enable_events = True), sg.T('  '),
-                        sg.Button('Reset to defaults', k = 'Reset', enable_events = True)],
-                       [sg.Button('Exit', k = 'Exit', enable_events = True)]]
-
-    layout = [[sg.T('ShitStuckToYourMouse', size = (74, 1), justification = 'center',
-                    font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE, enable_events = True)]]
-
-    layout += [[sg.TabGroup([[sg.Tab('General settings', general_layout),
+    tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
                               sg.Tab('Color settings', color_layout),
                               sg.Tab('Dynamics', dynamic_layout),
                               sg.Tab('Preview', graphing_layout)]])]]
 
-    return sg.Window('ShitStuckToYourMouse configuration', layout, finalize=True)
+    layout = [[sg.T('ShitStuckToYourMouse', size = (74, 1), justification = 'center',
+                    font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE, enable_events = True)],
+              [sg.Column(tabs_layout, scrollable = True, vertical_scroll_only = True, size = (900, 600))],
+              [sg.Button('Save and Run', k = 'Save', enable_events = True), sg.T('  '),
+               sg.Button('Close child process', k = 'Close', enable_events = True), sg.T('  '),
+               sg.Button('Reset to defaults', k = 'Reset', enable_events = True)],
+              [sg.Button('Exit', k = 'Exit', enable_events = True)]]
 
-
-
-def PopenNotice():
-    sg.popup_auto_close('Starting ...')
-
+    return sg.Window('ShitStuckToYourMouse configuration', layout, grab_anywhere=True, finalize=True)
 
 
 def main(config):
@@ -271,10 +248,10 @@ def main(config):
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
         ageColorSpeedFine = values['ageColorSpeed']
-        if event in (None, 'Exit1') or event in (None, 'Exit2') or event in (None, 'Exit3'):
+        if event in (None, 'Exit'):
             if proc:
-                proc.kill()
-            break
+                os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
+            breaks
         if not values['ageColor']:
             window['ageColorSpeed'].update(disabled = True)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_background_color())
@@ -353,7 +330,7 @@ def main(config):
             #variables = values
             #window['inGUIConsole'].update(variables)
             #values['inGUIConsole'] = None
-        if event in (None, 'Reset1') or event in (None, 'Reset2') or event in (None, 'Reset3'):
+        if event in (None, 'Reset'):
             answer = sg.popup_yes_no('Reset all settings to defaults?')
             if answer == 'Yes' or answer == 'yes':
                 setDefaults()
@@ -364,21 +341,17 @@ def main(config):
             else:
                 continue
             #print("[LOG] Reset to defaults...")
-        elif event in (None, 'Save1') or event in (None, 'Save2') or event in (None, 'Save3'):
+        elif event in (None, 'Save'):
             #print("[LOG] Save to config.ini and run programm...")
             updateConfig(values)
             if proc:
-                proc.kill()
+                os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
             sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
-            proc = subprocess.Popen("py sparkles.py", shell = False, stdout = subprocess.PIPE, stdin = subprocess.PIPE, stderr = subprocess.PIPE, creationflags = subprocess.CREATE_NO_WINDOW)
-        elif event in (None, 'Close1') or event in (None, 'Close2') or event in (None, 'Close3'):
+            proc = subprocess.Popen("sparkles.exe", shell = False, stdout = subprocess.PIPE, stdin = subprocess.PIPE, stderr = subprocess.PIPE, creationflags = subprocess.CREATE_NO_WINDOW)
+        elif event in (None, 'Close'):
             if proc:
-                proc.kill()
-                #subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=proc.pid))
-                #subprocess.Popen("TASKKILL /F /IM ShitStuckToYourMouse")
-                # or use ("TASKKILL /F /IM ShitStuckToYourMouse")
-                #os.pgkill(os.getpgid(proc.pid), signal.SIGTERM)
-            #proc = False
+                os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
+            proc = False
         elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
             if particleColor == "None":
                 particleColor = config.get("SETTINGS", "particleColor")
@@ -393,7 +366,7 @@ def main(config):
             values['ageColorSpeed'] = values['ageColorSpeedFine']
             window['ageColorSpeed'].update(values['ageColorSpeedFine'])
     if proc:
-        proc.kill()
+        os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
     window.close()
 
 
