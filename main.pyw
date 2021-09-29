@@ -18,9 +18,31 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 import configparser
-import os
 import PySimpleGUI as sg
-import subprocess
+from time import sleep
+from subprocess import Popen, PIPE, CREATE_NO_WINDOW
+from PIL import Image, ImageTk
+from io import BytesIO
+
+
+def cleanup_mei():
+    """
+    Rudimentary workaround for https://github.com/pyinstaller/pyinstaller/issues/2379
+    """
+    from os import path, listdir
+    import sys
+    from shutil import rmtree
+
+    mei_bundle = getattr(sys, "_MEIPASS", False)
+
+    if mei_bundle:
+        dir_mei, current_mei = mei_bundle.split("_MEI")
+        for file in listdir(dir_mei):
+            if file.startswith("_MEI") and not file.endswith(current_mei):
+                try:
+                    rmtree(path.join(dir_mei, file))
+                except PermissionError:  # mainly to allow simultaneous pyinstaller instances
+                    pass
 
 
 class CaseConfigParser(configparser.ConfigParser):
@@ -45,100 +67,131 @@ def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
         config.write(configfile)
 
 
-# settings = dict(config.items('SETTINGS'))  # I don't understand this for now
+# settings = dict(config.items('SPARKLES'))  # I don't understand this for now
 def getVariablesFromConfig(window):
-    window['particleSize'].update(int(config.get("SETTINGS", "particleSize")))
-    window['particleAge'].update(int(config.get("SETTINGS", "particleAge")))
-    window['ageBrightnessMod'].update(float(config.get("SETTINGS", "ageBrightnessMod")))
-    window['ageBrightnessNoise'].update(int(config.get("SETTINGS", "ageBrightnessNoise")))
-    window['velocityMod'].update(float(config.get("SETTINGS", "velocityMod")))
-    window['velocityClamp'].update(int(config.get("SETTINGS", "velocityClamp")))
-    string = config.getlistfloat("SETTINGS", "GRAVITY")
+    window['particleSize'].update(int(config.get("SPARKLES", "particleSize")))
+    window['particleAge'].update(int(config.get("SPARKLES", "particleAge")))
+    window['ageBrightnessMod'].update(float(config.get("SPARKLES", "ageBrightnessMod")))
+    window['ageBrightnessNoise'].update(int(config.get("SPARKLES", "ageBrightnessNoise")))
+    window['velocityMod'].update(float(config.get("SPARKLES", "velocityMod")))
+    window['velocityClamp'].update(int(config.get("SPARKLES", "velocityClamp")))
+    string = config.getlistfloat("SPARKLES", "GRAVITY")
     window['GRAVITY_X'].update(string[0])
     window['GRAVITY_Y'].update(string[1])
-    window['drag'].update(float(config.get("SETTINGS", "drag")))
-    window['FPS'].update(int(config.get("SETTINGS", "FPS")))
-    window['interpolateMouseMovement'].update(config.getboolean("SETTINGS", "interpolateMouseMovement"))
-    window['particleColor'].update(str(config.get("SETTINGS", "particleColor")))
-    window['particleColorRandom'].update(config.getboolean("SETTINGS", "particleColorRandom"))
-    window['ageColor'].update(config.getboolean("SETTINGS", "ageColor"))
-    window['ageColorSpeed'].update(float(config.get("SETTINGS", "ageColorSpeed")))
-    window['ageColorSlope'].update(config.getboolean("SETTINGS", "ageColorSlope"))
-    window['ageColorSlopeConcavity'].update(float(config.get("SETTINGS", "ageColorSlopeConcavity")))
-    window['ageColorNoise'].update(int(config.get("SETTINGS", "ageColorNoise")))
-    window['ageColorNoiseMod'].update(float(config.get("SETTINGS", "ageColorNoiseMod")))
-    window['useOffset'].update(config.getboolean("SETTINGS", "useOffset"))
-    window['offsetX'].update(int(config.get("SETTINGS", "offsetX")))
-    window['offsetY'].update(int(config.get("SETTINGS", "offsetY")))
-    window['markPosition'].update(config.getboolean("SETTINGS", "markPosition"))
-    window['numParticles'].update(int(config.get("SETTINGS", "numParticles")))
-    window['randomMod'].update(float(config.get("SETTINGS", "randomMod")))
-    window['dynamic'].update(config.getboolean("SETTINGS", "dynamic"))
-    window['randomModDynamic'].update(float(config.get("SETTINGS", "randomModDynamic")))
-    string = config.getlistint("SETTINGS", "levelVelocity")
+    window['drag'].update(float(config.get("SPARKLES", "drag")))
+    window['FPS'].update(int(config.get("SPARKLES", "FPS")))
+    window['interpolateMouseMovement'].update(config.getboolean("SPARKLES", "interpolateMouseMovement"))
+    window['particleColor'].update(str(config.get("SPARKLES", "particleColor")))
+    window['particleColorRandom'].update(config.getboolean("SPARKLES", "particleColorRandom"))
+    window['ageColor'].update(config.getboolean("SPARKLES", "ageColor"))
+    window['ageColorSpeed'].update(float(config.get("SPARKLES", "ageColorSpeed")))
+    window['ageColorSlope'].update(config.getboolean("SPARKLES", "ageColorSlope"))
+    window['ageColorSlopeConcavity'].update(float(config.get("SPARKLES", "ageColorSlopeConcavity")))
+    window['ageColorNoise'].update(int(config.get("SPARKLES", "ageColorNoise")))
+    window['ageColorNoiseMod'].update(float(config.get("SPARKLES", "ageColorNoiseMod")))
+    window['useOffset'].update(config.getboolean("SPARKLES", "useOffset"))
+    window['offsetX'].update(int(config.get("SPARKLES", "offsetX")))
+    window['offsetY'].update(int(config.get("SPARKLES", "offsetY")))
+    window['markPosition'].update(config.getboolean("SPARKLES", "markPosition"))
+    window['numParticles'].update(int(config.get("SPARKLES", "numParticles")))
+    window['randomMod'].update(float(config.get("SPARKLES", "randomMod")))
+    window['dynamic'].update(config.getboolean("SPARKLES", "dynamic"))
+    window['randomModDynamic'].update(float(config.get("SPARKLES", "randomModDynamic")))
+    string = config.getlistint("SPARKLES", "levelVelocity")
     window['levelVelocity_1'].update(string[0])
     window['levelVelocity_2'].update(string[1])
     window['levelVelocity_3'].update(string[2])
     window['levelVelocity_4'].update(string[3])
-    string = config.getlistint("SETTINGS", "levelNumParticles")
+    string = config.getlistint("SPARKLES", "levelNumParticles")
     window['levelNumParticles_1'].update(string[0])
     window['levelNumParticles_2'].update(string[1])
     window['levelNumParticles_3'].update(string[2])
     window['levelNumParticles_4'].update(string[3])
+    window['fontColor'].update(str(config.get("OTHER", "fontColor")))
+    window['fontSize'].update(int(config.get("OTHER", "fontSize")))
+    window['showColor'].update(config.getboolean("OTHER", "showColor"))
+    window['showClock'].update(config.getboolean("OTHER", "showClock"))
+    window['showCPU'].update(config.getboolean("OTHER", "showCPU"))
+    window['showImage'].update(config.getboolean("OTHER", "showImage"))
+    window['imagePath'].update(str(config.get("OTHER", "imagePath")))
     return window
 
 
 def updateConfig(values):
-    config.set("SETTINGS", "particleSize", str(values['particleSize']))
-    config.set("SETTINGS", "particleAge", str(values['particleAge']))
-    config.set("SETTINGS", "ageBrightnessMod", str(values['ageBrightnessMod']))
-    config.set("SETTINGS", "ageBrightnessNoise", str(values['ageBrightnessNoise']))
-    config.set("SETTINGS", "velocityMod", str(values['velocityMod']))
-    config.set("SETTINGS", "velocityClamp", str(values['velocityClamp']))
+    config.set("SPARKLES", "particleSize", str(values['particleSize']))
+    config.set("SPARKLES", "particleAge", str(values['particleAge']))
+    config.set("SPARKLES", "ageBrightnessMod", str(values['ageBrightnessMod']))
+    config.set("SPARKLES", "ageBrightnessNoise", str(values['ageBrightnessNoise']))
+    config.set("SPARKLES", "velocityMod", str(values['velocityMod']))
+    config.set("SPARKLES", "velocityClamp", str(values['velocityClamp']))
     string = [str(values['GRAVITY_X']), ', ', str(values['GRAVITY_Y'])]
     GRAVITYStr = "".join(string)
-    config.set("SETTINGS", "GRAVITY", GRAVITYStr)
-    config.set("SETTINGS", "drag", str(values['drag']))
-    config.set("SETTINGS", "FPS", str(values['FPS']))
-    config.set("SETTINGS", "interpolateMouseMovement", str(values['interpolateMouseMovement']))
-    config.set("SETTINGS", "particleColor", values['particleColor'])
-    config.set("SETTINGS", "particleColorRandom", str(values['particleColorRandom']))
-    config.set("SETTINGS", "ageColor", str(values['ageColor']))
-    config.set("SETTINGS", "ageColorSpeed", str(values['ageColorSpeed']))
-    config.set("SETTINGS", "ageColorSlope", str(values['ageColorSlope']))
-    config.set("SETTINGS", "ageColorSlopeConcavity", str(values['ageColorSlopeConcavity']))
-    config.set("SETTINGS", "ageColorNoise", str(values['ageColorNoise']))
-    config.set("SETTINGS", "ageColorNoiseMod", str(values['ageColorNoiseMod']))
-    config.set("SETTINGS", "useOffset", str(values['useOffset']))
-    config.set("SETTINGS", "offsetX", str(values['offsetX']))
-    config.set("SETTINGS", "offsetY", str(values['offsetY']))
-    config.set("SETTINGS", "markPosition", str(values['markPosition']))
-    config.set("SETTINGS", "numParticles", str(values['numParticles']))
-    config.set("SETTINGS", "randomMod", str(values['randomMod']))
-    config.set("SETTINGS", "dynamic", str(values['dynamic']))
-    config.set("SETTINGS", "randomModDynamic", str(values['randomModDynamic']))
+    config.set("SPARKLES", "GRAVITY", GRAVITYStr)
+    config.set("SPARKLES", "drag", str(values['drag']))
+    config.set("SPARKLES", "FPS", str(values['FPS']))
+    config.set("SPARKLES", "interpolateMouseMovement", str(values['interpolateMouseMovement']))
+    config.set("SPARKLES", "particleColor", values['particleColor'])
+    config.set("SPARKLES", "particleColorRandom", str(values['particleColorRandom']))
+    config.set("SPARKLES", "ageColor", str(values['ageColor']))
+    config.set("SPARKLES", "ageColorSpeed", str(values['ageColorSpeed']))
+    config.set("SPARKLES", "ageColorSlope", str(values['ageColorSlope']))
+    config.set("SPARKLES", "ageColorSlopeConcavity", str(values['ageColorSlopeConcavity']))
+    config.set("SPARKLES", "ageColorNoise", str(values['ageColorNoise']))
+    config.set("SPARKLES", "ageColorNoiseMod", str(values['ageColorNoiseMod']))
+    config.set("SPARKLES", "useOffset", str(values['useOffset']))
+    config.set("SPARKLES", "offsetX", str(values['offsetX']))
+    config.set("SPARKLES", "offsetY", str(values['offsetY']))
+    config.set("SPARKLES", "markPosition", str(values['markPosition']))
+    config.set("SPARKLES", "numParticles", str(values['numParticles']))
+    config.set("SPARKLES", "randomMod", str(values['randomMod']))
+    config.set("SPARKLES", "dynamic", str(values['dynamic']))
+    config.set("SPARKLES", "randomModDynamic", str(values['randomModDynamic']))
     string = [str(values['levelVelocity_1']), ', ', str(values['levelVelocity_2']), ', ', str(values['levelVelocity_3']), ', ', str(values['levelVelocity_4'])]
     levelVelocityStr = "".join(string)
-    config.set("SETTINGS", "levelVelocity", levelVelocityStr)
+    config.set("SPARKLES", "levelVelocity", levelVelocityStr)
     string = [str(values['levelNumParticles_1']), ', ', str(values['levelNumParticles_2']), ', ', str(values['levelNumParticles_3']), ', ', str(values['levelNumParticles_4'])]
     levelNumParticlesStr = "".join(string)
-    config.set("SETTINGS", "levelNumParticles", levelNumParticlesStr)
+    config.set("SPARKLES", "levelNumParticles", levelNumParticlesStr)
+    config.set("OTHER", "fontColor", str(values['fontColor']))
+    config.set("OTHER", "fontSize", str(values['fontSize']))
+    config.set("OTHER", "showColor", str(values['showColor']))
+    config.set("OTHER", "showClock", str(values['showClock']))
+    config.set("OTHER", "showCPU", str(values['showCPU']))
+    config.set("OTHER", "showRAM", str(values['showRAM']))
+    config.set("OTHER", "showImage", str(values['showImage']))
+    config.set("OTHER", "imagePath", str(values['imagePath']))
     with open("config.ini", 'w') as configfile:
         config.write(configfile)
 
 
+def get_img_data(f, maxsize=(1200, 850), first=False):
+    """
+    Generate image data using PIL
+    """
+    img = Image.open(f)
+    img.thumbnail(maxsize)
+    if first:                     # tkinter is inactive the first time
+        bio = BytesIO()
+        img.save(bio, format="PNG")
+        del img
+        return bio.getvalue()
+    return ImageTk.PhotoImage(img)
+
+
 def make_window(theme):
-    global particleColor, ageColorSpeed
+    global particleColor, fontColor, ageColorSpeed, imagePath
     sg.theme(theme)
+    file_types = [("Images", "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"), ("All files (*.*)", "*.*")]
+    # "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"
 
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value = 60, font=("Segoe UI", 16), k = 'FPS', enable_events = True),
                        sg.T('Frames per second. Also affects number of particles as they are spawned per frame.')],
                       [sg.Checkbox('Interpolate mouse movement', default = True, k = 'interpolateMouseMovement', enable_events = True)],
                       [sg.T('Exp.: Draw some particles between current position of the cursor and that of last frame. (Interpolation should have almost no effect on performance)', pad = (10, (0, 15)))],
-                      [sg.Checkbox('Add offset to the particle origin', default = False, k = 'useOffset', enable_events = True),
+                      [sg.Checkbox('Add offset to the position of the particle origin', default = False, k = 'useOffset', enable_events = True),
                        sg.Checkbox('Mark position of particle origin. Use for offset tuning', default = False, k = 'markPosition', disabled = False, enable_events = True)],
-                      [sg.Spin([i for i in range(-99, 99)], initial_value = 0, font=("Segoe UI", 16), k = 'offsetX', disabled = False, enable_events = True), sg.T('X '),
-                       sg.Spin([i for i in range(-99, 99)], initial_value = 0, font=("Segoe UI", 16), k = 'offsetY', disabled = False, enable_events = True),
+                      [sg.T('X '), sg.Spin([i for i in range(-99, 99)], initial_value = 20, font=("Segoe UI", 16), k = 'offsetX', disabled = False, enable_events = True),
+                       sg.T('Y '), sg.Spin([i for i in range(-99, 99)], initial_value = 10, font=("Segoe UI", 16), k = 'offsetY', disabled = False, enable_events = True),
                        sg.T('Offset in pixel. (0, 0 = tip of cursor)')],
                       [sg.Spin([i for i in range(1, 11)], initial_value = 2, font=("Segoe UI", 16), k = 'particleSize', enable_events = True), sg.T('Particle size in pixel * pixel')],
                       [sg.Spin([i for i in range(1, 100)], initial_value = 1, font=("Segoe UI", 16), k = 'numParticles', enable_events = True), sg.T('Number of particles to spawn every frame')],
@@ -216,15 +269,35 @@ def make_window(theme):
                        sg.Spin([i for i in range(1, 1000)], initial_value = 120, font=("Segoe UI", 16), k = 'levelVelocity_4', disabled = False, enable_events = True), sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')],
                       [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')]]
 
-    graphing_layout = [[sg.Text("Anything you would use to graph will display here!")],
-                       [sg.Graph((200, 200), (0, 0), (200, 200), background_color = "#123456", enable_events = True)],
-                       [sg.Text("Current values of all variables:")],
-                       [sg.Text('none', k = 'inGUIConsole')]]
+    other_layout = [[sg.Text("Anything else one could find interesting to adhere to your mouse-cursor!")],
+                    [sg.Text('Notice: FPS and offset from the "General"-tab are also used here:')],
+                    [sg.Checkbox('Add offset to the position of the upper-right corner of these stupid things', default = False, k = 'useOffset2', enable_events = True)],
+                    [sg.T('X '), sg.Spin([i for i in range(-99, 99)], initial_value = 20, font = ("Segoe UI", 16), k = 'offsetX2', disabled = False, enable_events = True),
+                     sg.T('Y '), sg.Spin([i for i in range(-99, 99)], initial_value = 10, font = ("Segoe UI", 16), k = 'offsetY2', disabled = False, enable_events = True),
+                     sg.T('Offset in pixel. (0, 0 = tip of cursor)')],
+
+                    [sg.HorizontalSeparator()],
+                    [sg.Input(visible = False, enable_events = True, k = 'fontColor'),
+                     sg.ColorChooserButton('Font color picker: %s' % fontColor, button_color = ("#010101", fontColor), size = (25, 2), font = ("Segoe UI", 16), k = 'font color picker button')],
+
+                    [sg.Spin([i for i in range(1, 100)], initial_value = 10, font = ("Segoe UI", 16), k = 'fontSize', enable_events = True),
+                     sg.T('Font size in pt.')],
+                    [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default = False, k = 'showColor', disabled = False, enable_events = True)],
+                    [sg.Checkbox('Show a text-based clock on the right the cursor.', default = False, k = 'showClock', disabled = False, enable_events = True)],
+                    [sg.Checkbox('Show CPU-usage in percent beside the cursor.', default = False, k = 'showCPU', disabled = False, enable_events = True)],
+                    [sg.Checkbox('Show RAM-usage in percent alongside the cursor', default = False, k = 'showRAM', disabled = False, enable_events = True)],
+
+                    [sg.HorizontalSeparator()],
+                    [sg.Checkbox('Draw an image somewhere around the cursor', default = False, k = 'showImage', disabled = False, enable_events = True)],
+                    [sg.Text('Choose Image'), sg.InputText(size = (65, 1), enable_events = True, k = 'imagePath'),
+                     sg.FileBrowse('Browse', size = (10, 1), file_types = file_types, enable_events = True)],
+                    [sg.T('(Only ".png", ".jpg", ".jpeg", ".tiff" ".gif" or ".bmp" supported.)', font = ("Segoe UI", 10))],
+                    [sg.Image(data = get_img_data(imagePath, first = True), k = 'image')]]
 
     tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
                               sg.Tab('Color settings', color_layout),
                               sg.Tab('Dynamics', dynamic_layout),
-                              sg.Tab('Preview', graphing_layout)]])]]
+                              sg.Tab('Other things stuck to your mouse', other_layout)]])]]
 
     layout = [[sg.T('ShitStuckToYourMouse', size = (74, 1), justification = 'center',
                     font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE, enable_events = True)],
@@ -242,16 +315,48 @@ def main(config):
     sg.set_options(font=("Segoe UI", 10))
     window = make_window('Dark')
     proc = False  # Initiate variable to check if subprocess.Popen == True
+    otherProc = False
     getVariablesFromConfig(window)
     while True:
-        global particleColor, ageColorSpeed
+        global particleColor, fontColor, ageColorSpeed, imagePath
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
-        ageColorSpeedFine = values['ageColorSpeed']
+        fontColor = values['fontColor']
+        imagePath = values['imagePath']
         if event in (None, 'Exit'):
             if proc:
-                os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
-            breaks
+                proc.terminate()
+                if proc:
+                    Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            if otherProc:
+                otherProc.terminate()
+                if otherProc:
+                    Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            break
+
+        if values['showColor'] or values['showImage']:
+            window['showClock'].update(disabled = True)
+            window['showCPU'].update(disabled = True)
+            window['showRAM'].update(disabled = True)
+            if values['showColor']:
+                window['showColor'].update(disabled = False)
+                window['showImage'].update(disabled = True)
+            else:
+                window['showColor'].update(disabled = True)
+                window['showImage'].update(disabled = False)
+        elif values['showClock'] or values['showCPU'] or values['showRAM']:
+            window['showClock'].update(disabled = False)
+            window['showCPU'].update(disabled = False)
+            window['showRAM'].update(disabled = False)
+            window['showImage'].update(disabled = True)
+            window['showColor'].update(disabled = True)
+        else:
+            window['showClock'].update(disabled = False)
+            window['showCPU'].update(disabled = False)
+            window['showRAM'].update(disabled = False)
+            window['showImage'].update(disabled = False)
+            window['showColor'].update(disabled = False)
+
         if not values['ageColor']:
             window['ageColorSpeed'].update(disabled = True)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_background_color())
@@ -319,10 +424,15 @@ def main(config):
             window['offsetX'].update(disabled = False)
             window['offsetY'].update(disabled = False)
             window['markPosition'].update(disabled = False)
+            window['offsetX2'].update(disabled = False)
+            window['offsetY2'].update(disabled = False)
         else:
             window['offsetX'].update(disabled = True)
             window['offsetY'].update(disabled = True)
             window['markPosition'].update(disabled = True)
+            window['offsetX2'].update(disabled = True)
+            window['offsetY2'].update(disabled = True)
+
         #if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
             #print('============ Event = ', event, ' ==============')
             #print('-------- Values Dictionary (key:value) --------')
@@ -335,29 +445,62 @@ def main(config):
             if answer == 'Yes' or answer == 'yes':
                 setDefaults()
                 getVariablesFromConfig(window)
-                values['particleColor'] = config.get("SETTINGS", "particleColor")
+                values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+                values['fontColor'] = config.get("OTHER", "fontColor")
+                fontColor = values['fontColor']
+                window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+                values['imagePath'] = str(config.get("OTHER", "imagePath"))
+                imagePath = values['imagePath']
+                window['image'].update(data = get_img_data(imagePath, first = True))
             else:
                 continue
-            #print("[LOG] Reset to defaults...")
+        elif event in (None, 'Browse') or event in (None, 'imagePath'):
+            if imagePath == "None":
+                values['imagePath'] = str(config.get("OTHER", "imagePath"))
+                imagePath = values['imagePath']
+            imagePath = values['imagePath']
+            window['image'].update(data = get_img_data(imagePath, first = True))
         elif event in (None, 'Save'):
-            #print("[LOG] Save to config.ini and run programm...")
             updateConfig(values)
             if proc:
-                os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
+                proc.terminate()
+                if proc:
+                    Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            if otherProc:
+                otherProc.terminate()
+                if otherProc:
+                    Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            sleep(2)
             sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
-            proc = subprocess.Popen("sparkles.exe", shell = False, stdout = subprocess.PIPE, stdin = subprocess.PIPE, stderr = subprocess.PIPE, creationflags = subprocess.CREATE_NO_WINDOW)
+            if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
+                otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+            else:
+                proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
         elif event in (None, 'Close'):
             if proc:
-                os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
+                proc.terminate()
+                if proc:
+                    Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            if otherProc:
+                otherProc.terminate()
+                if otherProc:
+                    Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             proc = False
+            otherProc = False
         elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
             if particleColor == "None":
-                particleColor = config.get("SETTINGS", "particleColor")
-                values['particleColor'] = config.get("SETTINGS", "particleColor")
+                particleColor = config.get("SPARKLES", "particleColor")
+                values['particleColor'] = config.get("SPARKLES", "particleColor")
             particleColor = values['particleColor']
             window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+        elif event in (None, 'fontColor'):  # Update color and text of the color-picker button
+            if fontColor == "None":
+                fontColor = config.get("OTHER", "fontColor")
+                values['fontColor'] = config.get("OTHER", "fontColor")
+            fontColor = values['fontColor']
+            window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
         elif event in (None, 'ageColorSpeed'):  # Update ageColorSpeedFine slider
             ageColorSpeed = values['ageColorSpeed']
             values['ageColorSpeedFine'] = ageColorSpeed
@@ -365,18 +508,42 @@ def main(config):
         elif event in (None, 'ageColorSpeedFine'):  # Update ageColorSpeedFine slider
             values['ageColorSpeed'] = values['ageColorSpeedFine']
             window['ageColorSpeed'].update(values['ageColorSpeedFine'])
+        elif event in (None, 'useOffset2') or event in (None, 'offsetX2') or event in (None, 'offsetY2'):
+            values['useOffset'] = values['useOffset2']
+            values['offsetX'] = values['offsetX2']
+            values['offsetY'] = values['offsetY2']
+            window['useOffset'].update(values['useOffset'])
+            window['offsetX'].update(values['offsetX'])
+            window['offsetY'].update(values['offsetY'])
+        elif event in (None, 'useOffset') or event in (None, 'offsetX') or event in (None, 'offsetY'):
+            values['useOffset2'] = values['useOffset']
+            values['offsetX2'] = values['offsetX']
+            values['offsetY2'] = values['offsetY']
+            window['useOffset2'].update(values['useOffset2'])
+            window['offsetX2'].update(values['offsetX2'])
+            window['offsetY2'].update(values['offsetY2'])
+
     if proc:
-        os.system('taskkill /F /IM sparkles.exe')  # Only method that worked for me
+        proc.terminate()
+        if proc:
+            Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+    if otherProc:
+        otherProc.terminate()
+        if otherProc:
+            Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
     window.close()
 
 
 if __name__ == '__main__':
+    cleanup_mei()  # see comment inside
     config = CaseConfigParser()
     parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})
     config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
     config.read("config.ini")  # Read config file
-    if not config.has_section("SETTINGS"):
+    if not config.has_section("SPARKLES") or not config.has_section("OTHER"):
         setDefaults()
-    particleColor = str(config.get("SETTINGS", "particleColor"))
-    ageColorSpeed = float(config.get("SETTINGS", "ageColorSpeed"))
+    particleColor = str(config.get("SPARKLES", "particleColor"))
+    fontColor = str(config.get("OTHER", "fontColor"))
+    ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))
+    imagePath = str(config.get("OTHER", "imagePath"))
     main(config)

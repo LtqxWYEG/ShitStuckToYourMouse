@@ -18,17 +18,37 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 import configparser
-import math
-import random
+from math import sqrt, pow
+from random import randrange, uniform
 from ctypes import byref, c_int, Structure, windll
 
 import pygame
 import pygame.gfxdraw
-import win32api
-import win32con
-import win32gui
+from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, GetDC, ReleaseDC
+from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED
+from win32api import RGB
 from pygame.locals import *  # for Color
 from vec2d import Vec2d
+
+
+def cleanup_mei():
+    """
+    Rudimentary workaround for https://github.com/pyinstaller/pyinstaller/issues/2379
+    """
+    from os import path, listdir
+    import sys
+    from shutil import rmtree
+
+    mei_bundle = getattr(sys, "_MEIPASS", False)
+
+    if mei_bundle:
+        dir_mei, current_mei = mei_bundle.split("_MEI")
+        for file in listdir(dir_mei):
+            if file.startswith("_MEI") and not file.endswith(current_mei):
+                try:
+                    rmtree(path.join(dir_mei, file))
+                except PermissionError:  # mainly to allow simultaneous pyinstaller instances
+                    pass
 
 
 class CaseConfigParser(configparser.ConfigParser):
@@ -59,49 +79,49 @@ def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
         config.write(configfile)
 
 
-# settings = dict(config.items('SETTINGS'))
+# settings = dict(config.items('SPARKLES'))
 def readVariables():  # --- I do not like this, but now it's done and I don't care anymore
     global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod,\
         velocityClamp, GRAVITY, drag, FPS, interpolateMouseMovement, particleColor, particleColorRandom, ageColor, ageColorSpeed,\
         ageColorSlope, ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition,\
     numParticles, randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
-    transparentColor = str(config.get("SETTINGS", "transparentColor"))
-    particleSize = int(config.get("SETTINGS", "particleSize"))
-    particleAge = int(config.get("SETTINGS", "particleAge"))
-    ageBrightnessMod = float(config.get("SETTINGS", "ageBrightnessMod"))
-    ageBrightnessNoise = int(config.get("SETTINGS", "ageBrightnessNoise"))
-    velocityMod = float(config.get("SETTINGS", "velocityMod"))
-    velocityClamp = int(config.get("SETTINGS", "velocityClamp"))
-    GRAVITY = config.getlistfloat("SETTINGS", "GRAVITY")
-    drag = float(config.get("SETTINGS", "drag"))
-    FPS = int(config.get("SETTINGS", "FPS"))
-    interpolateMouseMovement = config.getboolean("SETTINGS", "interpolateMouseMovement")
-    particleColor = str(config.get("SETTINGS", "particleColor"))
-    particleColorRandom = config.getboolean("SETTINGS", "particleColorRandom")
-    ageColor = config.getboolean("SETTINGS", "ageColor")
-    ageColorSpeed = float(config.get("SETTINGS", "ageColorSpeed"))
-    ageColorSlope = config.getboolean("SETTINGS", "ageColorSlope")
-    ageColorSlopeConcavity = float(config.get("SETTINGS", "ageColorSlopeConcavity"))
-    ageColorNoise = int(config.get("SETTINGS", "ageColorNoise"))
-    ageColorNoiseMod = float(config.get("SETTINGS", "ageColorNoiseMod"))
-    useOffset = config.getboolean("SETTINGS", "useOffset")
-    offsetX = int(config.get("SETTINGS", "offsetX"))
-    offsetY = int(config.get("SETTINGS", "offsetY"))
-    markPosition = config.getboolean("SETTINGS", "markPosition")
-    numParticles = int(config.get("SETTINGS", "numParticles"))
-    randomMod = float(config.get("SETTINGS", "randomMod"))
-    dynamic = config.getboolean("SETTINGS", "dynamic")
-    randomModDynamic = float(config.get("SETTINGS", "randomModDynamic"))
-    printMouseSpeed = config.getboolean("SETTINGS", "printMouseSpeed")
-    levelVelocity = config.getlistint("SETTINGS", "levelVelocity")
-    levelNumParticles = config.getlistint("SETTINGS", "levelNumParticles")
+    transparentColor = str(config.get("SPARKLES", "transparentColor"))
+    particleSize = int(config.get("SPARKLES", "particleSize"))
+    particleAge = int(config.get("SPARKLES", "particleAge"))
+    ageBrightnessMod = float(config.get("SPARKLES", "ageBrightnessMod"))
+    ageBrightnessNoise = int(config.get("SPARKLES", "ageBrightnessNoise"))
+    velocityMod = float(config.get("SPARKLES", "velocityMod"))
+    velocityClamp = int(config.get("SPARKLES", "velocityClamp"))
+    GRAVITY = config.getlistfloat("SPARKLES", "GRAVITY")
+    drag = float(config.get("SPARKLES", "drag"))
+    FPS = int(config.get("SPARKLES", "FPS"))
+    interpolateMouseMovement = config.getboolean("SPARKLES", "interpolateMouseMovement")
+    particleColor = str(config.get("SPARKLES", "particleColor"))
+    particleColorRandom = config.getboolean("SPARKLES", "particleColorRandom")
+    ageColor = config.getboolean("SPARKLES", "ageColor")
+    ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))
+    ageColorSlope = config.getboolean("SPARKLES", "ageColorSlope")
+    ageColorSlopeConcavity = float(config.get("SPARKLES", "ageColorSlopeConcavity"))
+    ageColorNoise = int(config.get("SPARKLES", "ageColorNoise"))
+    ageColorNoiseMod = float(config.get("SPARKLES", "ageColorNoiseMod"))
+    useOffset = config.getboolean("SPARKLES", "useOffset")
+    offsetX = int(config.get("SPARKLES", "offsetX"))
+    offsetY = int(config.get("SPARKLES", "offsetY"))
+    markPosition = config.getboolean("SPARKLES", "markPosition")
+    numParticles = int(config.get("SPARKLES", "numParticles"))
+    randomMod = float(config.get("SPARKLES", "randomMod"))
+    dynamic = config.getboolean("SPARKLES", "dynamic")
+    randomModDynamic = float(config.get("SPARKLES", "randomModDynamic"))
+    printMouseSpeed = config.getboolean("SPARKLES", "printMouseSpeed")
+    levelVelocity = config.getlistint("SPARKLES", "levelVelocity")
+    levelNumParticles = config.getlistint("SPARKLES", "levelNumParticles")
     # I didn't like this whole ordeal. I suck and expect things to be more easy. :P
 
 
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
-    setWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_TRANSPARENT | win32con.WS_EX_LAYERED)
-    win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(*transparentColorTuple), 0, win32con.LWA_COLORKEY)
+    setWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
+    SetLayeredWindowAttributes(hwnd, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
     # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
     # It's not necessary to set the SWP_SHOWWINDOW flag.
     # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
@@ -129,10 +149,10 @@ class Particle(object):
         self.surface = surface
         self.pos = Vec2d(pos)
         if dynamic:
-            vel = [vel[0]+random.uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic)),
-                   vel[1]+random.uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic))]
+            vel = [vel[0]+uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic)),
+                   vel[1]+uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic))]
         else:
-            vel = [vel[0]+random.uniform(-randomMod, randomMod), vel[1]+random.uniform(-randomMod, randomMod)]
+            vel = [vel[0]+uniform(-randomMod, randomMod), vel[1]+uniform(-randomMod, randomMod)]
         vel = [vel[0], vel[1]]
         self.vel = Vec2d(vel) / velocityMod
 
@@ -145,7 +165,7 @@ class Particle(object):
         self.color = Color(color)
         hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         hue = hsva[0]  # unpack hue from hsva tuple
-        hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
+        hue = hue + uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
         hue = clamp(hue, 0, 359)  # Clamp hue within limits
         self.color.hsva = (hue, int(hsva[1]), int(hsva[2]))  # pack new hue value into hsva tuple
 
@@ -211,7 +231,7 @@ class ParticleSparkle(Particle):
             
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
-        brightness = brightness + random.uniform(-ageBrightnessNoise, ageBrightnessNoise)
+        brightness = brightness + uniform(-ageBrightnessNoise, ageBrightnessNoise)
         brightness = clamp(brightness, 0, 99)
         hue = clamp(hue, 0, 359)  # Clamp hue within limits
         # alpha = hsva[3]  # alpha is not used with pygame.draw :(
@@ -240,13 +260,14 @@ def clamp(val, minval, maxval):
     return val
 
 
+cleanup_mei()  # see comment inside
 pygame.init()
 pygame.display.set_caption('ShitStuckToYourMouse')  # title(stupid)
 # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
 
 # --------- Initiate variables:
-if not config.has_section("SETTINGS"):
+if not config.has_section("SPARKLES"):
     setDefaults()
 readVariables()
 drawParticles = True
@@ -312,7 +333,7 @@ while loop:
 
     # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
     if dynamic is True:
-        mouseSpeedPixelPerFrame = math.sqrt(math.pow(mouseVelocity[0], 2) + math.pow(mouseVelocity[1], 2))
+        mouseSpeedPixelPerFrame = sqrt(pow(mouseVelocity[0], 2) + pow(mouseVelocity[1], 2))
         if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", mouseSpeedPixelPerFrame)
         drawParticles = False
         #print(mouseSpeedPixelPerFrame)
@@ -337,7 +358,7 @@ while loop:
     x = 0
     y = 0
     while x < numParticles and drawParticles is True:
-        if particleColorRandom is True: particleColor = (random.randrange(256), random.randrange(256), random.randrange(256))
+        if particleColorRandom is True: particleColor = (randrange(256), randrange(256), randrange(256))
         if not interpolateMouseMovement:
             particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
             y = -1
