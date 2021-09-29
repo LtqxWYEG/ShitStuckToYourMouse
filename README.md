@@ -18,12 +18,12 @@ Usage:
 - Run main.pyw for a heavily configurable, nice sparkle effect with velocity and gravity. (not optimized)
 - ^--- "Do it!" - Palpatine
 - Other possibilities: 
- - Display color under mouse cursor
- - Display a clock
- - CPU usage
- - RAM usage
- - Both/All
- - An image
+   - Display color under mouse cursor
+   - Display a clock
+   - CPU usage
+   - RAM usage
+   - Both/All
+   - An image
 - The other programs are inferior. (Like, literally every other)
 
 
