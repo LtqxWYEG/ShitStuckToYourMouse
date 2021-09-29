@@ -20,9 +20,9 @@
 
 from ctypes import windll, Structure, c_int, byref
 import pygame
-import win32gui
-import win32con
-import win32api
+from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, GetDC, ReleaseDC
+from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED
+from win32api import RGB
 from datetime import datetime
 from time import sleep
 from psutil import cpu_percent, virtual_memory
@@ -109,9 +109,9 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
 
 
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
-    setWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_TRANSPARENT | win32con.WS_EX_LAYERED)
-    win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(*rgbHexToTuple(transparentColor)), 0, win32con.LWA_COLORKEY)
+    setWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
+    SetLayeredWindowAttributes(hwnd, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
     # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
     # It's not necessary to set the SWP_SHOWWINDOW flag.
     # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
@@ -204,7 +204,7 @@ if showColor:
     color_rect = colorSquare.get_rect()  # get rectangle from surface
     old_color_rect = colorSquare.get_rect()  # second one
     small_color_rect = pygame.Rect((1, 1), (40, 40))  # create smaller rectangle to fill with color from pixel
-    hdc = win32gui.GetDC(0)  # Get display content for emqsuring RGB value
+    hdc = GetDC(0)  # Get display content for emqsuring RGB value
     old_rect = blit_rect  # initialize as aswell
     loop = True
 elif showImage:
@@ -232,13 +232,13 @@ elif showCPU or showRAM or showClock:
         blit_rect = textRAM.get_rect()
     if showClock and showCPU and showRAM:
         blit_rect = textClock.get_rect()
-        blit_rect = blit_rect.inflate(0, 18)
+        blit_rect = blit_rect.inflate(0, 17)
     elif showClock and showCPU or showClock and showRAM:
         blit_rect = textClock.get_rect()  # get rectangle size and position (0,0) from Surface 'text', save as Rectangle
-        blit_rect = blit_rect.inflate(0, 8)  # double height
+        blit_rect = blit_rect.inflate(0, 7)  # double height
     elif showCPU and showRAM and not showClock:
         blit_rect = textCPU.get_rect()  # get rectangle size and position (0,0) from Surface 'text', save as Rectangle
-        blit_rect = blit_rect.inflate(0, 8)
+        blit_rect = blit_rect.inflate(0, 7)
     old_rect = blit_rect  # initialize as aswell
     loop = True
 else:
@@ -335,13 +335,13 @@ while loop:
             textRAM = font.render(str('RAM: %s' % ramPercent), True, fontColor, transparentColor)
             display_window.blit(textRAM, blit_rect)
         pygame.display.update((old_rect, blit_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
-        old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+2))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
+        old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+4))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
 
     # limit the fps of the program
     clock.tick(FPS)
 # while end
 
-win32gui.ReleaseDC(0, hdc)
+ReleaseDC(0, hdc)
 getCPU.join()
 getRAM.join()
 pygame.quit()
