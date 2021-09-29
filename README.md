@@ -44,7 +44,7 @@ Prerequisites:
 - PyGame
 - PySimpleGUI
 
-
+![alt text](https://github.com/LtqxWYEG/ShitStuckToYourMouse/raw/main/GUI.png?raw=true)
 
 ---
 Thank you, various netizens, for all the StackOverflow questions whose answers helped me grasp an incredibly rudimentary understanding of Python.
