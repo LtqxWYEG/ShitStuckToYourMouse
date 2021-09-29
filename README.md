@@ -17,9 +17,13 @@ The intention for this is to build upon it to create something interesting - lik
 Usage:
 - Run main.pyw for a heavily configurable, nice sparkle effect with velocity and gravity. (not optimized)
 - ^--- "Do it!" - Palpatine
-- Run clock.py for a clock beneath your cursor. (optimized)
-- Run color.py for RGB values of the pixel. Also draws a 40x40 square, filled with the color for visibility.
-- Run picture.py to have a stupid python image follow your mouse.
+- Other possibilities: 
+ - Display color under mouse cursor
+ - Display a clock
+ - CPU usage
+ - RAM usage
+ - Both/All
+ - An image
 - The other programs are inferior. (Like, literally every other)
 
 
