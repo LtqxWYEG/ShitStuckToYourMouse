@@ -23,16 +23,16 @@ from time import sleep
 from subprocess import Popen, PIPE, CREATE_NO_WINDOW
 from PIL import Image, ImageTk
 from io import BytesIO
+from os import path, listdir
+from os.path import exists
+import sys
+from shutil import rmtree
 
 
 def cleanup_mei():
     """
     Rudimentary workaround for https://github.com/pyinstaller/pyinstaller/issues/2379
     """
-    from os import path, listdir
-    import sys
-    from shutil import rmtree
-
     mei_bundle = getattr(sys, "_MEIPASS", False)
 
     if mei_bundle:
@@ -289,7 +289,7 @@ def make_window(theme):
 
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Draw an image somewhere around the cursor', default = False, k = 'showImage', disabled = False, enable_events = True)],
-                    [sg.Text('Choose Image'), sg.InputText(size = (65, 1), enable_events = True, k = 'imagePath'),
+                    [sg.Text('Choose Image'), sg.InputText(size = (65, 1), k = 'imagePath'),
                      sg.FileBrowse('Browse', size = (10, 1), file_types = file_types, enable_events = True)],
                     [sg.T('(Only ".png", ".jpg", ".jpeg", ".tiff" ".gif" or ".bmp" supported.)', font = ("Segoe UI", 10))],
                     [sg.Image(data = get_img_data(imagePath, first = True), k = 'image')]]
@@ -468,6 +468,9 @@ def main(config):
         elif event in (None, 'Save'):
             values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
             updateConfig(values)
+            doesImageFileExist = exists(values['imagePath'])
+            if not doesImageFileExist:
+                sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
             if proc:
                 proc.terminate()  # Probably won't work
                 if proc:
@@ -476,12 +479,13 @@ def main(config):
                 otherProc.terminate()  # Probably won't work
                 if otherProc:
                     Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            sleep(2)
-            sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
-            if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
-                otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
-            else:
-                proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+            if doesImageFileExist:
+                sleep(2)
+                sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
+                if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
+                    otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                else:
+                    proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
 
 
         elif event in (None, 'Close'):
