@@ -58,7 +58,7 @@ Prerequisites:
 
 
 
-![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/raw/main/GUI.png?raw=true)
+![Current GUI](https://i.imgur.com/u55J7IS.png?raw=true)
 
 ---
 Thank you, various netizens, for all the StackOverflow questions and answers that helped me grasp an incredibly rudimentary understanding of Python.
