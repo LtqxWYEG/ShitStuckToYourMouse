@@ -1,22 +1,18 @@
 ```
-______                 _____ _              _  _____  __   __              ___  ___                     
-| ___ \               /  ___| |            | ||_   _| \ \ / /              |  \/  |                     
-| |_/ /__   ___  _ __ \ `--.| |_ _   _  ___| | _| | ___\ V /___  _   _ _ __| .  . | ___  _   _ ___  ___ 
-|  __/ _ \ / _ \| '_ \ `--. \ __| | | |/ __| |/ / |/ _ \\ // _ \| | | | '__| |\/| |/ _ \| | | / __|/ _ \
-| | | (_) | (_) | |_) /\__/ / |_| |_| | (__|   <| | (_) | | (_) | |_| | |  | |  | | (_) | |_| \__ \  __/
-\_|  \___/ \___/| .__/\____/ \__|\__,_|\___|_|\_\_/\___/\_/\___/ \__,_|_|  \_|  |_/\___/ \__,_|___/\___|
-                | |                                                                                     
-                |_|
+    _____                 __                ______) __     __)          __     __)              
+   (, /   )           (__/  )        /)    (, /    (, )   /            (, /|  /|                
+    _/__ / ________     / _/_     _ (/_      /   ___ /   /  ___    __    / | / |  ___    _    _ 
+    /     (_)(_) /_)_) /  (__(_(_(__/(__  ) /   (_) (___/_ (_)(_(_/ (_) /  |/  |_(_)(_(_/_)__(/_
+ ) /          .-/   (_/                  (_/       )   /             (_/   '                    
+(_/          (_/                                  (__ /
 ```
-Yeah, bitch! It's the 90s again! Get some poop stuck to your mouse, like ppl did in the 90s! Yay!! Waste some CPU-cycles, have visuals... the 90s!! Who cares about 5% CPU! Get this hit stuck to your mouse cursor! woot
+Yea boy! It's the 90s again! Get some _*very elegant*_ poop stuck to your mouse - *like ppl did in the 90s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 90s!! Who cares about 5% CPU! Get this poop stuck to your mouse cursor! Now! NOW!
 
 Draws mouse-cursor-following text, cursor coordinates, color of pixel under cursor, pictures or a clock - for when you really need to keep an eye on the time. Uses PyGame for 'low' resource usage. Works by creating a transparent full-screen window that is click-through, on top of the z-order. (But not on top of the context menus, start menu and all these things.)
 
 The intention for this is to build upon it to create something interesting - like cellular automata to draw fancy graphics over/around mouse cursor. Something like that. We'll see.
 
-
 ---
-
 
 Usage:
 - Run PoopStuckToYourMouse.exe for a heavily configurable, nice sparkle effect with velocity and gravity and more. (not optimized)
@@ -30,10 +26,10 @@ Usage:
    - An image
 - You can also run 'other.exe' or 'sparkles.exe' alone. (Or the .py versions) They'll use the settings stored in the 'config.ini' - or if the files doesn't exist, create it with the values saved in 'defaults.ini'.
 
-
 Important notice:
 - If you execute PoopStuckToYourMouse.exe, (or main.pyw) don't have any other programs running that are also named "other.exe" or "sparkles.exe", otherwise they'll be terminated. So far this is the only working solution to kill the spawned processes. :(
 
+---
 
 Special features:
 - Name is stupid! (Now less vulgar!)
@@ -44,11 +40,13 @@ Special features:
 - Rainbow colors!
 - I completely disregard all Linux users.
 
+---
 
 Performance with 20 particles per frame @60fps: (runs only on a single core)
 - Laptop with AMD A4-6210:              20 to 25% CPU usage. (max per core: 25%)
 - Desktop with AMD Ryzen 5 2600 @4Ghz:  4.7 to 5.5% CPU usage. (max per core: 8.33%)
 
+---
 
 Prerequisites:
 - Windows (I used Windows 10 21H1)
@@ -58,7 +56,7 @@ Prerequisites:
 - pywin32
 - Pillow
 
-
+---
 
 ![Current GUI](https://i.imgur.com/u55J7IS.png?raw=true)
 
