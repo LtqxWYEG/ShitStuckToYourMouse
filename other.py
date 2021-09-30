@@ -191,7 +191,7 @@ transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i
 hwnd = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
 setWindowAttributes(hwnd)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
 
-font = pygame.font.Font(resource_path("Pixel LCD-7.ttf"), fontSize)  # Set Font and font size
+font = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)  # Set Font and font size
 #font = pygame.font.Font("./fonts/Pixel LCD-7.ttf", fontSize)
 text_height = font.get_linesize()
 if showColor:

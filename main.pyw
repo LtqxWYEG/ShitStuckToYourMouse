@@ -94,7 +94,7 @@ def getVariablesFromConfig(window):
     window['offsetY'].update(int(config.get("SPARKLES", "offsetY")))
     window['markPosition'].update(config.getboolean("SPARKLES", "markPosition"))
     window['numParticles'].update(int(config.get("SPARKLES", "numParticles")))
-    window['randomMod'].update(float(config.get("SPARKLES", "randomMod")))
+    window['randomMod'].update(int(config.get("SPARKLES", "randomMod")))
     window['dynamic'].update(config.getboolean("SPARKLES", "dynamic"))
     window['randomModDynamic'].update(float(config.get("SPARKLES", "randomModDynamic")))
     string = config.getlistint("SPARKLES", "levelVelocity")
@@ -206,7 +206,7 @@ def make_window(theme):
 
                       [sg.HorizontalSeparator()],
                       [sg.T('Adds random motion to random direction to particles: mouseSpeed(xy) +|- randomMod. Deactivate with 0. Deactivated if dynamic is True', pad = (10, (15, 0)))],
-                      [sg.Slider(range = (0.00, 99.99), default_value = 5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
+                      [sg.Slider(range = (0, 100), default_value = 10, font=("Segoe UI", 14), resolution = 1, size = (70, 15),
                                  orientation = 'horizontal', disabled = False, k = 'randomMod', enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.T('Multiply velocity added to particle by mouse movement: velocity * velocityMod', pad = (10, (15, 0)))],
                       [sg.Slider(range=(-3.000, 3.000), default_value = 1.000, font=("Segoe UI", 14), resolution = .001, size=(70, 15),
@@ -456,13 +456,17 @@ def main(config):
                 window['image'].update(data = get_img_data(imagePath, first = True))
             else:
                 continue
+
         elif event in (None, 'Browse') or event in (None, 'imagePath'):
             if imagePath == "None":
                 values['imagePath'] = str(config.get("OTHER", "imagePath"))
                 imagePath = values['imagePath']
             imagePath = values['imagePath']
             window['image'].update(data = get_img_data(imagePath, first = True))
+
+
         elif event in (None, 'Save'):
+            values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
             updateConfig(values)
             if proc:
                 proc.terminate()  # Probably won't work
@@ -475,9 +479,11 @@ def main(config):
             sleep(2)
             sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
             if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
-                otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
             else:
                 proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+
+
         elif event in (None, 'Close'):
             if proc:
                 proc.terminate()  # Probably won't work
@@ -489,25 +495,30 @@ def main(config):
                     Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             proc = False
             otherProc = False
+
         elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
             if particleColor == "None":
                 particleColor = config.get("SPARKLES", "particleColor")
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
             particleColor = values['particleColor']
             window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+
         elif event in (None, 'fontColor'):  # Update color and text of the color-picker button
             if fontColor == "None":
                 fontColor = config.get("OTHER", "fontColor")
                 values['fontColor'] = config.get("OTHER", "fontColor")
             fontColor = values['fontColor']
             window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+
         elif event in (None, 'ageColorSpeed'):  # Update ageColorSpeedFine slider
             ageColorSpeed = values['ageColorSpeed']
             values['ageColorSpeedFine'] = ageColorSpeed
             window['ageColorSpeedFine'].update(ageColorSpeed, range = (ageColorSpeed-2.00, ageColorSpeed+2.00))
+
         elif event in (None, 'ageColorSpeedFine'):  # Update ageColorSpeedFine slider
             values['ageColorSpeed'] = values['ageColorSpeedFine']
             window['ageColorSpeed'].update(values['ageColorSpeedFine'])
+
         elif event in (None, 'useOffset2') or event in (None, 'offsetX2') or event in (None, 'offsetY2'):
             values['useOffset'] = values['useOffset2']
             values['offsetX'] = values['offsetX2']
@@ -515,6 +526,7 @@ def main(config):
             window['useOffset'].update(values['useOffset'])
             window['offsetX'].update(values['offsetX'])
             window['offsetY'].update(values['offsetY'])
+
         elif event in (None, 'useOffset') or event in (None, 'offsetX') or event in (None, 'offsetY'):
             values['useOffset2'] = values['useOffset']
             values['offsetX2'] = values['offsetX']

@@ -109,7 +109,7 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     offsetY = int(config.get("SPARKLES", "offsetY"))
     markPosition = config.getboolean("SPARKLES", "markPosition")
     numParticles = int(config.get("SPARKLES", "numParticles"))
-    randomMod = float(config.get("SPARKLES", "randomMod"))
+    randomMod = int(config.get("SPARKLES", "randomMod"))
     dynamic = config.getboolean("SPARKLES", "dynamic")
     randomModDynamic = float(config.get("SPARKLES", "randomModDynamic"))
     printMouseSpeed = config.getboolean("SPARKLES", "printMouseSpeed")
@@ -152,7 +152,8 @@ class Particle(object):
             vel = [vel[0]+uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic)),
                    vel[1]+uniform(-(mouseSpeedPixelPerFrame * randomModDynamic), (mouseSpeedPixelPerFrame * randomModDynamic))]
         else:
-            vel = [vel[0]+uniform(-randomMod, randomMod), vel[1]+uniform(-randomMod, randomMod)]
+            vel = [vel[0]+uniform(-randrange(randomMod), randrange(randomMod)),
+                   vel[1]+uniform(-randrange(randomMod), randrange(randomMod))]
         vel = [vel[0], vel[1]]
         self.vel = Vec2d(vel) * velocityMod
 
