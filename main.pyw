@@ -208,8 +208,8 @@ def make_window(theme):
                       [sg.T('Adds random motion to random direction to particles: mouseSpeed(xy) +|- randomMod. Deactivate with 0. Deactivated if dynamic is True', pad = (10, (15, 0)))],
                       [sg.Slider(range = (0.00, 99.99), default_value = 5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
                                  orientation = 'horizontal', disabled = False, k = 'randomMod', enable_events = True, trough_color = sg.theme_slider_color())],
-                      [sg.T('Lowers velocity added to particle based on mouse speed: mouseSpeed / velocityMod', pad = (10, (15, 0)))],
-                      [sg.Slider(range=(-9.9, 9.9), default_value = 1.6, font=("Segoe UI", 14), resolution = .1, size=(70, 15),
+                      [sg.T('Multiply velocity added to particle by mouse movement: velocity * velocityMod', pad = (10, (15, 0)))],
+                      [sg.Slider(range=(-3.000, 3.000), default_value = 1.000, font=("Segoe UI", 14), resolution = .001, size=(70, 15),
                                  orientation='horizontal', k = 'velocityMod', enable_events = True)],
                       [sg.Spin([i for i in range(1, 1000)], initial_value = 200, font=("Segoe UI", 16), k = 'velocityClamp', enable_events = True),
                        sg.T('Max. particle velocity')],
@@ -325,11 +325,11 @@ def main(config):
         imagePath = values['imagePath']
         if event in (None, 'Exit'):
             if proc:
-                proc.terminate()
+                proc.terminate()  # Probably won't work
                 if proc:
                     Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             if otherProc:
-                otherProc.terminate()
+                otherProc.terminate()  # Probably won't work
                 if otherProc:
                     Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             break
@@ -465,11 +465,11 @@ def main(config):
         elif event in (None, 'Save'):
             updateConfig(values)
             if proc:
-                proc.terminate()
+                proc.terminate()  # Probably won't work
                 if proc:
                     Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             if otherProc:
-                otherProc.terminate()
+                otherProc.terminate()  # Probably won't work
                 if otherProc:
                     Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             sleep(2)
@@ -477,14 +477,14 @@ def main(config):
             if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
                 otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
             else:
-                proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
         elif event in (None, 'Close'):
             if proc:
-                proc.terminate()
+                proc.terminate()  # Probably won't work
                 if proc:
                     Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             if otherProc:
-                otherProc.terminate()
+                otherProc.terminate()  # Probably won't work
                 if otherProc:
                     Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
             proc = False
@@ -524,11 +524,11 @@ def main(config):
             window['offsetY2'].update(values['offsetY2'])
 
     if proc:
-        proc.terminate()
+        proc.terminate()  # Probably won't work
         if proc:
             Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
     if otherProc:
-        otherProc.terminate()
+        otherProc.terminate()  # Probably won't work
         if otherProc:
             Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
     window.close()

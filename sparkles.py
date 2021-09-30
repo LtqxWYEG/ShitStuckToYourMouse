@@ -154,16 +154,14 @@ class Particle(object):
         else:
             vel = [vel[0]+uniform(-randomMod, randomMod), vel[1]+uniform(-randomMod, randomMod)]
         vel = [vel[0], vel[1]]
-        if velocityMod == 0:
-            velocityMod = 0.0001
-        self.vel = Vec2d(vel) / velocityMod
+        self.vel = Vec2d(vel) * velocityMod
 
         if self.vel.length > velocityClamp:  # Clamp any huge velocities
             self.vel.length = velocityClamp
 
         self.gravity = Vec2d(gravity)
         self.container = container
-        
+
         self.color = Color(color)
         hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         hue = hsva[0]  # unpack hue from hsva tuple
@@ -174,7 +172,8 @@ class Particle(object):
         self.surfSize = surface.get_size()
         self.drag = drag
 
-    def update(self):
+    def updateParticle(self):
+        global oldParticleContainer
         """
         Update position and existence per frame.
         """
@@ -186,7 +185,7 @@ class Particle(object):
             except ValueError:
                 pass
 
-    def draw(self):
+    def drawParticle(self):
         """
         Override with subclass drawing method.
         """
@@ -204,9 +203,9 @@ class Particle(object):
         return outOfBounds
 
 
-class ParticleSparkle(Particle):
+class ParticleClass(Particle):
     """
-    Draw particle 'sparkles'.
+    Draw particles.
     """
 
     def __init__(self, surface, pos, vel, gravity, container, color, mouseSpeedPixelPerFrame):
@@ -214,12 +213,12 @@ class ParticleSparkle(Particle):
         age : How long the particle will live.  Will get darker as it gets older.
         """
         # Init superclass:
-        super(ParticleSparkle, self).__init__(surface, pos, vel, gravity, container, mouseSpeedPixelPerFrame, color)
+        super(ParticleClass, self).__init__(surface, pos, vel, gravity, container, mouseSpeedPixelPerFrame, color)
         self.age = particleAge
 
-    def update(self):
+    def updateParticle(self):
         # Override superclass, but call to superclass method first:
-        super(ParticleSparkle, self).update()
+        super(ParticleClass, self).updateParticle()
         self.ageStep = 100.0/float(self.age)
         # Update color, and existance based on color:
         hsva = self.color.hsva  # Limits: H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
@@ -230,7 +229,7 @@ class ParticleSparkle(Particle):
             else:
                 hue += self.ageStep * ageColorSpeed
             #hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
-            
+
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
         brightness = brightness + uniform(-ageBrightnessNoise, ageBrightnessNoise)
@@ -246,10 +245,14 @@ class ParticleSparkle(Particle):
                 pass
         else:
             self.color.hsva = (hue, int(hsva[1]), brightness)  # , alpha)
-            
-    def draw(self):
+
+    def drawParticle(self):
         # Draw just a simple point:
         pygame.draw.rect(self.surface, self.color, ((self.pos[0], self.pos[1]), (particleSize, particleSize)))
+
+    def getParticleRect(self):
+        particleRect = ((self.pos[0], self.pos[1]), (particleSize, particleSize))
+        return particleRect
 
 
 class POINT(Structure):
@@ -272,11 +275,19 @@ pygame.display.set_caption('ShitStuckToYourMouse')  # title(stupid)
 if not config.has_section("SPARKLES"):
     setDefaults()
 readVariables()
-drawParticles = True
+drawParticles = True  # For dynamic: Don't draw particles if mouse doesn't move
+particleContainer = []
+
+# global oldParticleContainer
+# particleContainerRects = []
+# oldParticleContainer = []
+# listOfRects = []
+# markPositionRect = (((0, 0), (0, 0)), ((0, 0), (0, 0)))
+# oldMarkPositionRect = markPositionRect
+
 numParticlesBackup = numParticles
 mouseSpeedPixelPerFrame = 0
 mousePosition = POINT()
-particles = []
 firstPos = (mousePosition.x, mousePosition.y)  # Initiate positions
 secondPos = firstPos
 mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
@@ -356,31 +367,60 @@ while loop:
         else:
             numParticles = levelNumParticles[3]
             drawParticles = True
-            
+
     x = 0
     y = 0
     while x < numParticles and drawParticles is True:
         if particleColorRandom is True: particleColor = (randrange(256), randrange(256), randrange(256))
         if not interpolateMouseMovement:
-            particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            particleContainer.append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
             y = -1
         elif y == 0:
-            particles.append(ParticleSparkle(display_window, firstMiddlePos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            particleContainer.append(ParticleClass(display_window, firstMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
             y = 1
         elif y == 1:
-            particles.append(ParticleSparkle(display_window, secondMiddlePos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            particleContainer.append(ParticleClass(display_window, secondMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
             y = 2
         elif y == 2:
-            particles.append(ParticleSparkle(display_window, firstPos, mouseVelocity, GRAVITY, particles, particleColor, mouseSpeedPixelPerFrame))
+            particleContainer.append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
             y = 0
         x += 1
-    for spark in particles:
-        spark.update()
-        spark.draw()
 
-    if markPosition is True: pygame.draw.circle(display_window, "#ff0000", firstPos, 2)  # used for tuning offset
+    for part in particleContainer:
+        part.updateParticle()
+        part.drawParticle()
+
+
+    ''' I tried to optimize the code by only updating the used display area instead of the whole screen.
+    Performance of pygame.display.update() depends on the following: (obviously)
+    - area of rectangle
+    - number of rectangles
+    If one rectangle is smaller than the other it is drawn faster. I use that in other.py to speed up drawing text alongside the mouse.
+    There it makes a big difference if I update the whole screen or just the small rectangle with the text. (times two)
+        (If drawColor is true, four rectangles are updated. But that is still faster than updating the whole screen.)
+    
+    The following code produces hundreds of rectangles. In this case the huge amount of rectangles are negating any performance
+    improvements I gained by reducing the area down to a combined couple hundred pixels.
+    
+    # for part in particleContainer:
+    #     partRect = part.getParticleRect()
+    #     particleContainerRects.append(partRect)
+    # listOfRects.extend(oldParticleContainer)
+    # listOfRects.extend(particleContainerRects)
+    # pygame.display.update(listOfRects)
+    # oldParticleContainer = []
+    # particleContainerRects = []
+    # listOfRects = []
+    # for part in particleContainer:
+    #     partRect = part.getParticleRect()
+    #     oldParticleContainer.append(partRect)
+    '''
+
+
+    if markPosition is True:
+        markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2).get_rect()  # used for tuning offset
+    pygame.display.update()
     secondPos = firstPos  # for getting mouse velocity
-    pygame.display.flip()
 # while ends here
 
 pygame.quit()
