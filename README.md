@@ -10,9 +10,11 @@ Yeah, bitch! It's the 90s again! Get some shit stuck to your mouse, like ppl did
 
 Draws mouse-cursor-following text, cursor coordinates, color of pixel under cursor, pictures or a clock - for when you really need to keep an eye on the time. Uses PyGame for 'low' resource usage. Works by creating a transparent full-screen window that is click-through, on top of the z-order. (But not on top of the context menus, start menu and all these things.)
 
+The intention for this is to build upon it to create something interesting - like cellular automata to draw fancy graphics over/around mouse cursor. Something like that. We'll see.
+
+
 ---
 
-The intention for this is to build upon it to create something interesting - like cellular automata to draw fancy graphics over/around mouse cursor. Something like that.
 
 Usage:
 - Run ShitStuckToYourMouse.exe for a heavily configurable, nice sparkle effect with velocity and gravity and more. (not optimized)
@@ -24,13 +26,11 @@ Usage:
    - RAM usage
    - Both/All
    - An image
-- You can also run 'other.exe' or 'sparkles.exe'. They'll use the settings stored in the 'config.ini' - or if the files doesn't exist, create it with the values saved in 'defaults.ini'.
+- You can also run 'other.exe' or 'sparkles.exe' alone. (Or the .py versions) They'll use the settings stored in the 'config.ini' - or if the files doesn't exist, create it with the values saved in 'defaults.ini'.
 
 
 Important notice:
-- Don't have any programs running that arr also named "other.exe" or"sparkles.exe", otherwise they'll be terminated. So far this is the only working solution to kill the spawned processes. :(
-- If you execute main.pyw via Python you have to change the lines 478 and 480 to: "other.exe" and "sparkles.exe" to "py other.py" and "py sparkles.py"
-  (I don't know how to automatically detect if the script is 'compiled' or run.)
+- If you execute ShitStuckToYourMouse.exe, (or main.pyw) don't have any other programs running that are also named "other.exe" or "sparkles.exe", otherwise they'll be terminated. So far this is the only working solution to kill the spawned processes. :(
 
 
 Special features:
