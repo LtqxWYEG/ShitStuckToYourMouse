@@ -154,6 +154,8 @@ class Particle(object):
         else:
             vel = [vel[0]+uniform(-randomMod, randomMod), vel[1]+uniform(-randomMod, randomMod)]
         vel = [vel[0], vel[1]]
+        if velocityMod == 0:
+            velocityMod = 0.0001
         self.vel = Vec2d(vel) / velocityMod
 
         if self.vel.length > velocityClamp:  # Clamp any huge velocities
