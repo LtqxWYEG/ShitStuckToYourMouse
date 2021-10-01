@@ -248,8 +248,11 @@ class ParticleClass(Particle):
             self.color.hsva = (hue, int(hsva[1]), brightness)  # , alpha)
 
     def drawParticle(self):
-        # Draw just a simple point:
-        pygame.draw.rect(self.surface, self.color, ((self.pos[0], self.pos[1]), (particleSize, particleSize)))
+        if particleSize <= 2:
+            # Draw just a simple point:
+            pygame.draw.rect(self.surface, self.color, ((self.pos[0], self.pos[1]), (particleSize, particleSize)))
+        else:
+            pygame.draw.circle(self.surface, self.color, ((self.pos[0], self.pos[1])), particleSize-1)
 
     def getParticleRect(self):
         particleRect = ((self.pos[0], self.pos[1]), (particleSize, particleSize))

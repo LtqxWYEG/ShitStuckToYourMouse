@@ -336,7 +336,7 @@ def make_window(theme):
                                   sg.Tab('Console output', console_layout)]])]]
 
     layout = [[sg.T('PoopStuckToYourMouse', size = (74, 1), justification = 'center',
-                    font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE, enable_events = True)],
+                    font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE)],
               [sg.Column(tabs_layout, scrollable = True, vertical_scroll_only = True, size = (900, 600))],
               [sg.Button('Save and Run', k = 'Save', enable_events = True), sg.T('  '),
                sg.Button('Close child process', k = 'Close', enable_events = True), sg.T('  '),
