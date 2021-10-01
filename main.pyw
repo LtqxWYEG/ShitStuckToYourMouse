@@ -18,11 +18,11 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 import configparser
-import PySimpleGUI as sg
-from time import sleep
-from subprocess import Popen, PIPE, CREATE_NO_WINDOW
-from PIL import Image, ImageTk
 from io import BytesIO
+from json import (load as jsonload, dump as jsondump)
+import PySimpleGUI as sg
+from subprocess import PIPE, Popen, CREATE_NO_WINDOW
+from PIL import Image, ImageTk
 from os import path, listdir, getpid
 from os.path import exists
 import sys
@@ -58,7 +58,7 @@ class CaseConfigParser(configparser.ConfigParser):
     def getlistint(self, section, option):  # It's so annoying.
         return [int(x) for x in self.getlist(section, option)]
 
-    def getlistfloat(self, section, option):  # No wonder ppl use the horrible JSON... (Although I have no idea if that's better)
+    def getlistfloat(self, section, option):  # No wonder ppl use the horribly looking JSON... (Although I have no idea if that's better)
         return [float(x) for x in self.getlist(section, option)]
 
 
@@ -170,14 +170,40 @@ def get_img_data(f, maxsize=(1200, 850), first=False):
     """
     Generate image data using PIL
     """
-    img = Image.open(f)
-    img.thumbnail(maxsize)
-    if first:                     # tkinter is inactive the first time
-        bio = BytesIO()
-        img.save(bio, format="PNG")
-        del img
-        return bio.getvalue()
-    return ImageTk.PhotoImage(img)
+    try:
+        img = Image.open(f)
+        img.thumbnail(maxsize)
+        print('Image opened')
+        print(img)
+        if first:                     # tkinter is inactive the first time
+            bio = BytesIO()
+            img.save(bio, format="PNG")
+            del img
+            return bio.getvalue()
+        return ImageTk.PhotoImage(img)
+    except:
+        sg.popup_no_wait('Error: Image does not exist', text_color = '#ffc000', button_type = 5, auto_close = True,
+                         auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+        print('Error: %s does not exist' % imagePath)
+        return
+
+
+def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=True, timeout=None, on_terminate=None):
+    """Kill a process tree (including grandchildren) with signal
+    "sig" and return a (gone, still_alive) tuple.
+    "on_terminate", if specified, is a callabck function which is
+    called as soon as a child terminates.
+    """
+    if pid == getpid():
+        raise RuntimeError("I refuse to kill myself")
+    parent = psutil.Process(pid)
+    children = parent.children(recursive = True)
+    if include_parent:
+        children.append(parent)
+    for p in children:
+        p.send_signal(sig)
+    gone, alive = psutil.wait_procs(children, timeout = timeout, callback = on_terminate)
+    return (gone, alive)  # Thank you very much Mr. PySimpleGUI :)
 
 
 def make_window(theme):
@@ -222,7 +248,8 @@ def make_window(theme):
                                  orientation='horizontal', k = 'GRAVITY_Y', enable_events = True)],
                       [sg.T('Particle drag, higher equals less drag: (drag * particle speed) per frame. --If >1 then particles speed up--', pad = (10, (15, 0)))],
                       [sg.Slider(range = (0.000, 2.999), default_value = 0.850, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
-                                 orientation = 'horizontal', k = 'drag', enable_events = True)]]
+                                 orientation = 'horizontal', k = 'drag', enable_events = True)]
+                      ]
 
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor), size = (25, 2), font=("Segoe UI", 16), k = 'color picker button')],
                     [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue', pad = (10, (0, 15)))],
@@ -249,7 +276,8 @@ def make_window(theme):
                        sg.T('Add random hue variation to combat too uniform-looking hue-aging: hue = random(+|-value). "0" disables this.')],
                     [sg.T('Hue variation bias towards more positive or negative values: 0 = only positive noise | 0.5 = balanced | 1.0 = only negative noise', pad = (10, (15, 0)))],
                     [sg.Slider(range = (0.000, 1.000), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
-                               orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())]]
+                               orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())]
+                    ]
 
     dynamic_layout = [[sg.Text('Dynamics settings')],
                       [sg.Checkbox('Enable dynamic behavior', default = True, k = 'dynamic', enable_events = True)],
@@ -269,7 +297,8 @@ def make_window(theme):
                        sg.Spin([i for i in range(1, 1000)], initial_value = 30, font=("Segoe UI", 16), k = 'levelVelocity_2', disabled = False, enable_events = True), sg.T('Level 2'),
                        sg.Spin([i for i in range(1, 1000)], initial_value = 60, font=("Segoe UI", 16), k = 'levelVelocity_3', disabled = False, enable_events = True), sg.T('Level 3 '),
                        sg.Spin([i for i in range(1, 1000)], initial_value = 120, font=("Segoe UI", 16), k = 'levelVelocity_4', disabled = False, enable_events = True), sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')],
-                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')]]
+                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')]
+                      ]
 
     other_layout = [[sg.Text("Anything else one could find interesting to adhere to your mouse-cursor!")],
                     [sg.Text('Notice: FPS and offset from the "General"-tab are also used here:')],
@@ -285,21 +314,26 @@ def make_window(theme):
                     [sg.Spin([i for i in range(1, 100)], initial_value = 10, font = ("Segoe UI", 16), k = 'fontSize', enable_events = True),
                      sg.T('Font size in pt.')],
                     [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default = False, k = 'showColor', disabled = False, enable_events = True)],
-                    [sg.Checkbox('Show a text-based clock on the right the cursor.', default = False, k = 'showClock', disabled = False, enable_events = True)],
-                    [sg.Checkbox('Show CPU-usage in percent beside the cursor.', default = False, k = 'showCPU', disabled = False, enable_events = True)],
-                    [sg.Checkbox('Show RAM-usage in percent alongside the cursor', default = False, k = 'showRAM', disabled = False, enable_events = True)],
+                    [sg.Checkbox('Clock: Show a text-based clock on the right the cursor.', default = False, k = 'showClock', disabled = False, enable_events = True)],
+                    [sg.Checkbox('CPU-usage: Show in percent beside the cursor.', default = False, k = 'showCPU', disabled = False, enable_events = True)],
+                    [sg.Checkbox('RAM-usage: Show in percent alongside the cursor', default = False, k = 'showRAM', disabled = False, enable_events = True)],
 
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Draw an image somewhere around the cursor', default = False, k = 'showImage', disabled = False, enable_events = True)],
                     [sg.Text('Choose Image'), sg.InputText(size = (65, 1), k = 'imagePath'),
                      sg.FileBrowse('Browse', size = (10, 1), file_types = file_types, enable_events = True)],
                     [sg.T('(Only ".png", ".jpg", ".jpeg", ".tiff" ".gif" or ".bmp" supported.)', font = ("Segoe UI", 10))],
-                    [sg.Image(data = get_img_data(imagePath, first = True), k = 'image')]]
+                    [sg.Image(data = get_img_data(imagePath, first = True), k = 'image')]
+                    ]
+
+    console_layout = [[sg.Output(size = (120, 33), font = ("Segoe UI", 10))],
+                      [sg.T('Nothing to see here.')]]
 
     tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
-                              sg.Tab('Color settings', color_layout),
-                              sg.Tab('Dynamics', dynamic_layout),
-                              sg.Tab('Other things stuck to your mouse', other_layout)]])]]
+                                  sg.Tab('Color settings', color_layout),
+                                  sg.Tab('Dynamics', dynamic_layout),
+                                  sg.Tab('Other things stuck to your mouse', other_layout),
+                                  sg.Tab('Console output', console_layout)]])]]
 
     layout = [[sg.T('PoopStuckToYourMouse', size = (74, 1), justification = 'center',
                     font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE, enable_events = True)],
@@ -309,51 +343,33 @@ def make_window(theme):
                sg.Button('Reset to defaults', k = 'Reset', enable_events = True)],
               [sg.Button('Exit', k = 'Exit', enable_events = True)]]
 
-    return sg.Window('PoopStuckToYourMouse configuration', layout, grab_anywhere=True, finalize=True)
-
-
-def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=True,
-                   timeout=None, on_terminate=None):
-    """Kill a process tree (including grandchildren) with signal
-    "sig" and return a (gone, still_alive) tuple.
-    "on_terminate", if specified, is a callabck function which is
-    called as soon as a child terminates.
-    """
-    if pid == getpid():
-        raise RuntimeError("I refuse to kill myself")
-    parent = psutil.Process(pid)
-    children = parent.children(recursive = True)
-    if include_parent:
-        children.append(parent)
-    for p in children:
-        p.send_signal(sig)
-    gone, alive = psutil.wait_procs(children, timeout = timeout,
-                                    callback = on_terminate)
-    return (gone, alive)
+    return sg.Window('PoopStuckToYourMouse configuration', layout, finalize=True)
 
 
 def main(config):
+    global particleColor, fontColor, ageColorSpeed, imagePath
     sg.theme('Dark')
     sg.set_options(font=("Segoe UI", 10))
     window = make_window('Dark')
-    proc = False  # Initiate variable to check if subprocess.Popen == True
+    proc = False  # Initiate variable for check if subprocess.Popen == True
     otherProc = False
+    if exists(imagePath):
+        doesImageFileExist = True
+    else:
+        doesImageFileExist = False
+    pid = None
     getVariablesFromConfig(window)
+
     while True:
-        global particleColor, fontColor, ageColorSpeed, imagePath
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
         fontColor = values['fontColor']
         imagePath = values['imagePath']
         if event in (None, 'Exit'):
-            if proc:
-                proc.terminate()  # Probably won't work
-                if proc:
-                    Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            if otherProc:
-                otherProc.terminate()  # Probably won't work
-                if otherProc:
-                    Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            if proc or otherProc:
+                kill_proc_tree(pid = pid)
+            proc = False
+            otherProc = False
             break
 
         if values['showColor'] or values['showImage']:
@@ -455,13 +471,11 @@ def main(config):
             window['offsetX2'].update(disabled = True)
             window['offsetY2'].update(disabled = True)
 
-        #if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
-            #print('============ Event = ', event, ' ==============')
-            #print('-------- Values Dictionary (key:value) --------')
-            #print(values)
-            #variables = values
-            #window['inGUIConsole'].update(variables)
-            #values['inGUIConsole'] = None
+        if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
+            print('\n============ Event = ', event, ' ==============')
+            if not event == 'Save' and not event == 'Close' and not event == 'Browse' and not event == 'Reset':
+                print(values[event])
+
         if event in (None, 'Reset'):
             answer = sg.popup_yes_no('Reset all settings to defaults?')
             if answer == 'Yes' or answer == 'yes':
@@ -480,54 +494,68 @@ def main(config):
                 continue
 
         elif event in (None, 'Browse') or event in (None, 'imagePath'):
-            if imagePath == "None":
-                values['imagePath'] = str(config.get("OTHER", "imagePath"))
-                imagePath = values['imagePath']
             imagePath = values['imagePath']
-            window['image'].update(data = get_img_data(imagePath, first = True))
+            if exists(imagePath):
+                window['image'].update(data = get_img_data(imagePath, first = True))
+                doesImageFileExist = True
+            else:
+                window['image'].update(data = '')
+                sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True,
+                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                doesImageFileExist = False
+                print('Error: %s does not exist' % imagePath)
 
-
+        # ---------------------
         elif event in (None, 'Save'):
             values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
             updateConfig(values)
-            doesImageFileExist = exists(values['imagePath'])
-            window['image'].update(data = get_img_data(imagePath, first = True))
-            if not doesImageFileExist:
-                sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
-            if proc:
-                proc.terminate()  # Probably won't work
-                if proc:
-                    Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            if otherProc:
-                otherProc.terminate()  # Probably won't work
-                if otherProc:
-                    Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            if doesImageFileExist:
-                sleep(2)
-                sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
-                if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
+            print('All values saved to config.ini')
+            print(values)
+            if values['showImage']:
+                if exists(imagePath):
+                    window['image'].update(data = get_img_data(imagePath, first = True))
+                    doesImageFileExist = True
+                else:
+                    window['image'].update(data = '')
+                    sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26),
+                                     no_titlebar = True, keep_on_top = True)
+                    doesImageFileExist = False
+                    print('Error: %s does not exist' % imagePath)
+            if proc or otherProc:
+                kill_proc_tree(pid = pid)
+                print('Subprocess killed')
+            proc = False
+            otherProc = False
+            if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM']:
+                sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
+                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                pid = otherProc.pid
+                print('Subprocess Started')
+                print(otherProc)
+            elif values['showImage']:
+                if doesImageFileExist:
+                    sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
+                                     auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
                     otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                     pid = otherProc.pid
-                else:
-                    proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
-                    pid = proc.pid
-
+                    print('Subprocess Started')
+                    print(otherProc)
+            else:
+                sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
+                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                pid = proc.pid
+                print('Subprocess Started')
+                print(proc)
+        # ---------------------
 
         elif event in (None, 'Close'):
-            # if proc:
-            #     proc.terminate()  # Probably won't work
-            #     if proc:
-            #         Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            # if otherProc:
-            #     otherProc.terminate()  # Probably won't work
-            #     if otherProc:
-            #         Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            # proc = False
-            # otherProc = False
-            # .send_signal(sig).Process(pid)
-            # proc.pid
-
-            kill_proc_tree(pid = pid)
+            if proc or otherProc:
+                kill_proc_tree(pid = pid)
+                print('Subprocess killed')
+            proc = False
+            otherProc = False
 
         elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
             if particleColor == "None":
@@ -568,25 +596,21 @@ def main(config):
             window['offsetX2'].update(values['offsetX2'])
             window['offsetY2'].update(values['offsetY2'])
 
-    if proc:
-        proc.terminate()  # Probably won't work
-        if proc:
-            Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-    if otherProc:
-        otherProc.terminate()  # Probably won't work
-        if otherProc:
-            Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+    if proc or otherProc:
+        kill_proc_tree(pid = pid)
     window.close()
 
 
 if __name__ == '__main__':
     cleanup_mei()  # see comment inside
     config = CaseConfigParser()
-    parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})
+    #parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})
     config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
     config.read("config.ini")  # Read config file
     if not config.has_section("SPARKLES") or not config.has_section("OTHER"):
         setDefaults()
+        print('No config file exists. Writing new one with default values...')
+        print(config)
     particleColor = str(config.get("SPARKLES", "particleColor"))
     fontColor = str(config.get("OTHER", "fontColor"))
     ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))

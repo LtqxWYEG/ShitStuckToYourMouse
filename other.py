@@ -232,13 +232,13 @@ elif showCPU or showRAM or showClock:
         blit_rect = textRAM.get_rect()
     if showClock and showCPU and showRAM:
         blit_rect = textClock.get_rect()
-        blit_rect = blit_rect.inflate(0, 17)
+        blit_rect = blit_rect.inflate(0, 18)
     elif showClock and showCPU or showClock and showRAM:
         blit_rect = textClock.get_rect()  # get rectangle size and position (0,0) from Surface 'text', save as Rectangle
-        blit_rect = blit_rect.inflate(0, 7)  # double height
+        blit_rect = blit_rect.inflate(0, 8)  # double height
     elif showCPU and showRAM and not showClock:
         blit_rect = textCPU.get_rect()  # get rectangle size and position (0,0) from Surface 'text', save as Rectangle
-        blit_rect = blit_rect.inflate(0, 7)
+        blit_rect = blit_rect.inflate(0, 8)
     old_rect = blit_rect  # initialize as aswell
     loop = True
 else:
