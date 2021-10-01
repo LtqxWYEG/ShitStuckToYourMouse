@@ -174,7 +174,7 @@ mousePosition = POINT()
 setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
 setFocus = windll.user32.SetFocus  # sets focus to
 pygame.init()
-pygame.display.set_caption('ShitStuckToYourMouse - Other')  # title(stupid)
+pygame.display.set_caption('PoopStuckToYourMouse - Other')  # title(stupid)
 clock = pygame.time.Clock()  # for FPS limiting
 info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
 flags = pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode

@@ -268,7 +268,7 @@ def clamp(val, minval, maxval):
 
 cleanup_mei()  # see comment inside
 pygame.init()
-pygame.display.set_caption('ShitStuckToYourMouse')  # title(stupid)
+pygame.display.set_caption('PoopStuckToYourMouse - Sparkles')  # title(stupid)
 # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
 

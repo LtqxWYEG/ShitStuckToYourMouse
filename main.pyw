@@ -23,10 +23,12 @@ from time import sleep
 from subprocess import Popen, PIPE, CREATE_NO_WINDOW
 from PIL import Image, ImageTk
 from io import BytesIO
-from os import path, listdir
+from os import path, listdir, getpid
 from os.path import exists
 import sys
 from shutil import rmtree
+import psutil
+import signal
 
 
 def cleanup_mei():
@@ -182,7 +184,6 @@ def make_window(theme):
     global particleColor, fontColor, ageColorSpeed, imagePath
     sg.theme(theme)
     file_types = [("Images", "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"), ("All files (*.*)", "*.*")]
-    # "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"
 
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value = 60, font=("Segoe UI", 16), k = 'FPS', enable_events = True),
                        sg.T('Frames per second. Also affects number of particles as they are spawned per frame.')],
@@ -208,6 +209,7 @@ def make_window(theme):
                       [sg.T('Adds random motion to random direction to particles: mouseSpeed(xy) +|- randomMod. Deactivate with 0. Deactivated if dynamic is True', pad = (10, (15, 0)))],
                       [sg.Slider(range = (0, 100), default_value = 10, font=("Segoe UI", 14), resolution = 1, size = (70, 15),
                                  orientation = 'horizontal', disabled = False, k = 'randomMod', enable_events = True, trough_color = sg.theme_slider_color())],
+                      #[sg.T('--- Scroll down ---')],
                       [sg.T('Multiply velocity added to particle by mouse movement: velocity * velocityMod', pad = (10, (15, 0)))],
                       [sg.Slider(range=(-3.000, 3.000), default_value = 1.000, font=("Segoe UI", 14), resolution = .001, size=(70, 15),
                                  orientation='horizontal', k = 'velocityMod', enable_events = True)],
@@ -299,7 +301,7 @@ def make_window(theme):
                               sg.Tab('Dynamics', dynamic_layout),
                               sg.Tab('Other things stuck to your mouse', other_layout)]])]]
 
-    layout = [[sg.T('ShitStuckToYourMouse', size = (74, 1), justification = 'center',
+    layout = [[sg.T('PoopStuckToYourMouse', size = (74, 1), justification = 'center',
                     font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE, enable_events = True)],
               [sg.Column(tabs_layout, scrollable = True, vertical_scroll_only = True, size = (900, 600))],
               [sg.Button('Save and Run', k = 'Save', enable_events = True), sg.T('  '),
@@ -307,7 +309,27 @@ def make_window(theme):
                sg.Button('Reset to defaults', k = 'Reset', enable_events = True)],
               [sg.Button('Exit', k = 'Exit', enable_events = True)]]
 
-    return sg.Window('ShitStuckToYourMouse configuration', layout, grab_anywhere=True, finalize=True)
+    return sg.Window('PoopStuckToYourMouse configuration', layout, grab_anywhere=True, finalize=True)
+
+
+def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=True,
+                   timeout=None, on_terminate=None):
+    """Kill a process tree (including grandchildren) with signal
+    "sig" and return a (gone, still_alive) tuple.
+    "on_terminate", if specified, is a callabck function which is
+    called as soon as a child terminates.
+    """
+    if pid == getpid():
+        raise RuntimeError("I refuse to kill myself")
+    parent = psutil.Process(pid)
+    children = parent.children(recursive = True)
+    if include_parent:
+        children.append(parent)
+    for p in children:
+        p.send_signal(sig)
+    gone, alive = psutil.wait_procs(children, timeout = timeout,
+                                    callback = on_terminate)
+    return (gone, alive)
 
 
 def main(config):
@@ -469,6 +491,7 @@ def main(config):
             values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
             updateConfig(values)
             doesImageFileExist = exists(values['imagePath'])
+            window['image'].update(data = get_img_data(imagePath, first = True))
             if not doesImageFileExist:
                 sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
             if proc:
@@ -484,21 +507,27 @@ def main(config):
                 sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True)
                 if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or values['showImage']:
                     otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                    pid = otherProc.pid
                 else:
                     proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                    pid = proc.pid
 
 
         elif event in (None, 'Close'):
-            if proc:
-                proc.terminate()  # Probably won't work
-                if proc:
-                    Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            if otherProc:
-                otherProc.terminate()  # Probably won't work
-                if otherProc:
-                    Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
-            proc = False
-            otherProc = False
+            # if proc:
+            #     proc.terminate()  # Probably won't work
+            #     if proc:
+            #         Popen('taskkill /F /IM sparkles.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            # if otherProc:
+            #     otherProc.terminate()  # Probably won't work
+            #     if otherProc:
+            #         Popen('taskkill /F /IM other.exe', creationflags = CREATE_NO_WINDOW)  # Only method that worked for me
+            # proc = False
+            # otherProc = False
+            # .send_signal(sig).Process(pid)
+            # proc.pid
+
+            kill_proc_tree(pid = pid)
 
         elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
             if particleColor == "None":
