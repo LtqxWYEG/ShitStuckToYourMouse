@@ -43,8 +43,14 @@ Special features:
 ---
 
 Performance with 20 particles per frame @60fps: (runs only on a single core)
-- Laptop with AMD A4-6210:              20 to 25% CPU usage. (max per core: 25%)
+- Laptop with AMD A4-6210:              25% CPU usage. (max per core: 25%)
 - Desktop with AMD Ryzen 5 2600 @4Ghz:  4.7 to 5.5% CPU usage. (max per core: 8.33%)
+
+Performance of Clock, Color, Image, CPU, RAM ...:
+- Laptop:   3 to 5% CPU usage. (max per core: 25%)
+- Desktop:  0.7 to 1% CPU usage. (max per core: 8.33%)
+
+For some reason, if no subprocesses are running, PoopStuckToYourMouse.exe (or main.pyw) uses 4 to 5% CPU on my laptop.
 
 ---
 
