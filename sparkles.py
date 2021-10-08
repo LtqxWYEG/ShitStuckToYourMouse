@@ -29,6 +29,9 @@ from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TR
 from win32api import RGB
 from pygame.locals import *  # for Color
 from vec2d import Vec2d
+import cProfile
+import pstats
+
 
 
 def cleanup_mei():
@@ -252,7 +255,7 @@ class ParticleClass(Particle):
             # Draw just a simple point:
             pygame.draw.rect(self.surface, self.color, ((self.pos[0], self.pos[1]), (particleSize, particleSize)))
         else:
-            pygame.draw.circle(self.surface, self.color, ((self.pos[0], self.pos[1])), particleSize-1)
+            pygame.draw.circle(self.surface, self.color, (self.pos[0], self.pos[1]), particleSize-1)
 
     def getParticleRect(self):
         particleRect = ((self.pos[0], self.pos[1]), (particleSize, particleSize))
@@ -267,6 +270,110 @@ def clamp(val, minval, maxval):
     if val < minval: return minval
     if val > maxval: return maxval
     return val
+
+
+def loop():
+    global numParticlesBackup, firstPos, secondPos, mouseVelocity, ageColorNoiseMod, ageColorNoiseRange, shiftAgeColorNoise, offsetX,\
+        offsetY, particleColor
+    loop = True
+    while loop:
+        clock.tick(FPS)  # limit the fps of the program
+        display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
+        windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
+        firstPos = (mousePosition.x - offsetX, mousePosition.y - offsetY)
+        mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
+        if interpolateMouseMovement:
+            firstMiddlePos = (firstPos[0] - (mouseVelocity[0] / 3),
+                              firstPos[1] - (mouseVelocity[1] / 3))  # To triple resolution
+            secondMiddlePos = (firstPos[0] - (mouseVelocity[0] - (mouseVelocity[0] / 3)),
+                               firstPos[1] - (mouseVelocity[1] - (mouseVelocity[1] / 3)))
+        # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
+
+        for event in pygame.event.get():
+            setFocus(hwnd)  # Brings window back to focus if any key or mouse button is pressed.
+            # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
+            # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
+            if event.type == pygame.QUIT:
+                loop = False
+            # elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
+            #     if event.key == pygame.K_ESCAPE:
+            #         loop = False
+
+        # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
+        if dynamic is True:
+            mouseSpeedPixelPerFrame = sqrt(pow(mouseVelocity[0], 2) + pow(mouseVelocity[1], 2))
+            if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", mouseSpeedPixelPerFrame)
+            drawParticles = False
+            if mouseSpeedPixelPerFrame == 0:
+                drawParticles = False
+            elif mouseSpeedPixelPerFrame < levelVelocity[0]:
+                numParticles = numParticlesBackup
+                drawParticles = True
+            elif mouseSpeedPixelPerFrame < levelVelocity[1]:
+                numParticles = levelNumParticles[0]
+                drawParticles = True
+            elif mouseSpeedPixelPerFrame < levelVelocity[2]:
+                numParticles = levelNumParticles[1]
+                drawParticles = True
+            elif mouseSpeedPixelPerFrame < levelVelocity[3]:
+                numParticles = levelNumParticles[2]
+                drawParticles = True
+            else:
+                numParticles = levelNumParticles[3]
+                drawParticles = True
+
+        x = 0
+        y = 0
+        while x < numParticles and drawParticles is True:
+            if particleColorRandom is True: particleColor = (randrange(256), randrange(256), randrange(256))
+            if not interpolateMouseMovement:
+                particleContainer.append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
+                y = -1
+            elif y == 0:
+                particleContainer.append(ParticleClass(display_window, firstMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
+                y = 1
+            elif y == 1:
+                particleContainer.append(ParticleClass(display_window, secondMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
+                y = 2
+            elif y == 2:
+                particleContainer.append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
+                y = 0
+            x += 1
+
+        for part in particleContainer:
+            part.updateParticle()
+            part.drawParticle()
+
+        ''' I tried to optimize the code by only updating the used display area instead of the whole screen.
+        Performance of pygame.display.update() depends on the following: (obviously)
+        - area of rectangle
+        - number of rectangles
+        If one rectangle is smaller than the other it is drawn faster. I use that in other.py to speed up drawing text alongside the mouse.
+        There it makes a big difference if I update the whole screen or just the small rectangle with the text. (times two)
+            (If drawColor is true, four rectangles are updated. But that is still faster than updating the whole screen.)
+
+        The following code produces hundreds of rectangles. In this case the huge amount of rectangles are negating any performance
+        improvements I gained by reducing the area down to a combined couple hundred pixels.
+
+        # for part in particleContainer:
+        #     partRect = part.getParticleRect()
+        #     particleContainerRects.append(partRect)
+        # listOfRects.extend(oldParticleContainer)
+        # listOfRects.extend(particleContainerRects)
+        # pygame.display.update(listOfRects)
+        # oldParticleContainer = []
+        # particleContainerRects = []
+        # listOfRects = []
+        # for part in particleContainer:
+        #     partRect = part.getParticleRect()
+        #     oldParticleContainer.append(partRect)
+        '''
+
+        if markPosition is True:
+            markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2).get_rect()  # used for tuning offset
+        pygame.display.update()
+        secondPos = firstPos  # for getting mouse velocity
+    # while ends here
 
 
 cleanup_mei()  # see comment inside
@@ -322,109 +429,32 @@ if not useOffset:
     offsetY = 0
 
 # ---------- Start the lööp:
-print("--- To stop overlay, close this window ---")  # notify on what to do to stop program
 setFocus(hwnd)  # sets focus on pygame window
-loop = True
-while loop:
-    clock.tick(FPS)  # limit the fps of the program
-    display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
-    windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
-    firstPos = (mousePosition.x-offsetX, mousePosition.y-offsetY)
-    mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
-    if interpolateMouseMovement:
-        firstMiddlePos = (firstPos[0] - (mouseVelocity[0] / 3),
-                          firstPos[1] - (mouseVelocity[1] / 3))  # To triple resolution
-        secondMiddlePos = (firstPos[0] - (mouseVelocity[0] - (mouseVelocity[0] / 3)),
-                           firstPos[1] - (mouseVelocity[1] - (mouseVelocity[1] / 3)))
-    # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
+# with cProfile.Profile() as pr:
+#     loop()
+# stats = pstats.Stats(pr)
+# stats.sort_stats(pstats.SortKey.TIME)
+# stats.print_stats()
 
-    for event in pygame.event.get():
-        setFocus(hwnd)  # Brings window back to focus if any key or mouse button is pressed.
-        # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
-        # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
-        if event.type == pygame.QUIT:
-            loop = False
-        # elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
-        #     if event.key == pygame.K_ESCAPE:
-        #         loop = False
-
-    # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
-    if dynamic is True:
-        mouseSpeedPixelPerFrame = sqrt(pow(mouseVelocity[0], 2) + pow(mouseVelocity[1], 2))
-        if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", mouseSpeedPixelPerFrame)
-        drawParticles = False
-        #print(mouseSpeedPixelPerFrame)
-        if mouseSpeedPixelPerFrame == 0:
-            drawParticles = False
-        elif mouseSpeedPixelPerFrame < levelVelocity[0]:
-            numParticles = numParticlesBackup
-            drawParticles = True
-        elif mouseSpeedPixelPerFrame < levelVelocity[1]:
-            numParticles = levelNumParticles[0]
-            drawParticles = True
-        elif mouseSpeedPixelPerFrame < levelVelocity[2]:
-            numParticles = levelNumParticles[1]
-            drawParticles = True
-        elif mouseSpeedPixelPerFrame < levelVelocity[3]:
-            numParticles = levelNumParticles[2]
-            drawParticles = True
-        else:
-            numParticles = levelNumParticles[3]
-            drawParticles = True
-
-    x = 0
-    y = 0
-    while x < numParticles and drawParticles is True:
-        if particleColorRandom is True: particleColor = (randrange(256), randrange(256), randrange(256))
-        if not interpolateMouseMovement:
-            particleContainer.append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
-            y = -1
-        elif y == 0:
-            particleContainer.append(ParticleClass(display_window, firstMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
-            y = 1
-        elif y == 1:
-            particleContainer.append(ParticleClass(display_window, secondMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
-            y = 2
-        elif y == 2:
-            particleContainer.append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
-            y = 0
-        x += 1
-
-    for part in particleContainer:
-        part.updateParticle()
-        part.drawParticle()
-
-
-    ''' I tried to optimize the code by only updating the used display area instead of the whole screen.
-    Performance of pygame.display.update() depends on the following: (obviously)
-    - area of rectangle
-    - number of rectangles
-    If one rectangle is smaller than the other it is drawn faster. I use that in other.py to speed up drawing text alongside the mouse.
-    There it makes a big difference if I update the whole screen or just the small rectangle with the text. (times two)
-        (If drawColor is true, four rectangles are updated. But that is still faster than updating the whole screen.)
-    
-    The following code produces hundreds of rectangles. In this case the huge amount of rectangles are negating any performance
-    improvements I gained by reducing the area down to a combined couple hundred pixels.
-    
-    # for part in particleContainer:
-    #     partRect = part.getParticleRect()
-    #     particleContainerRects.append(partRect)
-    # listOfRects.extend(oldParticleContainer)
-    # listOfRects.extend(particleContainerRects)
-    # pygame.display.update(listOfRects)
-    # oldParticleContainer = []
-    # particleContainerRects = []
-    # listOfRects = []
-    # for part in particleContainer:
-    #     partRect = part.getParticleRect()
-    #     oldParticleContainer.append(partRect)
-    '''
-
-
-    if markPosition is True:
-        markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2).get_rect()  # used for tuning offset
-    pygame.display.update()
-    secondPos = firstPos  # for getting mouse velocity
-# while ends here
-
+loop()
+# ...
 pygame.quit()
+
+''' performance analysis
+cumsec  per call    name
+7.033	0.007466	~:0(<method 'tick' of 'Clock' objects>)             # highest per-call
+4.668	1.23e-05	sparkles.py:223(updateParticle)
+3.014	7.94e-06	sparkles.py:179(updateParticle)
+1.678	0.001781	~:0(<built-in method pygame.display.flip>)          # second highest
+0.9605	1.265e-06	vec2d.py:91(__add__)
+0.9322	2.456e-06	sparkles.py:253(drawParticle)
+0.7923	2.087e-06	sparkles.py:198(outOfBounds)
+0.6166	0.0006545	~:0(<method 'fill' of 'pygame.Surface' objects>)    # third highest
+0.5493	1.414e-06	vec2d.py:140(__mul__)
+
+update instead of flip:
+per call
+0.001688	~:0(<built-in method pygame.display.update>)
+0.001781	~:0(<built-in method pygame.display.flip>)
+
+'''
