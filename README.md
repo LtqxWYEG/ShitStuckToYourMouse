@@ -52,6 +52,8 @@ Performance of Clock, Color, Image, CPU, RAM ...:
 
 For some reason, if no subprocesses are running, PoopStuckToYourMouse.exe (or main.pyw) uses 4 to 5% CPU on my laptop.
 
+Also, running any of the executables for the first time in, maybe, 30 minutes, takes a long time because Windows Defender needs to scan the file again and again. (And, I guess, because they are basically ~15MB big archives full of pure code, they take a long time to scan) If you exclude the folder in the security center then the starting time is only 1/10th or less.
+
 ---
 
 Prerequisites:
