@@ -87,7 +87,7 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod,\
         velocityClamp, GRAVITY, drag, FPS, interpolateMouseMovement, particleColor, particleColorRandom, ageColor, ageColorSpeed,\
         ageColorSlope, ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition,\
-    numParticles, randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
+        numParticles, randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles  # God damn it
     transparentColor = str(config.get("SPARKLES", "transparentColor"))
     particleSize = int(config.get("SPARKLES", "particleSize"))
     particleAge = int(config.get("SPARKLES", "particleAge"))
@@ -273,8 +273,11 @@ def clamp(val, minval, maxval):
 
 
 def loop():
-    global numParticlesBackup, firstPos, secondPos, mouseVelocity, ageColorNoiseMod, ageColorNoiseRange, shiftAgeColorNoise, offsetX,\
-        offsetY, particleColor
+    global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod, \
+        velocityClamp, GRAVITY, drag, FPS, interpolateMouseMovement, particleColor, particleColorRandom, ageColor, ageColorSpeed, \
+        ageColorSlope, ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition, \
+        numParticles, randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, \
+        secondPos, mouseVelocity, ageColorNoiseRange, shiftAgeColorNoise, drawParticles, mouseSpeedPixelPerFrame
     loop = True
     while loop:
         clock.tick(FPS)  # limit the fps of the program
@@ -430,13 +433,13 @@ if not useOffset:
 
 # ---------- Start the lööp:
 setFocus(hwnd)  # sets focus on pygame window
-# with cProfile.Profile() as pr:
-#     loop()
-# stats = pstats.Stats(pr)
-# stats.sort_stats(pstats.SortKey.TIME)
-# stats.print_stats()
+with cProfile.Profile(timeunit=0.000000, subcalls=True, builtins=True) as pr:
+    loop()
+stats = pstats.Stats(pr)
+stats.sort_stats(pstats.SortKey.TIME)
+stats.print_stats()
 
-loop()
+#loop()
 # ...
 pygame.quit()
 
