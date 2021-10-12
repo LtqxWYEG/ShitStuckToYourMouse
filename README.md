@@ -42,6 +42,8 @@ Special features:
 
 ---
 
+Ah... currently using the sparkles increases the energy usage of my PC by 20W. Maybe don't use it untill I find a better suited package than PyGame.
+
 Performance with 20 particles per frame @60fps: (runs only on a single core)
 - Laptop with AMD A4-6210:              25% CPU usage. (max per core: 25%)
 - Desktop with AMD Ryzen 5 2600 @4Ghz:  4.7 to 5.5% CPU usage. (max per core: 8.33%)
