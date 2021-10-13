@@ -28,6 +28,7 @@ Usage:
 
 Important notice:
 - If you execute PoopStuckToYourMouse.exe, (or main.pyw) don't have any other programs running that are also named "other.exe" or "sparkles.exe", otherwise they'll be terminated. So far this is the only working solution to kill the spawned processes. :(
+- ^-- Maybe not?
 
 ---
 
@@ -42,15 +43,16 @@ Special features:
 
 ---
 
-Ah... currently using the sparkles increases the energy usage of my PC by 20W. Maybe don't use it untill I find a better suited package than PyGame.
-
 Performance with 20 particles per frame @60fps: (runs only on a single core)
 - Laptop with AMD A4-6210:              25% CPU usage. (max per core: 25%)
-- Desktop with AMD Ryzen 5 2600 @4Ghz:  4.7 to 5.5% CPU usage. (max per core: 8.33%)
+- Desktop with AMD Ryzen 5 2600 @4Ghz:  5.14% avg CPU usage. (max per core: 8.33%)
 
 Performance of Clock, Color, Image, CPU, RAM ...:
 - Laptop:   3 to 5% CPU usage. (max per core: 25%)
-- Desktop:  0.7 to 1% CPU usage. (max per core: 8.33%)
+- Desktop:  0.00 to 0.20% avg CPU usage. (max per core: 8.33%)
+(measured using Resource Monitor)
+
+Ah... currently using the sparkles increases the energy usage of my PC by 20W. Maybe don't use it untill I find a better suited package than PyGame.
 
 For some reason, if no subprocesses are running, PoopStuckToYourMouse.exe (or main.pyw) uses 4 to 5% CPU on my laptop.
 
