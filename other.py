@@ -204,8 +204,8 @@ if showColor:
     color_rect = colorSquare.get_rect()  # get rectangle from surface
     old_color_rect = colorSquare.get_rect()  # second one
     small_color_rect = pygame.Rect((1, 1), (40, 40))  # create smaller rectangle to fill with color from pixel
-    hdc = GetDC(0)  # Get display content for emqsuring RGB value
     old_rect = blit_rect  # initialize as aswell
+    hdc = GetDC(0)  # Get display content for emqsuring RGB value
     loop = True
 elif showImage:
     image = pygame.image.load(imagePath)
@@ -341,7 +341,7 @@ while loop:
     clock.tick(FPS)
 # while end
 
-ReleaseDC(0, hdc)
-getCPU.join()
-getRAM.join()
+if showColor: ReleaseDC(0, hdc)
+if showCPU: getCPU.join()
+if showRAM: getRAM.join()
 pygame.quit()
