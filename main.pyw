@@ -19,7 +19,7 @@
 
 import configparser
 from io import BytesIO
-from json import (load as jsonload, dump as jsondump)
+#from json import (load as jsonload, dump as jsondump)
 import PySimpleGUI as sg
 from subprocess import PIPE, Popen, CREATE_NO_WINDOW
 from PIL import Image, ImageTk
@@ -112,6 +112,9 @@ def getVariablesFromConfig(window):
     window['fontColor'].update(str(config.get("OTHER", "fontColor")))
     window['fontSize'].update(int(config.get("OTHER", "fontSize")))
     window['showColor'].update(config.getboolean("OTHER", "showColor"))
+    window['complementaryColor'].update(config.getboolean("OTHER", "complementaryColor"))
+    window['rgbComplement'].update(config.getboolean("OTHER", "rgbComplement"))
+    window['artistComplement'].update(config.getboolean("OTHER", "artistComplement"))
     window['showClock'].update(config.getboolean("OTHER", "showClock"))
     window['showCPU'].update(config.getboolean("OTHER", "showCPU"))
     window['showImage'].update(config.getboolean("OTHER", "showImage"))
@@ -157,6 +160,9 @@ def updateConfig(values):
     config.set("OTHER", "fontColor", str(values['fontColor']))
     config.set("OTHER", "fontSize", str(values['fontSize']))
     config.set("OTHER", "showColor", str(values['showColor']))
+    config.set("OTHER", "complementaryColor", str(values['complementaryColor']))
+    config.set("OTHER", "rgbComplement", str(values['rgbComplement']))
+    config.set("OTHER", "artistComplement", str(values['artistComplement']))
     config.set("OTHER", "showClock", str(values['showClock']))
     config.set("OTHER", "showCPU", str(values['showCPU']))
     config.set("OTHER", "showRAM", str(values['showRAM']))
@@ -188,7 +194,7 @@ def get_img_data(f, maxsize=(1200, 850), first=False):
         return
 
 
-def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=True, timeout=None, on_terminate=None):
+def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, on_terminate=None):
     """Kill a process tree (including grandchildren) with signal
     "sig" and return a (gone, still_alive) tuple.
     "on_terminate", if specified, is a callabck function which is
@@ -203,7 +209,7 @@ def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=True, timeout=None, o
     for p in children:
         p.send_signal(sig)
     gone, alive = psutil.wait_procs(children, timeout = timeout, callback = on_terminate)
-    return (gone, alive)  # Thank you very much Mr. PySimpleGUI :)
+    return gone, alive  # Thank you very much Mr. PySimpleGUI :)
 
 
 def make_window(theme):
@@ -252,7 +258,7 @@ def make_window(theme):
                       ]
 
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor), size = (25, 2), font=("Segoe UI", 16), k = 'color picker button')],
-                    [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue', pad = (10, (0, 15)))],
+                    [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue = hsv hue of 360°)', pad = (10, (0, 15)))],
                     [sg.Checkbox('Randomly colored particles', default = False, k = 'particleColorRandom', enable_events = True)],
                     [sg.Checkbox('Change hue over time. (Hue aging)', default = True, k = 'ageColor', enable_events = True)],
 
@@ -314,12 +320,15 @@ def make_window(theme):
                     [sg.Spin([i for i in range(1, 100)], initial_value = 10, font = ("Segoe UI", 16), k = 'fontSize', enable_events = True),
                      sg.T('Font size in pt.')],
                     [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default = False, k = 'showColor', disabled = False, enable_events = True)],
+                    [sg.Checkbox('Show complementary color instead', default = False, k = 'complementaryColor', disabled = False, enable_events = True)],
+                    [sg.Checkbox('rgb complement', default = False, k = 'rgbComplement', disabled = False, enable_events = True),
+                     sg.Checkbox('ryb (artist) complement (Follows: "red–green, yellow–purple, and blue–orange" but seems inaccurate inbetween', default = True, k = 'artistComplement', disabled = False, enable_events = True)],
                     [sg.Checkbox('Clock: Show a text-based clock on the right the cursor.', default = False, k = 'showClock', disabled = False, enable_events = True)],
                     [sg.Checkbox('CPU-usage: Show in percent beside the cursor.', default = False, k = 'showCPU', disabled = False, enable_events = True)],
                     [sg.Checkbox('RAM-usage: Show in percent alongside the cursor', default = False, k = 'showRAM', disabled = False, enable_events = True)],
 
                     [sg.HorizontalSeparator()],
-                    [sg.Checkbox('Draw an image somewhere around the cursor', default = False, k = 'showImage', disabled = False, enable_events = True)],
+                    [sg.Checkbox("Draw an image somewhere around the cursor (gifs don't move)", default = False, k = 'showImage', disabled = False, enable_events = True)],
                     [sg.Text('Choose Image'), sg.InputText(size = (65, 1), k = 'imagePath'),
                      sg.FileBrowse('Browse', size = (10, 1), file_types = file_types, enable_events = True)],
                     [sg.T('(Only ".png", ".jpg", ".jpeg", ".tiff" ".gif" or ".bmp" supported.)', font = ("Segoe UI", 10))],
@@ -353,13 +362,24 @@ def main(config):
     window = make_window('Dark')
     proc = False  # Initiate variable for check if subprocess.Popen == True
     otherProc = False
-    if exists(imagePath):
-        doesImageFileExist = True
-    else:
-        doesImageFileExist = False
     pid = None
+    if not exists(imagePath) or imagePath == '':
+        doesImageFileExist = False
+    else:
+        doesImageFileExist = True
     getVariablesFromConfig(window)
 
+    #update display of some settings once
+    event, values = window.read(timeout = 250)
+    window['useOffset'].update(values['useOffset'])
+    window['offsetX'].update(values['offsetX'])
+    window['offsetY'].update(values['offsetY'])
+    values['useOffset2'] = values['useOffset']
+    values['offsetX2'] = values['offsetX']
+    values['offsetY2'] = values['offsetY']
+    window['useOffset2'].update(values['useOffset2'])
+    window['offsetX2'].update(values['offsetX2'])
+    window['offsetY2'].update(values['offsetY2'])
     while True:
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
@@ -378,9 +398,19 @@ def main(config):
             window['showRAM'].update(disabled = True)
             if values['showColor']:
                 window['showColor'].update(disabled = False)
+                window['complementaryColor'].update(disabled = False)
+                if values['complementaryColor']:
+                    window['rgbComplement'].update(disabled = False)
+                    window['artistComplement'].update(disabled = False)
+                else:
+                    window['rgbComplement'].update(disabled = True)
+                    window['artistComplement'].update(disabled = True)
                 window['showImage'].update(disabled = True)
             else:
                 window['showColor'].update(disabled = True)
+                window['complementaryColor'].update(disabled = True)
+                window['rgbComplement'].update(disabled = True)
+                window['artistComplement'].update(disabled = True)
                 window['showImage'].update(disabled = False)
         elif values['showClock'] or values['showCPU'] or values['showRAM']:
             window['showClock'].update(disabled = False)
@@ -388,12 +418,18 @@ def main(config):
             window['showRAM'].update(disabled = False)
             window['showImage'].update(disabled = True)
             window['showColor'].update(disabled = True)
+            window['complementaryColor'].update(disabled = True)
+            window['rgbComplement'].update(disabled = True)
+            window['artistComplement'].update(disabled = True)
         else:
             window['showClock'].update(disabled = False)
             window['showCPU'].update(disabled = False)
             window['showRAM'].update(disabled = False)
             window['showImage'].update(disabled = False)
             window['showColor'].update(disabled = False)
+            window['complementaryColor'].update(disabled = True)
+            window['rgbComplement'].update(disabled = True)
+            window['artistComplement'].update(disabled = True)
 
         if not values['ageColor']:
             window['ageColorSpeed'].update(disabled = True)
@@ -479,17 +515,30 @@ def main(config):
         if event in (None, 'Reset'):
             answer = sg.popup_yes_no('Reset all settings to defaults?')
             if answer == 'Yes' or answer == 'yes':
+                if proc or otherProc:
+                    kill_proc_tree(pid = pid)
+                    print('Subprocess killed')
+                proc = False
+                otherProc = False
                 setDefaults()
                 getVariablesFromConfig(window)
+                event, values = window.read(timeout = 250)
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
                 values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+                values['useOffset2'] = values['useOffset']
+                values['offsetX2'] = values['offsetX']
+                values['offsetY2'] = values['offsetY']
+                window['useOffset2'].update(values['useOffset'])
+                window['offsetX2'].update(values['offsetX'])
+                window['offsetY2'].update(values['offsetY'])
                 values['imagePath'] = str(config.get("OTHER", "imagePath"))
                 imagePath = values['imagePath']
-                window['image'].update(data = get_img_data(imagePath, first = True))
+                if exists(imagePath):
+                    window['image'].update(data = get_img_data(imagePath, first = True))
             else:
                 continue
 
@@ -511,43 +560,61 @@ def main(config):
             updateConfig(values)
             print('All values saved to config.ini')
             print(values)
+            event, values = window.read(timeout = 250)
+            values['particleColor'] = config.get("SPARKLES", "particleColor")
+            particleColor = values['particleColor']
+            window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+            values['fontColor'] = config.get("OTHER", "fontColor")
+            fontColor = values['fontColor']
+            window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+            values['useOffset2'] = values['useOffset']
+            values['offsetX2'] = values['offsetX']
+            values['offsetY2'] = values['offsetY']
+            window['useOffset2'].update(values['useOffset'])
+            window['offsetX2'].update(values['offsetX'])
+            window['offsetY2'].update(values['offsetY'])
             if values['showImage']:
-                if exists(imagePath):
-                    window['image'].update(data = get_img_data(imagePath, first = True))
-                    doesImageFileExist = True
-                else:
+                if not exists(imagePath) or imagePath == '':
                     window['image'].update(data = '')
-                    sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True, auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26),
-                                     no_titlebar = True, keep_on_top = True)
+                    sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True,
+                                     auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
                     doesImageFileExist = False
                     print('Error: %s does not exist' % imagePath)
+                else:
+                    window['image'].update(data = get_img_data(imagePath, first = True))
+                    doesImageFileExist = True
             if proc or otherProc:
                 kill_proc_tree(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
-            if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM']:
+            if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                 sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
                                  auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
                 otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = otherProc.pid
                 print('Subprocess Started')
-                print(otherProc)
-            elif values['showImage']:
-                if doesImageFileExist:
-                    sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
-                                     auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                    otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
-                    pid = otherProc.pid
-                    print('Subprocess Started')
-                    print(otherProc)
-            else:
-                sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
-                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                print(otherProc, " with process id: ", pid)
+            # elif values['showImage'] and doesImageFileExist:
+            #     sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
+            #                      auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+            #     otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+            #     pid = otherProc.pid
+            #     print('Subprocess Started')
+            #     print(otherProc, " with process id: ", pid)
+            elif not values['showColor'] and not values['showClock'] and not values['showCPU'] and not values['showRAM'] and not values['showImage']:
+                sg.popup_no_wait('Starting ... if this is the first time it can take a while', text_color = '#00ff00', button_type = 5, auto_close = True,
+                                 auto_close_duration = 4, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
                 proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = proc.pid
                 print('Subprocess Started')
-                print(proc)
+                print(proc, " with process id: ", pid)
+            else:
+                if proc or otherProc:
+                    kill_proc_tree(pid = pid)
+                    print('Subprocess killed')
+                proc = False
+                otherProc = False
         # ---------------------
 
         elif event in (None, 'Close'):
@@ -596,6 +663,14 @@ def main(config):
             window['offsetX2'].update(values['offsetX2'])
             window['offsetY2'].update(values['offsetY2'])
 
+        elif event in (None, 'rgbComplement'):
+            values['artistComplement'] = False
+            window['artistComplement'].update(values['artistComplement'])
+
+        elif event in (None, 'artistComplement'):
+            values['rgbComplement'] = False
+            window['rgbComplement'].update(values['rgbComplement'])
+
     if proc or otherProc:
         kill_proc_tree(pid = pid)
     window.close()
@@ -615,4 +690,6 @@ if __name__ == '__main__':
     fontColor = str(config.get("OTHER", "fontColor"))
     ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))
     imagePath = str(config.get("OTHER", "imagePath"))
+    # I forgot why those four up there were necessary...
     main(config)
+#dead

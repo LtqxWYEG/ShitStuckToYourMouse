@@ -19,19 +19,20 @@
 
 
 import configparser
-import pygame
 from ctypes import byref, c_int, Structure, windll
 
+import pygame
 import pyximport
-pyximport.install(pyimport = True)
+
+pyximport.install(pyimport = True, inplace = False)  # changew to true to stop compiling
 import pygame.gfxdraw
 from pygame.locals import *  # for Color
-from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, GetDC, ReleaseDC
+from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong
 from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED
 from win32api import RGB
 
-import cProfile
-import pstats
+#import cProfile
+#import pstats
 #import cython
 #from functools import lru_cache
 
@@ -200,6 +201,8 @@ class ParticleClass(Particle):
             except ValueError:
                 pass
 
+        self.gravity[0] = self.gravity[0] + uniform(-0.01, 0.01)
+        self.gravity[1] = self.gravity[1] + uniform(-0.01, 0.01)
         self.ageStep = 100.0/float(self.age)
         # Update color, and existance based on color:
         hsva = self.color.hsva  # Limits: H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
@@ -209,7 +212,6 @@ class ParticleClass(Particle):
                 hue -= self.ageStep * (self.ageStep * ((self.ageStep / (10 ** ageColorSlopeConcavity)) / (10 ** ageColorSlopeConcavity)))
             else:
                 hue += self.ageStep * ageColorSpeed
-            #hue = hue + random.uniform(-ageColorNoise + shiftAgeColorNoise, ageColorNoise + shiftAgeColorNoise)
 
         brightness = hsva[2]
         brightness -= self.ageStep / ageBrightnessMod
@@ -266,9 +268,9 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
             # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
             if event.type == pygame.QUIT:
                 loop = False
-            # elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
-            #     if event.key == pygame.K_ESCAPE:
-            #         loop = False
+            elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
+                if event.key == pygame.K_ESCAPE:
+                    loop = False
 
         # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
         if dynamic is True:
@@ -412,11 +414,11 @@ ONE_THIRD = 1.0/3.0
 
 # ---------- Start the lööp:
 setFocus(hwnd)  # sets focus on pygame window
-with cProfile.Profile() as pr:
-    loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame)
-stats = pstats.Stats(pr)
-stats.sort_stats(pstats.SortKey.TIME)
-stats.print_stats()
+#with cProfile.Profile() as pr:
+loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame)
+#stats = pstats.Stats(pr)
+#stats.sort_stats(pstats.SortKey.TIME)
+#stats.print_stats()
 
 #loop()
 # ...

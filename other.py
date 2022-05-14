@@ -30,6 +30,7 @@ from threading import Thread
 import configparser
 from os import path, listdir
 import sys
+import acrylic
 
 
 """
@@ -71,21 +72,21 @@ class CaseConfigParser(configparser.ConfigParser):
     def getlistint(self, section, option):  # It's so annoying.
         return [int(x) for x in self.getlist(section, option)]
 
-    def getlistfloat(self, section, option):  # No wonder ppl use the horrible JSON... (Although I have no idea if that's better)
-        return [float(x) for x in self.getlist(section, option)]
+    def getlistfloat(self, section, option):  # No wonder ppl use the horrible JSON... (Although I have no idea if that's actually horrible)
+        return [float(x) for x in self.getlist(section, option)]  # it just looks horrible
 
 
 def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
     global config
     config.read("defaults.ini")
-    with open("config.ini", 'w') as configfile:
+    with open("config.ini", "w") as configfile:
         config.write(configfile)
 
 
 # settings = dict(config.items('SPARKLES'))
 def readVariables():  # --- I do not like this, but now it's done and I don't care anymore ... I'm doing it again
     global config, fontColor, fontSize, offsetX, offsetY, useOffset, showClock, showCPU, showRAM, showColor, FPS,\
-        showImage, imagePath
+        showImage, imagePath, complementaryColor, rgbComplement, artistComplement
     # fontColor = "#00ff00"
     # fontSize = 10
     # offsetX = 20  # offset to mouse cursor position in pixel. (= tip of cursor)
@@ -101,6 +102,9 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     fontColor = str(config.get("OTHER", "fontColor"))
     fontSize = int(config.get("OTHER", "fontSize"))
     showColor = config.getboolean("OTHER", "showColor")
+    complementaryColor = config.getboolean("OTHER", "complementaryColor")
+    rgbComplement = config.getboolean("OTHER", "rgbComplement")
+    artistComplement = config.getboolean("OTHER", "artistComplement")
     showClock = config.getboolean("OTHER", "showClock")
     showCPU = config.getboolean("OTHER", "showCPU")
     showRAM = config.getboolean("OTHER", "showRAM")
@@ -131,7 +135,40 @@ def rgbIntToTuple(RGBint):
     red = RGBint & 255
     green = (RGBint >> 8) & 255
     blue = (RGBint >> 16) & 255
-    return (red, green, blue)
+    return red, green, blue
+
+
+# Sum of the min & max of (a, b, c)
+def sumMinMax(a, b, c):
+    if c < b:
+        b, c = c, b
+    if b < a:
+        a, b = b, a
+    if c < b:
+        b, c = c, b
+    return a + c
+
+
+def rgbComplementaryColor(r, g, b):
+    k = sumMinMax(r, g, b)
+    return tuple(k - u for u in (r, g, b))
+
+# import colorsys
+# #convert to ryb, get complentary, convert to rgb
+# def artistComplementaryColor(rgb):  # Assumption: Acrylic object
+#     # returns RGB components of complementary RYB color
+#     #ryb = (rgb.ryb[0], rgb.ryb[1], rgb.ryb[2])
+#     #ryb = acrylic.Color(ryb = ryb)
+#     hsv = (rgb.hsv[0], rgb.hsv[1], rgb.hsv[2])
+#     hsv = ((hsv[0] + 0.5) % 1, hsv[1], hsv[2])  # "rotate" hue value by 180°
+#     rgbComp = colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2])
+#     #rgbComp = (hsv.rgb[0], hsv.rgb[1], hsv.rgb[2])
+#     return rgbComp
+
+
+def convertFloatTupleToInt(tup):
+    tup = tuple(int(x) for x in tup)  # Convert float values to int
+    return tup
 
 
 def cpu_Percent():
@@ -155,41 +192,45 @@ def resource_path(relative_path):
     return path.join(base_path, relative_path)
 
 
-class POINT(Structure): _fields_ = [("x", c_int), ("y", c_int)]
+class POINT(Structure):
+    _fields_ = [("x", c_int), ("y", c_int)]
 # def human_size(bytes, units=(' bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB')):
 #     """ Returns a human readable string reprentation of bytes"""
 #     return str(bytes) + units[0] if bytes < 1024 else human_size(bytes >> 10, units[1:])
+# What's that from??
 
 
 config = CaseConfigParser()
-parseList = CaseConfigParser(converters={'list': lambda x: [i.strip() for i in x.split(',')]})
-config.read("config.ini")  # Read config file
+# parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})
 config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
-if not config.has_section("OTHER"):
+config.read("config.ini")  # Read config file
+if not config.has_section("SPARKLES") or not config.has_section("OTHER"):
     setDefaults()
+    print('No config file exists. Writing new one with default values...')
+    print(config)
 readVariables()
 cleanup_mei()  # see comment inside
 transparentColor = "#000000"
 mousePosition = POINT()
 setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
-setFocus = windll.user32.SetFocus  # sets focus to
+setFocus = windll.user32.SetFocus  # sets focus to window
 pygame.init()
 pygame.display.set_caption('PoopStuckToYourMouse - Other')  # title(stupid)
 clock = pygame.time.Clock()  # for FPS limiting
-info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
+displayInfo = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
 flags = pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
 # FULLSCREEN: Create a fullscreen display
 # DOUBLEBUF: Double buffering. Creates a separate block of memory to apply all the draw routines and then copying that block (buffer) to video memory. (Thanks, Foon)
 # HWSURFACE: hardware accelerated window, only in FULLSCREEN. (Uses memory on video card)
 
-windowWidth = int(info.current_w)
-windowHeight = int(info.current_h)
+windowWidth = int(displayInfo.current_w)
+windowHeight = int(displayInfo.current_h)
 display_window = pygame.display.set_mode((windowWidth, windowHeight), flags, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
-display_window.fill(transparentColor)  # fill with tranparent color set in win32gui.SetLayeredWindowAttributes
+display_window.fill(transparentColor)  # fill with transparent color set in win32gui.SetLayeredWindowAttributes
 transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
-hwnd = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
-setWindowAttributes(hwnd)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
+handleWindowDeviceContext = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
+setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
 
 font = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)  # Set Font and font size
 #font = pygame.font.Font("./fonts/Pixel LCD-7.ttf", fontSize)
@@ -204,8 +245,8 @@ if showColor:
     color_rect = colorSquare.get_rect()  # get rectangle from surface
     old_color_rect = colorSquare.get_rect()  # second one
     small_color_rect = pygame.Rect((1, 1), (40, 40))  # create smaller rectangle to fill with color from pixel
-    old_rect = blit_rect  # initialize as aswell
-    hdc = GetDC(0)  # Get display content for emqsuring RGB value
+    old_rect = blit_rect  # initialize aswell
+    handleDeviceContext = GetDC(0)  # Get display content for measuring RGB value
     loop = True
 elif showImage:
     image = pygame.image.load(imagePath)
@@ -242,25 +283,27 @@ elif showCPU or showRAM or showClock:
     old_rect = blit_rect  # initialize as aswell
     loop = True
 else:
-    loop = False  # Interpreter should nevre reach this if using configuration GUI
+    loop = False  # Interpreter should never reach this if using configuration GUI
 
 
-setFocus(hwnd)  # sets focus on pygame window
+setFocus(handleWindowDeviceContext)  # sets focus on pygame window
 while loop:
     display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
     windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
 
     for event in pygame.event.get():
-        setFocus(hwnd)  # Brings window back to focus if any key or mouse button is pressed.
+        setFocus(handleWindowDeviceContext)  # Brings window back to focus if any key or mouse button is pressed.
+        # WELL IT SHOULD DO THIS, BUT NO... OF COURSE NOT
         # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
         # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
         if event.type == pygame.QUIT:
             loop = False
-        # elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
-        #     if event.key == pygame.K_ESCAPE:
-        #         loop = False
+        elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
+        # Wait. If window isn't focused then why is it still on top of z-order (sometimes) AND doesn't react to this event??
+            if event.key == pygame.K_ESCAPE:
+                loop = False
     if showColor:
-        colorPx = rgbIntToTuple(windll.gdi32.GetPixel(hdc, mousePosition.x, mousePosition.y))
+        colorPx = rgbIntToTuple(windll.gdi32.GetPixel(handleDeviceContext, mousePosition.x, mousePosition.y))
         if mousePosition.x > windowWidth - 130 or mousePosition.y > windowHeight - 55:
             if useOffset:
                 color_rect.topleft = (mousePosition.x + offsetX - 65, mousePosition.y + offsetY - 45)  # update rectangle position
@@ -271,6 +314,21 @@ while loop:
                 color_rect.topleft = (mousePosition.x + offsetX, mousePosition.y + offsetY + 15)
             else:
                 color_rect.topleft = (mousePosition.x, mousePosition.y + 15)
+
+        if complementaryColor:
+            if rgbComplement:
+                colorPx = rgbComplementaryColor(colorPx[0], colorPx[1], colorPx[2])
+            elif artistComplement:
+                colorPx = acrylic.Color(rgb = (colorPx[0], colorPx[1], colorPx[2]))
+                colorPx = colorPx.scheme(acrylic.Schemes.COMPLEMENTARY, in_rgb=False, fuzzy=0)
+                colorPx = acrylic.Color(ryb = (colorPx[0].ryb[0], colorPx[0].ryb[1], colorPx[0].ryb[2])).rgb
+                colorPx = (colorPx.rgb[0], colorPx.rgb[1], colorPx.rgb[2])
+                #colorPx = acrylic.Color(hsl = (colorPx[0], colorPx[1], colorPx[2]))
+                #colorPx = (colorPx.rgb[0], colorPx.rgb[1], colorPx.rgb[2])
+                #colorPx = (colorPx[0].rgb[0], colorPx[0].rgb[1], colorPx[0].rgb[2])
+                #colorPx = rgbComplementaryColor(colorPx.ryb[0], colorPx.ryb[1], colorPx.ryb[2])
+                #colorPx = artistComplementaryColor(colorPx)
+                #colorPx = tuple(int(round(x)) for x in colorPx)  # Convert float values to int
         colorSquare.fill(colorPx, small_color_rect)  # fill surface with color, the size and position of smaller rectangle, to create a 1px border
         display_window.blit(colorSquare, color_rect)  # blit'it
 
@@ -284,6 +342,7 @@ while loop:
                 blit_rect.topleft = (mousePosition.x + offsetX, mousePosition.y + offsetY)  # set position of rectangle to mouse cursor
             else:
                 blit_rect.topleft = (mousePosition.x, mousePosition.y)
+        #
         text = font.render(str(colorPx), True, fontColor, '#303030')  # gets color under cursor, then renders it in 'text' Surface object
         display_window.blit(text, blit_rect)  # copy blit_rect to the display Surface object 'text'
 
@@ -341,7 +400,7 @@ while loop:
     clock.tick(FPS)
 # while end
 
-if showColor: ReleaseDC(0, hdc)
+if showColor: ReleaseDC(0, handleDeviceContext)
 if showCPU: getCPU.join()
 if showRAM: getRAM.join()
 pygame.quit()
