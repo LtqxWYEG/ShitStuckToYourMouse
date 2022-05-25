@@ -111,6 +111,8 @@ def getVariablesFromConfig(window):
     window['levelNumParticles_4'].update(string[3])
     window['fontColor'].update(str(config.get("OTHER", "fontColor")))
     window['fontSize'].update(int(config.get("OTHER", "fontSize")))
+    window['outlineColor'].update(str(config.get("OTHER", "outlineColor")))
+    window['outlineThickness'].update(int(config.get("OTHER", "outlineThickness")))
     window['showColor'].update(config.getboolean("OTHER", "showColor"))
     window['complementaryColor'].update(config.getboolean("OTHER", "complementaryColor"))
     window['rgbComplement'].update(config.getboolean("OTHER", "rgbComplement"))
@@ -159,6 +161,8 @@ def updateConfig(values):
     config.set("SPARKLES", "levelNumParticles", levelNumParticlesStr)
     config.set("OTHER", "fontColor", str(values['fontColor']))
     config.set("OTHER", "fontSize", str(values['fontSize']))
+    config.set("OTHER", "outlineColor", str(values['outlineColor']))
+    config.set("OTHER", "outlineThickness", str(values['outlineThickness']))
     config.set("OTHER", "showColor", str(values['showColor']))
     config.set("OTHER", "complementaryColor", str(values['complementaryColor']))
     config.set("OTHER", "rgbComplement", str(values['rgbComplement']))
@@ -218,7 +222,7 @@ def killProcessUsingOsKill(pid, sig=signal.SIGTERM):
 
 
 def make_window(theme):
-    global particleColor, fontColor, ageColorSpeed, imagePath
+    global particleColor, fontColor, outlineColor, ageColorSpeed, imagePath
     sg.theme(theme)
     file_types = [("Images", "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"), ("All files (*.*)", "*.*")]
 
@@ -320,10 +324,13 @@ def make_window(theme):
 
                     [sg.HorizontalSeparator()],
                     [sg.Input(visible = False, enable_events = True, k = 'fontColor'),
-                     sg.ColorChooserButton('Font color picker: %s' % fontColor, button_color = ("#010101", fontColor), size = (25, 2), font = ("Segoe UI", 16), k = 'font color picker button')],
-
+                     sg.ColorChooserButton('Font color picker: %s' % fontColor, button_color = ("#010101", fontColor), size = (25, 1), font = ("Segoe UI", 16), k = 'font color picker button')],
+                    [sg.Input(visible = False, enable_events = True, k = 'outlineColor'),
+                     sg.ColorChooserButton('Outline color picker: %s' % outlineColor, button_color = ("#808080", outlineColor), size = (25, 1), font = ("Segoe UI", 16), k = 'outline color picker button')],
                     [sg.Spin([i for i in range(1, 100)], initial_value = 10, font = ("Segoe UI", 16), k = 'fontSize', enable_events = True),
                      sg.T('Font size in pt.')],
+                    [sg.Spin([i for i in range(0, 10)], initial_value = 1, font = ("Segoe UI", 16), k = 'outlineThickness', enable_events = True),
+                     sg.T('Thickness of the outline in pixel. Use "0" to deactivate the outline')],
                     [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default = False, k = 'showColor', disabled = False, enable_events = True)],
                     [sg.Checkbox('Show complementary color instead', default = False, k = 'complementaryColor', disabled = False, enable_events = True)],
                     [sg.Checkbox('rgb complement', default = False, k = 'rgbComplement', disabled = False, enable_events = True),
@@ -361,8 +368,21 @@ def make_window(theme):
     return sg.Window('PoopStuckToYourMouse configuration', layout, finalize=True)
 
 
+# import re
+# str = '#ffffff' # Your Hex
+#
+# match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', str)
+#
+# if match:
+#   print 'Hex is valid'
+#
+# else:
+#   print 'Hex is not valid'
+
+
+
 def main(config):
-    global particleColor, fontColor, ageColorSpeed, imagePath
+    global particleColor, fontColor, outlineColor, ageColorSpeed, imagePath
     sg.theme('Dark')
     sg.set_options(font=("Segoe UI", 10))
     window = make_window('Dark')
@@ -390,6 +410,7 @@ def main(config):
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
         fontColor = values['fontColor']
+        outlineColor = values['outlineColor']
         imagePath = values['imagePath']
         if event in (None, 'Exit'):
             if proc or otherProc:
@@ -550,6 +571,9 @@ def main(config):
                 values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+                values['outlineColor'] = config.get("OTHER", "outlineColor")
+                outlineColor = values['outlineColor']
+                window['outline color picker button'].update(('Outline color picker: %s' % outlineColor), button_color=("#808080", outlineColor))
                 values['useOffset2'] = values['useOffset']
                 values['offsetX2'] = values['offsetX']
                 values['offsetY2'] = values['offsetY']
@@ -576,6 +600,9 @@ def main(config):
             values['fontColor'] = config.get("OTHER", "fontColor")
             fontColor = values['fontColor']
             window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+            values['outlineColor'] = config.get("OTHER", "outlineColor")
+            outlineColor = values['outlineColor']
+            window['outline color picker button'].update(('Outline color picker: %s' % outlineColor), button_color=("#808080", outlineColor))
             values['useOffset2'] = values['useOffset']
             values['offsetX2'] = values['offsetX']
             values['offsetY2'] = values['offsetY']
@@ -601,9 +628,8 @@ def main(config):
             if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                 sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
                                  auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW,
-                                  cwd = getcwd())
-                #otherProc = Popen("py other.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                #otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW, cwd = getcwd())
+                otherProc = Popen("py other.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = otherProc.pid
                 print('Subprocess Started')
                 print(otherProc, " with process id: ", pid)
@@ -617,9 +643,8 @@ def main(config):
             elif not values['showColor'] and not values['showClock'] and not values['showCPU'] and not values['showRAM'] and not values['showImage']:
                 sg.popup_no_wait('Starting ... if this is the first time it can take a while', text_color = '#00ff00', button_type = 5, auto_close = True,
                                  auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW,
-                             cwd = getcwd())
-                #proc = Popen("py sparkles.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                #proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW, cwd = getcwd())
+                proc = Popen("py sparkles.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = proc.pid
                 print('Subprocess Started')
                 print(proc, " with process id: ", pid)
@@ -644,6 +669,9 @@ def main(config):
             values['fontColor'] = config.get("OTHER", "fontColor")
             fontColor = values['fontColor']
             window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+            values['outlineColor'] = config.get("OTHER", "outlineColor")
+            outlineColor = values['outlineColor']
+            window['outline color picker button'].update(('Outline color picker: %s' % outlineColor), button_color=("#808080", outlineColor))
             values['useOffset2'] = values['useOffset']
             values['offsetX2'] = values['offsetX']
             values['offsetY2'] = values['offsetY']
@@ -683,6 +711,13 @@ def main(config):
                 values['fontColor'] = config.get("OTHER", "fontColor")
             fontColor = values['fontColor']
             window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+
+        elif event in (None, 'outlineColor'):  # Update color and text of the color-picker button
+            if outlineColor == "None":
+                outlineColor = config.get("OTHER", "outlineColor")
+                values['outlineColor'] = config.get("OTHER", "outlineColor")
+            outlineColor = values['outlineColor']
+            window['outline color picker button'].update(('Outline color picker: %s' % outlineColor), button_color=("#808080", outlineColor))
 
         elif event in (None, 'ageColorSpeed'):  # Update ageColorSpeedFine slider
             ageColorSpeed = values['ageColorSpeed']
@@ -735,6 +770,7 @@ if __name__ == '__main__':
         print(config)
     particleColor = str(config.get("SPARKLES", "particleColor"))
     fontColor = str(config.get("OTHER", "fontColor"))
+    outlineColor = str(config.get("OTHER", "outlineColor"))
     ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))
     imagePath = str(config.get("OTHER", "imagePath"))
     # I forgot why those four up there were necessary...

@@ -86,7 +86,7 @@ def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
 # settings = dict(config.items('SPARKLES'))
 def readVariables():  # --- I do not like this, but now it's done and I don't care anymore ... I'm doing it again
     global config, fontColor, fontSize, offsetX, offsetY, useOffset, showClock, showCPU, showRAM, showColor, FPS,\
-        showImage, imagePath, complementaryColor, rgbComplement, artistComplement
+        showImage, imagePath, complementaryColor, rgbComplement, artistComplement, outlineThickness, outlineColor
     # fontColor = "#00ff00"
     # fontSize = 10
     # offsetX = 20  # offset to mouse cursor position in pixel. (= tip of cursor)
@@ -101,6 +101,8 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     useOffset = config.getboolean("SPARKLES", "useOffset")
     fontColor = str(config.get("OTHER", "fontColor"))
     fontSize = int(config.get("OTHER", "fontSize"))
+    outlineColor = str(config.get("OTHER", "outlineColor"))
+    outlineThickness = int(config.get("OTHER", "outlineThickness"))
     showColor = config.getboolean("OTHER", "showColor")
     complementaryColor = config.getboolean("OTHER", "complementaryColor")
     rgbComplement = config.getboolean("OTHER", "rgbComplement")
@@ -213,7 +215,8 @@ def _circlepoints(r):
     points.sort()
     return points
 
-def render(text, font, gfcolor, ocolor, opx):
+
+def renderTextWithOutline(text, font, gfcolor, ocolor, opx):
     textsurface = font.render(text, True, gfcolor).convert_alpha()
     w = textsurface.get_width() + 2 * opx
     h = font.get_height()
@@ -223,7 +226,6 @@ def render(text, font, gfcolor, ocolor, opx):
     osurf.blit(font.render(text, True, ocolor).convert_alpha(), (0, 0))
     for dx, dy in _circlepoints(opx):
         surf.blit(osurf, (dx + opx, dy + opx))
-
     surf.blit(textsurface, (opx, opx))
     return surf
 
@@ -247,6 +249,7 @@ if not config.has_section("SPARKLES") or not config.has_section("OTHER"):
 readVariables()
 cleanup_mei()  # see comment inside
 transparentColor = "#000000"
+if outlineColor == "#000000": outlineColor = "#010101"
 mousePosition = POINT()
 setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
 setFocus = windll.user32.SetFocus  # sets focus to window
@@ -292,19 +295,18 @@ elif showImage:
     loop = True
 elif showCPU or showRAM or showClock:
     if showClock:
-        textClock = render("88:88:88.8888888", font, fontColor, outlineColor), outlineThickness)  # draw text to a new Surface. 'transparentColor' is text background color
+        textClock = renderTextWithOutline("88:88:88.8888888", font, fontColor, outlineColor, outlineThickness)  # draw text to a new Surface. 'transparentColor' is text background color
         # "88:88:88.8888888" defines size of resulting rectangle, so we don't have to text.get_rect() inside the while loop
         # 'True' declares use of antialiasing. Antialiasing does not only look better, it is also more optimized. (See: https://www.pygame.org/docs/ref/font.html#pygame.font.Font.render)
-        #textClockOutline = font.render(textClock, 1, (1, 1, 1))
         blit_rect = textClock.get_rect()
     if showCPU:
-        textCPU = render("CPU: 888.8", True, fontColor, (1, 1, 1), 2)
+        textCPU = renderTextWithOutline("CPU: 888.8", font, fontColor, outlineColor, outlineThickness)
         getCPU = Thread(target = cpu_Percent)  # define function as separate thread
         getCPU.start()  # start thread
         cpuPercent = 0.0  # initialize variable
         blit_rect = textCPU.get_rect()
     if showRAM:
-        textRAM = render("RAM: 888.8", True, fontColor, (1, 1, 1))
+        textRAM = renderTextWithOutline("RAM: 888.8", font, fontColor, outlineColor, outlineThickness)
         getRAM = Thread(target = ram_Percent)  # define function as separate thread
         getRAM.start()  # start thread
         ramPercent = 0.0  # initialize variable
@@ -401,37 +403,35 @@ while loop:
         else:
             blit_rect.topleft = (mousePosition.x, mousePosition.y)
         if showClock and showCPU and showRAM:
-            textClock = font.render(str(datetime.now().time()), True, fontColor, transparentColor)
-            textCPU = font.render(str('CPU: %s' % cpuPercent), True, fontColor, transparentColor)
-            textRAM = font.render(str('RAM: %s' % ramPercent), True, fontColor, transparentColor)
+            textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
+            textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
+            textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
             display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
             display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
             display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+(2*text_height)))
         elif showClock and showRAM and not showCPU:
-            textClock = font.render(str(datetime.now().time()), True, fontColor, transparentColor)
-            textCPU = font.render(str('RAM: %s' % ramPercent), True, fontColor, transparentColor)
+            textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
+            textCPU = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
             display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
             display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
         elif showCPU and showRAM and not showClock:
-            textRAM = font.render(str('RAM: %s' % ramPercent), True, fontColor, transparentColor)
-            textCPU = font.render(str('CPU: %s' % cpuPercent), True, fontColor, transparentColor)
+            textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
+            textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
             display_window.blit(textCPU, blit_rect)  # copy blit_rect to the display Surface object 'text'
             display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+text_height))
         elif showClock and showCPU and not showRAM:
-            textClock = font.render(str(datetime.now().time()), True, fontColor, transparentColor)
-            textCPU = font.render(str('CPU: %s' % cpuPercent), True, fontColor, transparentColor)
+            textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
+            textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
             display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
             display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
         elif showClock and not (showCPU or showRAM):
-            textClock = render(str(datetime.now().time()), font, fontColor, (1, 1, 1), 2)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
-            #textClockOutline = font.render(str(datetime.now().time()), True, "#000001", transparentColor)
-            #textClockOutline = add_outline_to_image(textClock, 1, (1, 1, 1))
+            textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
             display_window.blit(textClock, blit_rect)
         elif showCPU and not (showClock or showRAM):
-            textCPU = font.render(str('CPU: %s' % cpuPercent), True, fontColor, transparentColor)
+            textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
             display_window.blit(textCPU, blit_rect)
         elif showRAM and not (showCPU or showClock):
-            textRAM = font.render(str('RAM: %s' % ramPercent), True, fontColor, transparentColor)
+            textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
             display_window.blit(textRAM, blit_rect)
         pygame.display.update((old_rect, blit_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
         old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+4))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
