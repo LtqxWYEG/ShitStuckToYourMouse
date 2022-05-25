@@ -23,7 +23,7 @@ from io import BytesIO
 import PySimpleGUI as sg
 from subprocess import PIPE, Popen, CREATE_NO_WINDOW
 from PIL import Image, ImageTk
-from os import path, listdir, getpid
+from os import path, listdir, getpid, kill, getcwd
 from os.path import exists
 import sys
 from shutil import rmtree
@@ -197,7 +197,7 @@ def get_img_data(f, maxsize=(1200, 850), first=False):
 def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, on_terminate=None):
     """Kill a process tree (including grandchildren) with signal
     "sig" and return a (gone, still_alive) tuple.
-    "on_terminate", if specified, is a callabck function which is
+    "on_terminate", if specified, is a callback function which is
     called as soon as a child terminates.
     """
     if pid == getpid():
@@ -210,6 +210,11 @@ def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, 
         p.send_signal(sig)
     gone, alive = psutil.wait_procs(children, timeout = timeout, callback = on_terminate)
     return gone, alive  # Thank you very much Mr. PySimpleGUI :)
+
+
+def killProcessUsingOS(pid, sig=signal.SIGTERM):
+    kill(pid, sig)
+    return
 
 
 def make_window(theme):
@@ -356,6 +361,7 @@ def make_window(theme):
 
 
 def main(config):
+    print("DEV TEST main entry")
     global particleColor, fontColor, ageColorSpeed, imagePath
     sg.theme('Dark')
     sg.set_options(font=("Segoe UI", 10))
@@ -370,7 +376,7 @@ def main(config):
     getVariablesFromConfig(window)
 
     #update display of some settings once
-    event, values = window.read(timeout = 250)
+    event, values = window.read(timeout=250)
     window['useOffset'].update(values['useOffset'])
     window['offsetX'].update(values['offsetX'])
     window['offsetY'].update(values['offsetY'])
@@ -381,13 +387,15 @@ def main(config):
     window['offsetX2'].update(values['offsetX2'])
     window['offsetY2'].update(values['offsetY2'])
     while True:
+        print("DEV TEST while loop start")
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
         fontColor = values['fontColor']
         imagePath = values['imagePath']
         if event in (None, 'Exit'):
             if proc or otherProc:
-                kill_proc_tree(pid = pid)
+                #kill_proc_tree(pid = pid)
+                killProcessUsingOS(pid = pid)
             proc = False
             otherProc = False
             break
@@ -584,14 +592,17 @@ def main(config):
                     window['image'].update(data = get_img_data(imagePath, first = True))
                     doesImageFileExist = True
             if proc or otherProc:
-                kill_proc_tree(pid = pid)
+                #kill_proc_tree(pid = pid)
+                killProcessUsingOS(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
             if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                 sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
                                  auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW,
+                                  cwd = getcwd())
+                #otherProc = Popen("py other.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = otherProc.pid
                 print('Subprocess Started')
                 print(otherProc, " with process id: ", pid)
@@ -604,14 +615,17 @@ def main(config):
             #     print(otherProc, " with process id: ", pid)
             elif not values['showColor'] and not values['showClock'] and not values['showCPU'] and not values['showRAM'] and not values['showImage']:
                 sg.popup_no_wait('Starting ... if this is the first time it can take a while', text_color = '#00ff00', button_type = 5, auto_close = True,
-                                 auto_close_duration = 4, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                proc = Popen("py sparkles.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW,
+                             cwd = getcwd())
+                #proc = Popen("py sparkles.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = proc.pid
                 print('Subprocess Started')
                 print(proc, " with process id: ", pid)
             else:
                 if proc or otherProc:
-                    kill_proc_tree(pid = pid)
+                    #kill_proc_tree(pid = pid)
+                    killProcessUsingOS(pid = pid)
                     print('Subprocess killed')
                 proc = False
                 otherProc = False
@@ -619,7 +633,8 @@ def main(config):
 
         elif event in (None, 'Close'):
             if proc or otherProc:
-                kill_proc_tree(pid = pid)
+                #kill_proc_tree(pid = pid)
+                killProcessUsingOS(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
@@ -671,12 +686,15 @@ def main(config):
             values['rgbComplement'] = False
             window['rgbComplement'].update(values['rgbComplement'])
 
+    print("DEV TEST while end")
     if proc or otherProc:
-        kill_proc_tree(pid = pid)
+        #kill_proc_tree(pid = pid)
+        killProcessUsingOS(pid = pid)
     window.close()
 
 
 if __name__ == '__main__':
+    print("DEV TEST if main")
     cleanup_mei()  # see comment inside
     config = CaseConfigParser()
     #parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})
@@ -693,3 +711,4 @@ if __name__ == '__main__':
     # I forgot why those four up there were necessary...
     main(config)
 #dead
+print("DEV TEST end")
