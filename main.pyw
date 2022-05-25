@@ -194,25 +194,25 @@ def get_img_data(f, maxsize=(1200, 850), first=False):
         return
 
 
-def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, on_terminate=None):
-    """Kill a process tree (including grandchildren) with signal
-    "sig" and return a (gone, still_alive) tuple.
-    "on_terminate", if specified, is a callback function which is
-    called as soon as a child terminates.
-    """
-    if pid == getpid():
-        raise RuntimeError("I refuse to kill myself")
-    parent = psutil.Process(pid)
-    children = parent.children(recursive = True)
-    if include_parent:
-        children.append(parent)
-    for p in children:
-        p.send_signal(sig)
-    gone, alive = psutil.wait_procs(children, timeout = timeout, callback = on_terminate)
-    return gone, alive  # Thank you very much Mr. PySimpleGUI :)
+# def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, on_terminate=None):
+#     """Kill a process tree (including grandchildren) with signal
+#     "sig" and return a (gone, still_alive) tuple.
+#     "on_terminate", if specified, is a callback function which is
+#     called as soon as a child terminates.
+#     """
+#     if pid == getpid():
+#         raise RuntimeError("I refuse to kill myself")
+#     parent = psutil.Process(pid)
+#     children = parent.children(recursive = True)
+#     if include_parent:
+#         children.append(parent)
+#     for p in children:
+#         p.send_signal(sig)
+#     gone, alive = psutil.wait_procs(children, timeout = timeout, callback = on_terminate)
+#     return gone, alive  # Thank you very much Mr. PySimpleGUI :)
 
 
-def killProcessUsingOS(pid, sig=signal.SIGTERM):
+def killProcessUsingOsKill(pid, sig=signal.SIGTERM):
     kill(pid, sig)
     return
 
@@ -341,7 +341,7 @@ def make_window(theme):
                     ]
 
     console_layout = [[sg.Output(size = (120, 33), font = ("Segoe UI", 10))],
-                      [sg.T('Nothing to see here.')]]
+                      [sg.T("Please don't look under the rug.")]]
 
     tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
                                   sg.Tab('Color settings', color_layout),
@@ -352,7 +352,8 @@ def make_window(theme):
     layout = [[sg.T('PoopStuckToYourMouse', size = (74, 1), justification = 'center',
                     font = ("Segoe UI", 16), relief = sg.RELIEF_RIDGE)],
               [sg.Column(tabs_layout, scrollable = True, vertical_scroll_only = True, size = (900, 600))],
-              [sg.Button('Save and Run', k = 'Save', enable_events = True), sg.T('  '),
+              [sg.Button('Save and Run', k = 'Save-n-Run', enable_events = True), sg.T('  '),
+               sg.Button('Save', k = 'Save', enable_events = True), sg.T('  '),
                sg.Button('Close child process', k = 'Close', enable_events = True), sg.T('  '),
                sg.Button('Reset to defaults', k = 'Reset', enable_events = True)],
               [sg.Button('Exit', k = 'Exit', enable_events = True)]]
@@ -361,7 +362,6 @@ def make_window(theme):
 
 
 def main(config):
-    print("DEV TEST main entry")
     global particleColor, fontColor, ageColorSpeed, imagePath
     sg.theme('Dark')
     sg.set_options(font=("Segoe UI", 10))
@@ -387,7 +387,6 @@ def main(config):
     window['offsetX2'].update(values['offsetX2'])
     window['offsetY2'].update(values['offsetY2'])
     while True:
-        print("DEV TEST while loop start")
         event, values = window.read(timeout=250)
         particleColor = values['particleColor']
         fontColor = values['fontColor']
@@ -395,7 +394,7 @@ def main(config):
         if event in (None, 'Exit'):
             if proc or otherProc:
                 #kill_proc_tree(pid = pid)
-                killProcessUsingOS(pid = pid)
+                killProcessUsingOsKill(pid = pid)
             proc = False
             otherProc = False
             break
@@ -517,14 +516,28 @@ def main(config):
 
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
             print('\n============ Event = ', event, ' ==============')
-            if not event == 'Save' and not event == 'Close' and not event == 'Browse' and not event == 'Reset':
+            if not event == 'Save-n-Run' and not event =='Save' and not event == 'Close' and not event == 'Browse' and not event == 'Reset':
                 print(values[event])
+
+        elif event in (None, 'Browse') or event in (None, 'imagePath'):
+            imagePath = values['imagePath']
+            if exists(imagePath):
+                window['image'].update(data = get_img_data(imagePath, first = True))
+                doesImageFileExist = True
+            else:
+                window['image'].update(data = '')
+                sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True,
+                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                doesImageFileExist = False
+                print('Error: %s does not exist' % imagePath)
+        #----------------------
 
         if event in (None, 'Reset'):
             answer = sg.popup_yes_no('Reset all settings to defaults?')
             if answer == 'Yes' or answer == 'yes':
                 if proc or otherProc:
-                    kill_proc_tree(pid = pid)
+                    #kill_proc_tree(pid = pid)
+                    killProcessUsingOsKill(pid = pid)
                     print('Subprocess killed')
                 proc = False
                 otherProc = False
@@ -549,21 +562,9 @@ def main(config):
                     window['image'].update(data = get_img_data(imagePath, first = True))
             else:
                 continue
-
-        elif event in (None, 'Browse') or event in (None, 'imagePath'):
-            imagePath = values['imagePath']
-            if exists(imagePath):
-                window['image'].update(data = get_img_data(imagePath, first = True))
-                doesImageFileExist = True
-            else:
-                window['image'].update(data = '')
-                sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True,
-                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                doesImageFileExist = False
-                print('Error: %s does not exist' % imagePath)
-
         # ---------------------
-        elif event in (None, 'Save'):
+
+        elif event in (None, 'Save-n-Run'):
             values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
             updateConfig(values)
             print('All values saved to config.ini')
@@ -593,7 +594,7 @@ def main(config):
                     doesImageFileExist = True
             if proc or otherProc:
                 #kill_proc_tree(pid = pid)
-                killProcessUsingOS(pid = pid)
+                killProcessUsingOsKill(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
@@ -625,16 +626,46 @@ def main(config):
             else:
                 if proc or otherProc:
                     #kill_proc_tree(pid = pid)
-                    killProcessUsingOS(pid = pid)
+                    killProcessUsingOsKill(pid = pid)
                     print('Subprocess killed')
                 proc = False
                 otherProc = False
         # ---------------------
 
+        elif event in (None, 'Save'):
+            values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
+            updateConfig(values)
+            print('All values saved to config.ini')
+            print(values)
+            event, values = window.read(timeout = 250)
+            values['particleColor'] = config.get("SPARKLES", "particleColor")
+            particleColor = values['particleColor']
+            window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+            values['fontColor'] = config.get("OTHER", "fontColor")
+            fontColor = values['fontColor']
+            window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
+            values['useOffset2'] = values['useOffset']
+            values['offsetX2'] = values['offsetX']
+            values['offsetY2'] = values['offsetY']
+            window['useOffset2'].update(values['useOffset'])
+            window['offsetX2'].update(values['offsetX'])
+            window['offsetY2'].update(values['offsetY'])
+            if values['showImage']:
+                if not exists(imagePath) or imagePath == '':
+                    window['image'].update(data = '')
+                    sg.popup_no_wait('Error: File does not exist', text_color = '#ffc000', button_type = 5, auto_close = True,
+                                     auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
+                    doesImageFileExist = False
+                    print('Error: %s does not exist' % imagePath)
+                else:
+                    window['image'].update(data = get_img_data(imagePath, first = True))
+                    doesImageFileExist = True
+        # ---------------------
+
         elif event in (None, 'Close'):
             if proc or otherProc:
                 #kill_proc_tree(pid = pid)
-                killProcessUsingOS(pid = pid)
+                killProcessUsingOsKill(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
@@ -686,15 +717,13 @@ def main(config):
             values['rgbComplement'] = False
             window['rgbComplement'].update(values['rgbComplement'])
 
-    print("DEV TEST while end")
     if proc or otherProc:
         #kill_proc_tree(pid = pid)
-        killProcessUsingOS(pid = pid)
+        killProcessUsingOsKill(pid = pid)
     window.close()
 
 
 if __name__ == '__main__':
-    print("DEV TEST if main")
     cleanup_mei()  # see comment inside
     config = CaseConfigParser()
     #parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})
@@ -711,4 +740,3 @@ if __name__ == '__main__':
     # I forgot why those four up there were necessary...
     main(config)
 #dead
-print("DEV TEST end")

@@ -192,6 +192,42 @@ def resource_path(relative_path):
     return path.join(base_path, relative_path)
 
 
+_circle_cache = {}
+def _circlepoints(r):
+    r = int(round(r))
+    if r in _circle_cache:
+        return _circle_cache[r]
+    x, y, e = r, 0, 1 - r
+    _circle_cache[r] = points = []
+    while x >= y:
+        points.append((x, y))
+        y += 1
+        if e < 0:
+            e += 2 * y - 1
+        else:
+            x -= 1
+            e += 2 * (y - x) - 1
+    points += [(y, x) for x, y in points if x > y]
+    points += [(-x, y) for x, y in points if x]
+    points += [(x, -y) for x, y in points if y]
+    points.sort()
+    return points
+
+def render(text, font, gfcolor, ocolor, opx):
+    textsurface = font.render(text, True, gfcolor).convert_alpha()
+    w = textsurface.get_width() + 2 * opx
+    h = font.get_height()
+    osurf = pygame.Surface((w, h + 2 * opx)).convert_alpha()
+    osurf.fill((0, 0, 0, 0))
+    surf = osurf.copy()
+    osurf.blit(font.render(text, True, ocolor).convert_alpha(), (0, 0))
+    for dx, dy in _circlepoints(opx):
+        surf.blit(osurf, (dx + opx, dy + opx))
+
+    surf.blit(textsurface, (opx, opx))
+    return surf
+
+
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
 # def human_size(bytes, units=(' bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB')):
@@ -218,7 +254,7 @@ pygame.init()
 pygame.display.set_caption('PoopStuckToYourMouse - Other')  # title(stupid)
 clock = pygame.time.Clock()  # for FPS limiting
 displayInfo = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
-flags = pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
+flags = pygame.FULLSCREEN # | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
 # FULLSCREEN: Create a fullscreen display
 # DOUBLEBUF: Double buffering. Creates a separate block of memory to apply all the draw routines and then copying that block (buffer) to video memory. (Thanks, Foon)
 # HWSURFACE: hardware accelerated window, only in FULLSCREEN. (Uses memory on video card)
@@ -230,9 +266,10 @@ display_window.fill(transparentColor)  # fill with transparent color set in win3
 transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
 handleWindowDeviceContext = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
-setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
+setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and click-through
 
 font = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)  # Set Font and font size
+outlineFont = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)
 #font = pygame.font.Font("./fonts/Pixel LCD-7.ttf", fontSize)
 text_height = font.get_linesize()
 if showColor:
@@ -245,31 +282,32 @@ if showColor:
     color_rect = colorSquare.get_rect()  # get rectangle from surface
     old_color_rect = colorSquare.get_rect()  # second one
     small_color_rect = pygame.Rect((1, 1), (40, 40))  # create smaller rectangle to fill with color from pixel
-    old_rect = blit_rect  # initialize aswell
+    old_rect = blit_rect  # initialize as well
     handleDeviceContext = GetDC(0)  # Get display content for measuring RGB value
     loop = True
 elif showImage:
     image = pygame.image.load(imagePath)
     blit_rect = image.get_rect()
-    old_rect = blit_rect  # initialize as aswell
+    old_rect = blit_rect  # initialize as well
     loop = True
 elif showCPU or showRAM or showClock:
     if showClock:
-        textClock = font.render("88:88:88.8888888", True, fontColor, transparentColor)  # draw text to a new Surface. 'transparentColor' is text background color
+        textClock = render("88:88:88.8888888", font, fontColor, outlineColor), outlineThickness)  # draw text to a new Surface. 'transparentColor' is text background color
         # "88:88:88.8888888" defines size of resulting rectangle, so we don't have to text.get_rect() inside the while loop
         # 'True' declares use of antialiasing. Antialiasing does not only look better, it is also more optimized. (See: https://www.pygame.org/docs/ref/font.html#pygame.font.Font.render)
+        #textClockOutline = font.render(textClock, 1, (1, 1, 1))
         blit_rect = textClock.get_rect()
     if showCPU:
-        textCPU = font.render("CPU: 888.8", True, fontColor, transparentColor)
+        textCPU = render("CPU: 888.8", True, fontColor, (1, 1, 1), 2)
         getCPU = Thread(target = cpu_Percent)  # define function as separate thread
         getCPU.start()  # start thread
-        cpuPercent = 0.0  # initialze variabel
+        cpuPercent = 0.0  # initialize variable
         blit_rect = textCPU.get_rect()
     if showRAM:
-        textRAM = font.render("RAM: 888.8", True, fontColor, transparentColor)
+        textRAM = render("RAM: 888.8", True, fontColor, (1, 1, 1))
         getRAM = Thread(target = ram_Percent)  # define function as separate thread
         getRAM.start()  # start thread
-        ramPercent = 0.0  # initialize variabel
+        ramPercent = 0.0  # initialize variable
         blit_rect = textRAM.get_rect()
     if showClock and showCPU and showRAM:
         blit_rect = textClock.get_rect()
@@ -290,9 +328,9 @@ setFocus(handleWindowDeviceContext)  # sets focus on pygame window
 while loop:
     display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
     windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
-
+    setFocus(handleWindowDeviceContext)
     for event in pygame.event.get():
-        setFocus(handleWindowDeviceContext)  # Brings window back to focus if any key or mouse button is pressed.
+          # Brings window back to focus if any key or mouse button is pressed.
         # WELL IT SHOULD DO THIS, BUT NO... OF COURSE NOT
         # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
         # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
@@ -306,12 +344,12 @@ while loop:
         colorPx = rgbIntToTuple(windll.gdi32.GetPixel(handleDeviceContext, mousePosition.x, mousePosition.y))
         if mousePosition.x > windowWidth - 130 or mousePosition.y > windowHeight - 55:
             if useOffset:
-                color_rect.topleft = (mousePosition.x + offsetX - 65, mousePosition.y + offsetY - 45)  # update rectangle position
+                color_rect.topleft = (mousePosition.x - offsetX - 65, mousePosition.y - offsetY - 45)  # update rectangle position
             else:
                 color_rect.topleft = (mousePosition.x - 65, mousePosition.y - 45)
         else:
             if useOffset:
-                color_rect.topleft = (mousePosition.x + offsetX, mousePosition.y + offsetY + 15)
+                color_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY + 15)
             else:
                 color_rect.topleft = (mousePosition.x, mousePosition.y + 15)
 
@@ -334,12 +372,12 @@ while loop:
 
         if mousePosition.x > windowWidth - 130 or mousePosition.y > windowHeight - 55:
             if useOffset:
-                blit_rect.topleft = (mousePosition.x + offsetX - 125, mousePosition.y + offsetY - 58)  # update rectangle position
+                blit_rect.topleft = (mousePosition.x - offsetX - 125, mousePosition.y - offsetY - 58)  # update rectangle position
             else:
                 blit_rect.topleft = (mousePosition.x - 125, mousePosition.y - 58)
         else:
             if useOffset:
-                blit_rect.topleft = (mousePosition.x + offsetX, mousePosition.y + offsetY)  # set position of rectangle to mouse cursor
+                blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)  # set position of rectangle to mouse cursor
             else:
                 blit_rect.topleft = (mousePosition.x, mousePosition.y)
         #
@@ -351,7 +389,7 @@ while loop:
         old_color_rect = ((color_rect.x - 1, color_rect.y - 1), (color_rect.width + 2, color_rect.height + 2))
     elif showImage:
         if useOffset:
-            blit_rect.topleft = (mousePosition.x + offsetX, mousePosition.y + offsetY)
+            blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)
         else:
             blit_rect.topleft = (mousePosition.x, mousePosition.y)
         display_window.blit(image, blit_rect)
@@ -359,7 +397,7 @@ while loop:
         old_rect = ((blit_rect.x - 1, blit_rect.y - 1), (blit_rect.width + 2, blit_rect.height + 2))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
     else:
         if useOffset:
-            blit_rect.topleft = (mousePosition.x+offsetX, mousePosition.y+offsetY)  # set position of rectangle to mouse cursor
+            blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)  # set position of rectangle to mouse cursor
         else:
             blit_rect.topleft = (mousePosition.x, mousePosition.y)
         if showClock and showCPU and showRAM:
@@ -385,7 +423,9 @@ while loop:
             display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
             display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
         elif showClock and not (showCPU or showRAM):
-            textClock = font.render(str(datetime.now().time()), True, fontColor, transparentColor)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
+            textClock = render(str(datetime.now().time()), font, fontColor, (1, 1, 1), 2)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
+            #textClockOutline = font.render(str(datetime.now().time()), True, "#000001", transparentColor)
+            #textClockOutline = add_outline_to_image(textClock, 1, (1, 1, 1))
             display_window.blit(textClock, blit_rect)
         elif showCPU and not (showClock or showRAM):
             textCPU = font.render(str('CPU: %s' % cpuPercent), True, fontColor, transparentColor)
