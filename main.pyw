@@ -243,7 +243,7 @@ def make_window(theme):
                       [sg.T('Increase for slower brightness decline (concavity of downward slope)', pad = (10, (15, 0)))],
                       [sg.Slider(range=(0.001, 9.999), default_value = 5.300, font=("Segoe UI", 14), resolution = .001, size=(70, 15),
                                  orientation='horizontal', k = 'ageBrightnessMod', enable_events = True)],
-                      [sg.Spin([i for i in range(1, 100)], initial_value = 12, font=("Segoe UI", 16), k = 'ageBrightnessNoise', enable_events = True),
+                      [sg.Spin([i for i in range(0, 100)], initial_value = 12, font=("Segoe UI", 16), k = 'ageBrightnessNoise', enable_events = True),
                        sg.T('Adds random noise (twinkling) to age/brightness: brightness = random(+|-value). 0 for no noise')],
 
                       [sg.HorizontalSeparator()],
@@ -257,9 +257,9 @@ def make_window(theme):
                       [sg.Spin([i for i in range(1, 1000)], initial_value = 200, font=("Segoe UI", 16), k = 'velocityClamp', enable_events = True),
                        sg.T('Max. particle velocity')],
                       [sg.T('x and y motion added to any particle each frame. (Motion vector with direction: 0.0, 0.1 = a motion of .1 in downwards direction.)', pad = (10, (15, 0)))],
-                      [sg.Slider(range=(-29.999, 29.999), default_value = 0.000, font=("Segoe UI", 14), resolution = .001, size=(34, 15),
+                      [sg.Slider(range=(-9.999, 9.999), default_value = 0.000, font=("Segoe UI", 14), resolution = .001, size=(34, 15),
                                  orientation='horizontal', k = 'GRAVITY_X', enable_events = True),
-                       sg.Slider(range=(-29.999, 29.999), default_value = 0.025, font=("Segoe UI", 14), resolution = .001, size=(35, 15),
+                       sg.Slider(range=(-3.000, 3.000), default_value = 0.025, font=("Segoe UI", 14), resolution = .001, size=(35, 15),
                                  orientation='horizontal', k = 'GRAVITY_Y', enable_events = True)],
                       [sg.T('Particle drag, higher equals less drag: (drag * particle speed) per frame. --If >1 then particles speed up--', pad = (10, (15, 0)))],
                       [sg.Slider(range = (0.000, 2.999), default_value = 0.850, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
@@ -269,9 +269,17 @@ def make_window(theme):
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor), size = (25, 2), font=("Segoe UI", 16), k = 'color picker button')],
                     [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue = hsv hue of 360°)', pad = (10, (0, 15)))],
                     [sg.Checkbox('Randomly colored particles', default = False, k = 'particleColorRandom', enable_events = True)],
-                    [sg.Checkbox('Change hue over time. (Hue aging)', default = True, k = 'ageColor', enable_events = True)],
 
                     [sg.HorizontalSeparator()],
+                    [sg.Spin([i for i in range(0, 200)], initial_value = 50, font=("Segoe UI", 16), k = 'ageColorNoise', enable_events = True),
+                       sg.T('Add random hue variation to combat too uniform-looking sparkles: hue = random(+|-value). "0" disables this.')],
+                    [sg.T('Hue variation bias towards more positive or negative values: 0 = only positive noise | 0.5 = balanced | 1.0 = only negative noise', pad = (10, (15, 0)))],
+                    [sg.Slider(range = (0.000, 1.000), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
+                               orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
+
+                    [sg.HorizontalSeparator()],
+                    [sg.Checkbox('Change hue over time. (Hue aging)', default = True, k = 'ageColor', enable_events = True)],
+                    [sg.T('')],
                     [sg.T('Hue aging speed factor. Negative values decrease hue [of hsv color] over time, positive increase it. (Neg: towards orange. Pos: towards purple)', pad = (10, (15, 0)))],
                     [sg.Slider(range = (-99.99, 99.99), default_value = -5.50, font=("Segoe UI", 14), resolution = .01, size = (70, 15),
                                orientation = 'horizontal', k = 'ageColorSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
@@ -282,16 +290,9 @@ def make_window(theme):
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster decline of hue value.', default = True, k = 'ageColorSlope', disabled = False, enable_events = True)],
                     [sg.T('(More pronounced upper colors. [Like purple and blue])', pad = (10, (0, 15)))],
-                    [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad = (10, (15, 0)))],
+                    [sg.T('Increase convexity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad = (10, (15, 0)))],
                     [sg.Slider(range = (0.000, 1.199), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
-                               orientation = 'horizontal', k = 'ageColorSlopeConcavity', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
-
-                    [sg.HorizontalSeparator()],
-                    [sg.Spin([i for i in range(0, 200)], initial_value = 50, font=("Segoe UI", 16), k = 'ageColorNoise', enable_events = True),
-                       sg.T('Add random hue variation to combat too uniform-looking hue-aging: hue = random(+|-value). "0" disables this.')],
-                    [sg.T('Hue variation bias towards more positive or negative values: 0 = only positive noise | 0.5 = balanced | 1.0 = only negative noise', pad = (10, (15, 0)))],
-                    [sg.Slider(range = (0.000, 1.000), default_value = 0.420, font=("Segoe UI", 14), resolution = .001, size = (70, 15),
-                               orientation = 'horizontal', k = 'ageColorNoiseMod', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())]
+                               orientation = 'horizontal', k = 'ageColorSlopeConcavity', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())]
                     ]
 
     dynamic_layout = [[sg.Text('Dynamics settings')],
@@ -467,9 +468,6 @@ def main(config):
             window['ageColorSlope'].update(disabled = True)
             window['ageColorSlopeConcavity'].update(disabled = True)
             window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_background_color())
-            window['ageColorNoise'].update(disabled = True)
-            window['ageColorNoiseMod'].update(disabled = True)
-            window['ageColorNoiseMod'].Widget.config(troughcolor = sg.theme_background_color())
         else:
             window['ageColorSpeed'].update(disabled = False)
             window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_slider_color())
@@ -478,9 +476,6 @@ def main(config):
             window['ageColorSlope'].update(disabled = False)
             window['ageColorSlopeConcavity'].update(disabled = False)
             window['ageColorSlopeConcavity'].Widget.config(troughcolor = sg.theme_slider_color())
-            window['ageColorNoise'].update(disabled = False)
-            window['ageColorNoiseMod'].update(disabled = False)
-            window['ageColorNoiseMod'].Widget.config(troughcolor = sg.theme_slider_color())
             if values['ageColorSlope']:
                 window['ageColorSpeed'].update(disabled = True)
                 window['ageColorSpeed'].Widget.config(troughcolor = sg.theme_background_color())
