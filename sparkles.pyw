@@ -121,20 +121,6 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     # I didn't like this whole ordeal. I suck and expect things to be more easy. :P
 
 
-def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
-    setWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
-    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
-    SetLayeredWindowAttributes(hwnd, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
-    # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
-    # It's not necessary to set the SWP_SHOWWINDOW flag.
-    # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
-    # SWP_NOSIZE: Retains the current size (ignores the cx and cy parameters).
-    # GWL_EXSTYLE: Retrieve the extended window styles of the window.
-    # WS_EX_TRANSPARENT: The window should not be painted until siblings beneath the window have been painted, making it transparent.
-    # WS_EX_LAYERED: The window is a layered window, so that we can set attributes like color with SetLayeredWindowAttributes ...
-    # LWA_COLORKEY: ... and make that color the transparent color of the window.
-
-
 class Particle(object):
     """
     Superclass for other particle types.
@@ -159,7 +145,7 @@ class ParticleClass(Particle):
         vel : (x,y) : tuple/list x,y velocity at time of creation.
         gravity : (x,y) : tuple/list x,y gravity effecting the particle.
         container : list : The passed in list that contains all the particles to draw.
-            Used so particles can be deleted.
+        color : Color : Used so particles can be deleted.
         """
         self.surface = surface
         self.pos = Vec2d(pos)
@@ -249,8 +235,10 @@ def clamp(val, minval, maxval):
 # @lru_cache(maxsize = 1024)  # TypeError: unhashable type: 'list' because particleContainer?
 def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame):
     loop = True
+    mostUppereLeftPart= []
     while loop:
         clock_tick(FPS)  # limit the fps of the program
+        setFocus(handleWindowDeviceContext)
         display_window_fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
         windll_user32_GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
         firstPos = (mousePosition.x - offsetX, mousePosition.y - offsetY)
@@ -263,7 +251,7 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
         # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
 
         for event in pygame.event.get():
-            setFocus(hwnd)  # Brings window back to focus if any key or mouse button is pressed.
+            #setFocus(handleWindowDeviceContext)  # Brings window back to focus if any key or mouse button is pressed.
             # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
             # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
             if event.type == pygame.QUIT:
@@ -316,13 +304,22 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
         for part in particleContainer:
             part.updateParticle()
 
+        if markPosition is True:
+            markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2)#.get_rect()  # used for tuning offset
+        pygame_display_update()
+        secondPos = firstPos  # for getting mouse velocity
+
+        # for part in particleContainer:
+        #     mostUppereLeftPart = mostUppereLeftPart.append(part.pos)
+
+
         ''' I tried to optimize the code by only updating the used display area instead of the whole screen.
         Performance of pygame.display.update() depends on the following: (obviously)
         - area of rectangle
         - number of rectangles
         If one rectangle is smaller than the other it is drawn faster. I use that in other.py to speed up drawing text alongside the mouse.
         There it makes a big difference if I update the whole screen or just the small rectangle with the text. (times two)
-            (If drawColor is true, four rectangles are updated. But that is still faster than updating the whole screen.)
+            (If drawColor and textOutline is true, five rectangles are updated. But that is still faster than updating the whole screen.)
 
         The following code produces hundreds of rectangles. In this case the huge amount of rectangles are negating any performance
         improvements I gained by reducing the area down to a combined couple hundred pixels.
@@ -353,10 +350,23 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
         #     oldParticleContainer.append(partRect)
         '''
 
-        if markPosition is True:
-            markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2)#.get_rect()  # used for tuning offset
-        pygame_display_update()
-        secondPos = firstPos  # for getting mouse velocity
+
+def setWindowAttributes(handleWindowDeviceContext):  # set all kinds of option for win32 windows
+    NOSIZE = 1
+    NOMOVE = 2
+    TOPMOST = -1
+    # NOT_TOPMOST = -2
+    setWindowPos(handleWindowDeviceContext, TOPMOST, 0, 0, 0, 0, NOMOVE | NOSIZE)
+    SetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE, GetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
+    SetLayeredWindowAttributes(handleWindowDeviceContext, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
+    # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
+    # It's not necessary to set the SWP_SHOWWINDOW flag.
+    # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
+    # SWP_NOSIZE: Retains the current size (ignores the cx and cy parameters).
+    # GWL_EXSTYLE: Retrieve the extended window styles of the window.
+    # WS_EX_TRANSPARENT: The window should not be painted until siblings beneath the window have been painted, making it transparent.
+    # WS_EX_LAYERED: The window is a layered window, so that we can set attributes like color with SetLayeredWindowAttributes ...
+    # LWA_COLORKEY: ... and make that color the transparent color of the window.
 
 
 cleanup_mei()  # see comment inside
@@ -374,6 +384,7 @@ if not config.has_section("SPARKLES"):
 readVariables()
 drawParticles: bool = True  # For dynamic: Don't draw particles if mouse doesn't move
 particleContainer = []
+mostUppereLeftPart = []
 numParticlesBackup = numParticles
 mouseSpeedPixelPerFrame = 0
 mousePosition = POINT()
@@ -382,9 +393,7 @@ secondPos = firstPos
 mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
 clock = pygame.time.Clock()  # for FPS limiting
 info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
-setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
-setFocus = windll.user32.SetFocus  # sets focus to
-flags = pygame.FULLSCREEN  # | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
+flags = pygame.FULLSCREEN | pygame.HWSURFACE # | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
 # FULLSCREEN: Create a fullscreen display
 # DOUBLEBUF: Double buffering. Creates a separate block of memory to apply all the draw routines and then copying that block (buffer) to video memory. (Thanks, Foon)
 # HWSURFACE: hardware accelerated window, only in FULLSCREEN. (Uses memory on video card)
@@ -396,10 +405,49 @@ shiftAgeColorNoise = ageColorNoiseRange[round((ageColorNoise * 2) * ageColorNois
 transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
 # ---------- Set things up:
-display_window = pygame.display.set_mode((info.current_w, info.current_h), flags, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
+display_window = pygame.display.set_mode((0, 0), flags, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
 display_window.fill(transparentColor)  # fill with tranparent color set in win32gui.SetLayeredWindowAttributes
-hwnd = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
-setWindowAttributes(hwnd)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
+#setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
+setFocus = windll.user32.SetFocus  # sets focus to
+handleWindowDeviceContext = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
+#setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
+
+
+from ctypes import windll, Structure, c_long, byref #windows only
+
+
+class RECT(Structure):
+    _fields_ = [
+    ('left',    c_long),
+    ('top',     c_long),
+    ('right',   c_long),
+    ('bottom',  c_long),
+    ]
+    def width(self):  return self.right  - self.left
+    def height(self): return self.bottom - self.top
+
+
+def onTop(hwnd):
+    SetWindowPos = windll.user32.SetWindowPos
+    GetWindowRect = windll.user32.GetWindowRect
+    rc = RECT()
+    GetWindowRect(hwnd, byref(rc))
+    SetWindowPos(hwnd, -1, rc.left, rc.top, 0, 0, 0x0001)
+    SetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE, GetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
+    SetLayeredWindowAttributes(handleWindowDeviceContext, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
+
+
+onTop(handleWindowDeviceContext)
+# from ctypes import POINTER, WINFUNCTYPE, windll
+# from ctypes.wintypes import BOOL, HWND, RECT
+# prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
+# paramflags = (1, "hwnd"), (2, "lprect")
+# GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
+# rect = GetWindowRect(handleWindowDeviceContext)
+# x = rect.left
+# y = rect.top
+# import os
+# os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x,y)
 if not useOffset:
     offsetX = 0
     offsetY = 0
@@ -413,7 +461,7 @@ pygame_display_update = pygame.display.update
 ONE_THIRD = 1.0/3.0
 
 # ---------- Start the lööp:
-setFocus(hwnd)  # sets focus on pygame window
+setFocus(handleWindowDeviceContext)  # sets focus on pygame window
 #with cProfile.Profile() as pr:
 loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame)
 #stats = pstats.Stats(pr)
