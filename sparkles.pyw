@@ -27,7 +27,7 @@ import pyximport
 pyximport.install(pyimport = True, inplace = False)  # changew to true to stop compiling
 import pygame.gfxdraw
 from pygame.locals import *  # for Color
-from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong
+from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, SetWindowPos
 from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED
 from win32api import RGB
 
@@ -39,13 +39,12 @@ from win32api import RGB
 from math import sqrt
 from random import randrange, uniform
 from vec2d import Vec2d
-
+from os import path, listdir, environ
 
 def cleanup_mei():
     """
     Rudimentary workaround for https://github.com/pyinstaller/pyinstaller/issues/2379
     """
-    from os import path, listdir
     import sys
     from shutil import rmtree
 
@@ -232,13 +231,26 @@ def clamp(val, minval, maxval):
     return val
 
 
+def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
+    SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT,)
+    SetLayeredWindowAttributes(hwnd, RGB(*transparentColorTuple), 255, LWA_COLORKEY)
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+    # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
+    # It's not necessary to set the SWP_SHOWWINDOW flag.
+    # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
+    # SWP_NOSIZE: Retains the current size (ignores the cx and cy parameters).
+    # GWL_EXSTYLE: Retrieve the extended window styles of the window.
+    # WS_EX_TRANSPARENT: The window should not be painted until siblings beneath the window have been painted, making it transparent.
+    # WS_EX_LAYERED: The window is a layered window, so that we can set attributes like color with SetLayeredWindowAttributes ...
+    # LWA_COLORKEY: ... and make that color the transparent color of the window.
+
+
 # @lru_cache(maxsize = 1024)  # TypeError: unhashable type: 'list' because particleContainer?
 def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame):
     loop = True
-    mostUppereLeftPart= []
+    mostUppereLeftPart = []
     while loop:
         clock_tick(FPS)  # limit the fps of the program
-        setFocus(handleWindowDeviceContext)
         display_window_fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
         windll_user32_GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
         firstPos = (mousePosition.x - offsetX, mousePosition.y - offsetY)
@@ -261,8 +273,9 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
                     loop = False
 
         # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
+        mouseSpeedPixelPerFrame = sqrt((mouseVelocity[0] * mouseVelocity[0]) + (mouseVelocity[1] * mouseVelocity[1]))
         if dynamic is True:
-            mouseSpeedPixelPerFrame = sqrt((mouseVelocity[0] * mouseVelocity[0]) + (mouseVelocity[1] * mouseVelocity[1]))
+            #mouseSpeedPixelPerFrame = sqrt((mouseVelocity[0] * mouseVelocity[0]) + (mouseVelocity[1] * mouseVelocity[1]))
             if printMouseSpeed: print("Mouse speed in pixel distance traveled this frame: ", mouseSpeedPixelPerFrame)
             drawParticles = False
             if mouseSpeedPixelPerFrame == 0:
@@ -305,13 +318,35 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
             part.updateParticle()
 
         if markPosition is True:
-            markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2)#.get_rect()  # used for tuning offset
-        pygame_display_update()
-        secondPos = firstPos  # for getting mouse velocity
+            markPositionRect = pygame.draw.circle(display_window, "#ff0000", firstPos, 2)  # Circle at origin point used by user for tuning offset
 
         # for part in particleContainer:
         #     mostUppereLeftPart = mostUppereLeftPart.append(part.pos)
 
+        pygame.display.update()
+        secondPos = firstPos  # for getting mouse velocity
+
+
+        #print(int(clock.get_fps()))
+
+        # ---------------------
+        # Drawing a rectangle that grows with mouseVelocity didn't work.
+        # Particles are consisting longer than mouse movement, thus would get killed too early. :(
+        # And the rectangle need to grow too fast anyway...
+        #
+        # blitRect = pygame.Rect((0, 0), (0, 0))
+        # blitRectOld = pygame.Rect((0, 0), (0, 0))
+        #
+        # blitRectSize = int(mouseSpeedPixelPerFrame*20)
+        # if blitRectSize >= int(info.current_w): blitRectSize = info.current_w
+        # blitRect = pygame.Rect(mousePosition.x-(blitRectSize/2), mousePosition.y-(blitRectSize/2), blitRectSize, blitRectSize)
+        # blitRectOld = blitRect
+        # colorBlitRectSurface = pygame.Surface((blitRectSize, blitRectSize))
+        # colorBlitRectSurface.fill((100, 0, 0, 50), blitRect)
+        # colorBlitRect = colorBlitRectSurface.get_rect()
+        # display_window.blit(colorBlitRectSurface, colorBlitRect)  # blit'it
+        #
+        # pygame.display.update(blitRect, blitRectOld, colorBlitRect)
 
         ''' I tried to optimize the code by only updating the used display area instead of the whole screen.
         Performance of pygame.display.update() depends on the following: (obviously)
@@ -351,27 +386,12 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
         '''
 
 
-def setWindowAttributes(handleWindowDeviceContext):  # set all kinds of option for win32 windows
-    NOSIZE = 1
-    NOMOVE = 2
-    TOPMOST = -1
-    # NOT_TOPMOST = -2
-    setWindowPos(handleWindowDeviceContext, TOPMOST, 0, 0, 0, 0, NOMOVE | NOSIZE)
-    SetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE, GetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
-    SetLayeredWindowAttributes(handleWindowDeviceContext, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
-    # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
-    # It's not necessary to set the SWP_SHOWWINDOW flag.
-    # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
-    # SWP_NOSIZE: Retains the current size (ignores the cx and cy parameters).
-    # GWL_EXSTYLE: Retrieve the extended window styles of the window.
-    # WS_EX_TRANSPARENT: The window should not be painted until siblings beneath the window have been painted, making it transparent.
-    # WS_EX_LAYERED: The window is a layered window, so that we can set attributes like color with SetLayeredWindowAttributes ...
-    # LWA_COLORKEY: ... and make that color the transparent color of the window.
-
-
 cleanup_mei()  # see comment inside
+environ['SDL_VIDEO_WINDOW_POS'] = '0,0'  # Set window position to (0,0) as that is necessary now for some reason
 pygame.init()
 pygame.display.set_caption('PoopStuckToYourMouse - Sparkles')  # title(stupid)
+icon = pygame.image.load('.\poop.png')
+pygame.display.set_icon(icon)
 # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
 # --------- Initiate variables:
@@ -391,12 +411,9 @@ mousePosition = POINT()
 firstPos = (mousePosition.x, mousePosition.y)  # Initiate positions
 secondPos = firstPos
 mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
+blitRectSize = 5
 clock = pygame.time.Clock()  # for FPS limiting
 info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
-flags = pygame.FULLSCREEN | pygame.HWSURFACE # | pygame.DOUBLEBUF | pygame.HWSURFACE  # flags to set in pygame.display.set_mode
-# FULLSCREEN: Create a fullscreen display
-# DOUBLEBUF: Double buffering. Creates a separate block of memory to apply all the draw routines and then copying that block (buffer) to video memory. (Thanks, Foon)
-# HWSURFACE: hardware accelerated window, only in FULLSCREEN. (Uses memory on video card)
 
 # ---------- Correct input errors and precalculate things:
 ageColorNoiseMod = clamp(ageColorNoiseMod, 0.0, 1.0)
@@ -405,49 +422,37 @@ shiftAgeColorNoise = ageColorNoiseRange[round((ageColorNoise * 2) * ageColorNois
 transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
 # ---------- Set things up:
-display_window = pygame.display.set_mode((0, 0), flags, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
-display_window.fill(transparentColor)  # fill with tranparent color set in win32gui.SetLayeredWindowAttributes
-#setWindowPos = windll.user32.SetWindowPos  # see setWindowAttributes()
+numDisplays = pygame.display.get_num_displays()
+if numDisplays != 1:
+    print()
+    print("----------- More than one displays detected -----------")
+    print("pygame.display.get_num_displays = ", pygame.display.get_num_displays())
+    print("pygame.display.Info = ", pygame.display.Info())
+    print("pygame.display.get_desktop_sizes = ", pygame.display.get_desktop_sizes())
+    print()
+
+    info = pygame.display.get_desktop_sizes()
+
+    # Get highest display height and widest width
+    listHeights = []
+    combinedWidth = 0
+    i = 0
+    while i < numDisplays:
+        combinedWidth = combinedWidth + info[i][0]
+        i = i + 1
+    highestHeight = max(info, key=lambda x: x[1])
+
+    print("biggestHeight = ", highestHeight[1])
+    print("combinedWidth = ", combinedWidth)
+    print()
+
+    display_window = pygame.display.set_mode((combinedWidth, highestHeight[1]), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
+else:
+    display_window = pygame.display.set_mode((0, 0), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
+display_window.fill(transparentColor)  # fill with transparent color set in win32gui.SetLayeredWindowAttributes
 setFocus = windll.user32.SetFocus  # sets focus to
 handleWindowDeviceContext = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
-#setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
-
-
-from ctypes import windll, Structure, c_long, byref #windows only
-
-
-class RECT(Structure):
-    _fields_ = [
-    ('left',    c_long),
-    ('top',     c_long),
-    ('right',   c_long),
-    ('bottom',  c_long),
-    ]
-    def width(self):  return self.right  - self.left
-    def height(self): return self.bottom - self.top
-
-
-def onTop(hwnd):
-    SetWindowPos = windll.user32.SetWindowPos
-    GetWindowRect = windll.user32.GetWindowRect
-    rc = RECT()
-    GetWindowRect(hwnd, byref(rc))
-    SetWindowPos(hwnd, -1, rc.left, rc.top, 0, 0, 0x0001)
-    SetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE, GetWindowLong(handleWindowDeviceContext, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
-    SetLayeredWindowAttributes(handleWindowDeviceContext, RGB(*transparentColorTuple), 0, LWA_COLORKEY)
-
-
-onTop(handleWindowDeviceContext)
-# from ctypes import POINTER, WINFUNCTYPE, windll
-# from ctypes.wintypes import BOOL, HWND, RECT
-# prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
-# paramflags = (1, "hwnd"), (2, "lprect")
-# GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
-# rect = GetWindowRect(handleWindowDeviceContext)
-# x = rect.left
-# y = rect.top
-# import os
-# os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x,y)
+setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
 if not useOffset:
     offsetX = 0
     offsetY = 0
@@ -461,7 +466,7 @@ pygame_display_update = pygame.display.update
 ONE_THIRD = 1.0/3.0
 
 # ---------- Start the lööp:
-setFocus(handleWindowDeviceContext)  # sets focus on pygame window
+#setFocus(handleWindowDeviceContext)  # sets focus on pygame window
 #with cProfile.Profile() as pr:
 loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame)
 #stats = pstats.Stats(pr)
