@@ -22,19 +22,19 @@ import configparser
 from ctypes import byref, c_int, Structure, windll
 
 import pygame
-import pyximport
-
-pyximport.install(pyimport = True, inplace = False)  # changew to true to stop compiling
+# import pyximport
+# import cython
+# pyximport.install(pyimport = True, inplace = False)  # changew to true to stop compiling
 import pygame.gfxdraw
 from pygame.locals import *  # for Color
 from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, SetWindowPos
 from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED
 from win32api import RGB
 
-#import cProfile
-#import pstats
-#import cython
+import cProfile
+import pstats
 #from functools import lru_cache
+from multiprocessing import Pool
 
 from math import sqrt
 from random import randrange, uniform
@@ -250,20 +250,8 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
     loop = True
     mostUppereLeftPart = []
     while loop:
-        clock_tick(FPS)  # limit the fps of the program
-        display_window_fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
-        windll_user32_GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
-        firstPos = (mousePosition.x - offsetX, mousePosition.y - offsetY)
-        mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
-        if interpolateMouseMovement:
-            firstMiddlePos = (firstPos[0] - (mouseVelocity[0] * ONE_THIRD),
-                              firstPos[1] - (mouseVelocity[1] * ONE_THIRD))  # To triple resolution
-            secondMiddlePos = (firstPos[0] - (mouseVelocity[0] - (mouseVelocity[0] * ONE_THIRD)),
-                               firstPos[1] - (mouseVelocity[1] - (mouseVelocity[1] * ONE_THIRD)))
-        # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
-
         for event in pygame.event.get():
-            #setFocus(handleWindowDeviceContext)  # Brings window back to focus if any key or mouse button is pressed.
+            # setFocus(handleWindowDeviceContext)  # Brings window back to focus if any key or mouse button is pressed.
             # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
             # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
             if event.type == pygame.QUIT:
@@ -271,6 +259,18 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
             elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
                 if event.key == pygame.K_ESCAPE:
                     loop = False
+
+        clock_tick(FPS)  # limit the fps of the program
+        display_window_fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
+        windll_user32_GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
+        firstPos = (mousePosition.x - offsetX, mousePosition.y - offsetY)
+        mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
+        if interpolateMouseMovement:
+            firstMiddlePos =   (firstPos[0] - (mouseVelocity[0] * ONE_THIRD),
+                                firstPos[1] - (mouseVelocity[1] * ONE_THIRD))  # To triple resolution
+            secondMiddlePos =  (firstPos[0] - (mouseVelocity[0] - (mouseVelocity[0] * ONE_THIRD)),
+                                firstPos[1] - (mouseVelocity[1] - (mouseVelocity[1] * ONE_THIRD)))
+        # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
 
         # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
         mouseSpeedPixelPerFrame = sqrt((mouseVelocity[0] * mouseVelocity[0]) + (mouseVelocity[1] * mouseVelocity[1]))
@@ -296,12 +296,14 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
                 numParticles = levelNumParticles[3]
                 drawParticles = True
 
+        #---multi processing entry
         x = 0
         y = 0
         while x < numParticles and drawParticles is True:
             if particleColorRandom is True: particleColor = (randrange(256), randrange(256), randrange(256))
             if not interpolateMouseMovement:
-                particleContainer_append(ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
+                print("pool")
+                #pool.apply_async(particleContainer_append, (ParticleClass(display_window, firstPos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame)))
                 y = -1
             elif y == 0:
                 particleContainer_append(ParticleClass(display_window, firstMiddlePos, mouseVelocity, GRAVITY, particleContainer, particleColor, mouseSpeedPixelPerFrame))
@@ -354,7 +356,7 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
         - number of rectangles
         If one rectangle is smaller than the other it is drawn faster. I use that in other.py to speed up drawing text alongside the mouse.
         There it makes a big difference if I update the whole screen or just the small rectangle with the text. (times two)
-            (If drawColor and textOutline is true, five rectangles are updated. But that is still faster than updating the whole screen.)
+        (If drawColor and textOutline is true, five rectangles are updated. But that is still faster than updating the whole screen.)
 
         The following code produces hundreds of rectangles. In this case the huge amount of rectangles are negating any performance
         improvements I gained by reducing the area down to a combined couple hundred pixels.
@@ -386,112 +388,120 @@ def loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, pa
         '''
 
 
-cleanup_mei()  # see comment inside
-environ['SDL_VIDEO_WINDOW_POS'] = '0,0'  # Set window position to (0,0) as that is necessary now for some reason
-pygame.init()
-pygame.display.set_caption('PoopStuckToYourMouse - Sparkles')  # title(stupid)
-icon = pygame.image.load('.\poop.png')
-pygame.display.set_icon(icon)
-# pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
+if __name__ == "__main__":
+    #---------- multiproc initialisation
+    #
+    #pool=Pool(processes=2)
+    # res=pool.apply_async(square,(10,))
+    # print(res.get())
 
-# --------- Initiate variables:
-config = CaseConfigParser()
-parseList = CaseConfigParser(converters={'list': lambda x: [i.strip() for i in x.split(',')]})
-config.read("config.ini")  # Read config file
-config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
-if not config.has_section("SPARKLES"):
-    setDefaults()
-readVariables()
-drawParticles: bool = True  # For dynamic: Don't draw particles if mouse doesn't move
-particleContainer = []
-mostUppereLeftPart = []
-numParticlesBackup = numParticles
-mouseSpeedPixelPerFrame = 0
-mousePosition = POINT()
-firstPos = (mousePosition.x, mousePosition.y)  # Initiate positions
-secondPos = firstPos
-mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
-blitRectSize = 5
-clock = pygame.time.Clock()  # for FPS limiting
-info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
 
-# ---------- Correct input errors and precalculate things:
-ageColorNoiseMod = clamp(ageColorNoiseMod, 0.0, 1.0)
-ageColorNoiseRange = [x for x in range(-ageColorNoise, ageColorNoise+1)]
-shiftAgeColorNoise = ageColorNoiseRange[round((ageColorNoise * 2) * ageColorNoiseMod)]
-transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
+    cleanup_mei()  # see comment inside
+    environ['SDL_VIDEO_WINDOW_POS'] = '0,0'  # Set window position to (0,0) as that is necessary now for some reason
+    pygame.init()
+    pygame.display.set_caption('PoopStuckToYourMouse - Sparkles')  # title(stupid)
+    icon = pygame.image.load('.\poop.png')
+    pygame.display.set_icon(icon)
+    # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
-# ---------- Set things up:
-numDisplays = pygame.display.get_num_displays()
-if numDisplays != 1:
-    print()
-    print("----------- More than one displays detected -----------")
-    print("pygame.display.get_num_displays = ", pygame.display.get_num_displays())
-    print("pygame.display.Info = ", pygame.display.Info())
-    print("pygame.display.get_desktop_sizes = ", pygame.display.get_desktop_sizes())
-    print()
+    # --------- Initiate variables:
+    config = CaseConfigParser()
+    parseList = CaseConfigParser(converters={'list': lambda x: [i.strip() for i in x.split(',')]})
+    config.read("config.ini")  # Read config file
+    config.optionxform = str  # Read/write case-sensitive (Actually, read/write as string, which is case-sensitive)
+    if not config.has_section("SPARKLES"):
+        setDefaults()
+    readVariables()
+    drawParticles: bool = True  # For dynamic: Don't draw particles if mouse doesn't move
+    particleContainer = []
+    mostUppereLeftPart = []
+    numParticlesBackup = numParticles
+    mouseSpeedPixelPerFrame = 0
+    mousePosition = POINT()
+    firstPos = (mousePosition.x, mousePosition.y)  # Initiate positions
+    secondPos = firstPos
+    mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
+    blitRectSize = 5
+    clock = pygame.time.Clock()  # for FPS limiting
+    info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
 
-    info = pygame.display.get_desktop_sizes()
+    # ---------- Correct input errors and precalculate things:
+    ageColorNoiseMod = clamp(ageColorNoiseMod, 0.0, 1.0)
+    ageColorNoiseRange = [x for x in range(-ageColorNoise, ageColorNoise+1)]
+    shiftAgeColorNoise = ageColorNoiseRange[round((ageColorNoise * 2) * ageColorNoiseMod)]
+    transparentColorTuple = tuple(int(transparentColor.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))  # convert transparentColor to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
-    # Get highest display height and widest width
-    listHeights = []
-    combinedWidth = 0
-    i = 0
-    while i < numDisplays:
-        combinedWidth = combinedWidth + info[i][0]
-        i = i + 1
-    highestHeight = max(info, key=lambda x: x[1])
+    # ---------- Set things up:
+    numDisplays = pygame.display.get_num_displays()
+    if numDisplays != 1:
+        print()
+        print("----------- More than one displays detected -----------")
+        print("pygame.display.get_num_displays = ", pygame.display.get_num_displays())
+        print("pygame.display.Info = ", pygame.display.Info())
+        print("pygame.display.get_desktop_sizes = ", pygame.display.get_desktop_sizes())
+        print()
 
-    print("biggestHeight = ", highestHeight[1])
-    print("combinedWidth = ", combinedWidth)
-    print()
+        info = pygame.display.get_desktop_sizes()
 
-    display_window = pygame.display.set_mode((combinedWidth, highestHeight[1]), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
-else:
-    display_window = pygame.display.set_mode((0, 0), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
-display_window.fill(transparentColor)  # fill with transparent color set in win32gui.SetLayeredWindowAttributes
-setFocus = windll.user32.SetFocus  # sets focus to
-handleWindowDeviceContext = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
-setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
-if not useOffset:
-    offsetX = 0
-    offsetY = 0
+        # Get highest display height and widest width
+        listHeights = []
+        combinedWidth = 0
+        i = 0
+        while i < numDisplays:
+            combinedWidth = combinedWidth + info[i][0]
+            i = i + 1
+        highestHeight = max(info, key=lambda x: x[1])
 
-# --------- Optimizations:
-particleContainer_append = particleContainer.append
-clock_tick = clock.tick
-display_window_fill = display_window.fill
-windll_user32_GetCursorPos = windll.user32.GetCursorPos
-pygame_display_update = pygame.display.update
-ONE_THIRD = 1.0/3.0
+        print("biggestHeight = ", highestHeight[1])
+        print("combinedWidth = ", combinedWidth)
+        print()
 
-# ---------- Start the lööp:
-#setFocus(handleWindowDeviceContext)  # sets focus on pygame window
-#with cProfile.Profile() as pr:
-loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame)
-#stats = pstats.Stats(pr)
-#stats.sort_stats(pstats.SortKey.TIME)
-#stats.print_stats()
+        display_window = pygame.display.set_mode((combinedWidth, highestHeight[1]), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
+    else:
+        display_window = pygame.display.set_mode((0, 0), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
+    display_window.fill(transparentColor)  # fill with transparent color set in win32gui.SetLayeredWindowAttributes
+    setFocus = windll.user32.SetFocus  # sets focus to
+    handleWindowDeviceContext = pygame.display.get_wm_info()['window']  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
+    setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
+    if not useOffset:
+        offsetX = 0
+        offsetY = 0
 
-#loop()
-# ...
-pygame.quit()
+    # --------- Optimizations:
+    particleContainer_append = particleContainer.append
+    clock_tick = clock.tick
+    display_window_fill = display_window.fill
+    windll_user32_GetCursorPos = windll.user32.GetCursorPos
+    pygame_display_update = pygame.display.update
+    ONE_THIRD = 1.0/3.0
 
-''' performance analysis
-cumsec  per call    name
-7.033	0.007466	~:0(<method 'tick' of 'Clock' objects>)             # highest per-call
-4.668	1.23e-05	sparkles.py:223(updateParticle)
-3.014	7.94e-06	sparkles.py:179(updateParticle)
-1.678	0.001781	~:0(<built-in method pygame.display.flip>)          # second highest
-0.9605	1.265e-06	vec2d.py:91(__add__)
-0.9322	2.456e-06	sparkles.py:253(drawParticle)
-0.7923	2.087e-06	sparkles.py:198(outOfBounds)
-0.6166	0.0006545	~:0(<method 'fill' of 'pygame.Surface' objects>)    # third highest
-0.5493	1.414e-06	vec2d.py:140(__mul__)
+    # ---------- Start the lööp:
+    #setFocus(handleWindowDeviceContext)  # sets focus on pygame window
+    with cProfile.Profile() as pr:
+        loop(ONE_THIRD, transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleContainer, particleColor, particleColorRandom, offsetX, offsetY, markPosition, numParticles, dynamic, printMouseSpeed, levelVelocity, levelNumParticles, firstPos, secondPos, drawParticles, mouseSpeedPixelPerFrame)
+    stats = pstats.Stats(pr)
+    stats.sort_stats(pstats.SortKey.TIME)
+    stats.print_stats()
 
-update instead of flip:
-per call
-0.001688	~:0(<built-in method pygame.display.update>)
-0.001781	~:0(<built-in method pygame.display.flip>)
+    #loop()
+    # ...
+    pygame.quit()
 
-'''
+    ''' performance analysis
+    cumsec  per call    name
+    7.033	0.007466	~:0(<method 'tick' of 'Clock' objects>)             # highest per-call
+    4.668	1.23e-05	sparkles.py:223(updateParticle)
+    3.014	7.94e-06	sparkles.py:179(updateParticle)
+    1.678	0.001781	~:0(<built-in method pygame.display.flip>)          # second highest
+    0.9605	1.265e-06	vec2d.py:91(__add__)
+    0.9322	2.456e-06	sparkles.py:253(drawParticle)
+    0.7923	2.087e-06	sparkles.py:198(outOfBounds)
+    0.6166	0.0006545	~:0(<method 'fill' of 'pygame.Surface' objects>)    # third highest
+    0.5493	1.414e-06	vec2d.py:140(__mul__)
+    
+    update instead of flip:
+    per call
+    0.001688	~:0(<built-in method pygame.display.update>)
+    0.001781	~:0(<built-in method pygame.display.flip>)
+    
+    '''
