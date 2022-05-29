@@ -10,8 +10,8 @@
 #                                                                              \
 #  This program is distributed in the hope that it will be useful,             \
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of              \
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               \
-#  GNU General Public License for more details.                                \
+#  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE or SIGNIFICANCE.          \
+#  See the GNU General Public License for more details.                        \
 #                                                                              \
 #  You should have received a copy of the GNU General Public License           \
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.      \
@@ -62,6 +62,14 @@ def cleanup_mei():
                     rmtree(path.join(dir_mei, file))
                 except PermissionError:  # mainly to allow simultaneous pyinstaller instances
                     pass
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = path.abspath(".")
+    return path.join(base_path, relative_path)
 
 
 class CaseConfigParser(configparser.ConfigParser):
@@ -115,7 +123,6 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     showRAM = config.getboolean("OTHER", "showRAM")
     showImage = config.getboolean("OTHER", "showImage")
     imagePath = str(config.get("OTHER", "imagePath"))
-
 
 
 class POINT(Structure):
@@ -172,14 +179,6 @@ def ram_Percent():
         sleep(1)
 
 
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = path.abspath(".")
-    return path.join(base_path, relative_path)
-
-
 _circle_cache = {}
 def _circlepoints(r):
     r = int(round(r))
@@ -218,7 +217,7 @@ def renderTextWithOutline(text, font, fontColor, outlineColor, outlineThickness)
         i = 0
         while j >= i:
             outlineThickness.append(i)
-            i = i+1
+            i += 1
         for each in outlineThickness:
             for dx, dy in _circlepoints(each):
                 wholeSurface.blit(outlineSurface, (dx + each, dy + each))
@@ -244,8 +243,10 @@ def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
     # LWA_COLORKEY: ... and make that color the transparent color of the window.
 
 
-def loop(loop):
+def loop(loop, old_blit_rect, old_color_rect):
     old_rect = blit_rect
+    old_blit_rect = blit_rect
+    old_color_rect = blit_rect
     while loop:
         display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
         windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
@@ -325,23 +326,23 @@ def loop(loop):
                 textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
                 textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
-                display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
-                display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+(2*text_height)))
+                display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height+2))
+                display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+(2*text_height+5)))
             elif showClock and showRAM and not showCPU:
                 textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
                 textCPU = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
-                display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
+                display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height+2))
             elif showCPU and showRAM and not showClock:
                 textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textCPU, blit_rect)  # copy blit_rect to the display Surface object 'text'
-                display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+text_height))
+                display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+text_height+2))
             elif showClock and showCPU and not showRAM:
                 textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
                 textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
-                display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height))
+                display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height+2))
             elif showClock and not (showCPU or showRAM):
                 textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
                 display_window.blit(textClock, blit_rect)
@@ -352,11 +353,11 @@ def loop(loop):
                 textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textRAM, blit_rect)
             pygame.display.update((old_rect, blit_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
-            old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+4))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
+            old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+6))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
 
         # limit the fps of the program
         clock.tick()
-        print(int(clock.get_fps()))
+        # print(int(clock.get_fps()))
 
 
 config = CaseConfigParser()
@@ -424,13 +425,15 @@ font = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)  # S
 outlineFont = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)
 #font = pygame.font.Font("./fonts/Pixel LCD-7.ttf", fontSize)
 text_height = font.get_linesize()
+blit_rect = []  # also
+old_blit_rect = blit_rect  # also
+old_color_rect = []
 
 #----------------- Conditionals
 if showColor:
     textColor = font.render("(888, 888, 888)", True, fontColor, transparentColor)
     blit_rect = textColor.get_rect()
     blit_rect.update(0, 0, blit_rect.width + 2, blit_rect.height + 2)
-    old_blit_rect = blit_rect  # also
     colorSquare = pygame.Surface((42, 42))  # make surface
     colorSquare.fill(fontColor)  # fill surface with color
     color_rect = colorSquare.get_rect()  # get rectangle from surface
@@ -478,7 +481,7 @@ else:
 
 
 setFocus(handleWindowDeviceContext)  # sets focus on pygame window
-loop(looping)
+loop(looping, old_blit_rect, old_color_rect)
 
 if showColor: ReleaseDC(0, handleDeviceContext)
 if showCPU: getCPU.join()
