@@ -263,12 +263,9 @@ def loop(transparentColor, GRAVITY, FPS, interpolateMouseMovement, particleConta
     # mostUppereLeftPart = []
     while loop:
         for event in pygame.event.get():
-            # setFocus(handleWindowDeviceContext)  # Brings window back to focus if any key or mouse button is pressed.
-            # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
-            # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
             if event.type == pygame.QUIT:
                 loop = False
-            elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     loop = False
 

@@ -114,7 +114,7 @@ def getVariablesFromConfig(window):
     window['fontColor'].update(str(config.get("OTHER", "fontColor")))
     window['fontSize'].update(int(config.get("OTHER", "fontSize")))
     window['outlineColor'].update(str(config.get("OTHER", "outlineColor")))
-    #window['outlineThickness'].update(int(config.get("OTHER", "outlineThickness")))
+    window['outlineThickness'].update(int(config.get("OTHER", "outlineThickness")))
     window['showColor'].update(config.getboolean("OTHER", "showColor"))
     window['complementaryColor'].update(config.getboolean("OTHER", "complementaryColor"))
     window['rgbComplement'].update(config.getboolean("OTHER", "rgbComplement"))
@@ -165,7 +165,7 @@ def updateConfig(values):
     config.set("OTHER", "fontColor", str(values['fontColor']))
     config.set("OTHER", "fontSize", str(values['fontSize']))
     config.set("OTHER", "outlineColor", str(values['outlineColor']))
-    #config.set("OTHER", "outlineThickness", str(values['outlineThickness']))
+    config.set("OTHER", "outlineThickness", str(values['outlineThickness']))
     config.set("OTHER", "showColor", str(values['showColor']))
     config.set("OTHER", "complementaryColor", str(values['complementaryColor']))
     config.set("OTHER", "rgbComplement", str(values['rgbComplement']))
@@ -237,7 +237,7 @@ def make_window(theme):
                        sg.Checkbox('Mark position of particle origin. Use for offset tuning', default = False, k = 'markPosition', disabled = False, enable_events = True)],
                       [sg.T('X '), sg.Spin([i for i in range(-99, 99)], initial_value = 20, font=("Segoe UI", 16), k = 'offsetX', disabled = False, enable_events = True),
                        sg.T('Y '), sg.Spin([i for i in range(-99, 99)], initial_value = 10, font=("Segoe UI", 16), k = 'offsetY', disabled = False, enable_events = True),
-                       sg.T('Offset in pixel. (0, 0 = tip of cursor)'), sg.T('                                                                                                                     |')],
+                       sg.T('Offset in pixel. (0, 0 = tip of cursor)'), sg.T('                                                                                                                   |')],
                       [sg.Spin([i for i in range(1, 11)], initial_value = 2, font=("Segoe UI", 16), k = 'particleSize', enable_events = True), sg.T('Particle size in pixel * pixel'),
                        sg.T('                                                                                                                                            Scroll down  |')],
                       [sg.Spin([i for i in range(1, 100)], initial_value = 1, font=("Segoe UI", 16), k = 'numParticles', enable_events = True), sg.T('Number of particles to spawn every frame'),
@@ -343,8 +343,10 @@ def make_window(theme):
                      sg.ColorChooserButton('Outline color picker: %s' % outlineColor, button_color = ("#808080", outlineColor), size = (25, 1), font = ("Segoe UI", 16), k = 'outline color picker button')],
                     [sg.Spin([i for i in range(1, 100)], initial_value = 10, font = ("Segoe UI", 16), k = 'fontSize', enable_events = True),
                      sg.T('Font size in pt.')],
-                    # [sg.Spin([i for i in range(0, 10)], initial_value = 1, font = ("Segoe UI", 16), k = 'outlineThickness', enable_events = True),
-                    #  sg.T('Thickness of the outline in pixel. Use "0" to deactivate the outline')],
+                    [sg.Spin([i for i in range(0, 10)], initial_value = 1, font = ("Segoe UI", 16), k = 'outlineThickness', enable_events = True),
+                     sg.T('Thickness of the outline in pixel. Use "0" to deactivate the outline')],
+                    [sg.HorizontalSeparator()],
+                    [sg.T('Untick all in order to activate the sparkly particles again.', font = ("Segoe UI", 16))],
                     [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default = False, k = 'showColor', disabled = False, enable_events = True)],
                     [sg.Checkbox('Show complementary color instead', default = False, k = 'complementaryColor', disabled = False, enable_events = True)],
                     [sg.Checkbox('rgb complement', default = False, k = 'rgbComplement', disabled = False, enable_events = True),
@@ -394,7 +396,6 @@ def make_window(theme):
 #   print 'Hex is not valid'
 
 
-
 def main(config):
     global particleColor, fontColor, outlineColor, ageColorSpeed, imagePath
     sg.theme('Dark')
@@ -428,8 +429,10 @@ def main(config):
         imagePath = values['imagePath']
         if event in (None, 'Exit'):
             if proc or otherProc:
-                kill_proc_tree(pid = pid)
-                #killProcessUsingOsKill(pid = pid)
+                if isCompiledToExe:
+                    killProcessUsingOsKill(pid = pid)
+                else:
+                    kill_proc_tree(pid = pid)
             proc = False
             otherProc = False
             break
@@ -565,8 +568,10 @@ def main(config):
             answer = sg.popup_yes_no('Reset all settings to defaults?')
             if answer == 'Yes' or answer == 'yes':
                 if proc or otherProc:
-                    kill_proc_tree(pid = pid)
-                    #killProcessUsingOsKill(pid = pid)
+                    if isCompiledToExe:
+                        killProcessUsingOsKill(pid = pid)
+                    else:
+                        kill_proc_tree(pid = pid)
                     print('Subprocess killed')
                 proc = False
                 otherProc = False
@@ -628,38 +633,37 @@ def main(config):
                     window['image'].update(data = get_img_data(imagePath, first = True))
                     doesImageFileExist = True
             if proc or otherProc:
-                kill_proc_tree(pid = pid)
-                #killProcessUsingOsKill(pid = pid)
+                if isCompiledToExe:
+                    killProcessUsingOsKill(pid = pid)
+                else:
+                    kill_proc_tree(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
             if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
-                sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
-                                 auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                #otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW, cwd = getcwd())
-                otherProc = Popen("py other.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                if isCompiledToExe:
+                    otherProc = Popen("other.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW, cwd = getcwd())
+                else:
+                    otherProc = Popen("py other.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = otherProc.pid
                 print('Subprocess Started')
                 print(otherProc, " with process id: ", pid)
-            # elif values['showImage'] and doesImageFileExist:
-            #     sg.popup_no_wait('Starting ...', text_color = '#00ff00', button_type = 5, auto_close = True,
-            #                      auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-            #     otherProc = Popen("py other.py", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
-            #     pid = otherProc.pid
-            #     print('Subprocess Started')
-            #     print(otherProc, " with process id: ", pid)
             elif not values['showColor'] and not values['showClock'] and not values['showCPU'] and not values['showRAM'] and not values['showImage']:
-                sg.popup_no_wait('Starting ... if this is the first time it can take a while', text_color = '#00ff00', button_type = 5, auto_close = True,
+                sg.popup_no_wait('Starting ... ', text_color = '#00ff00', button_type = 5, auto_close = True,
                                  auto_close_duration = 3, non_blocking = True, font = ("Segoe UI", 26), no_titlebar = True, keep_on_top = True)
-                #proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW, cwd = getcwd())
-                proc = Popen("py sparkles.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
+                if isCompiledToExe:
+                    proc = Popen("sparkles.exe", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW, cwd = getcwd())
+                else:
+                    proc = Popen("py sparkles.pyw", shell = False, stdout = PIPE, stdin = PIPE, stderr = PIPE, creationflags = CREATE_NO_WINDOW)
                 pid = proc.pid
                 print('Subprocess Started')
                 print(proc, " with process id: ", pid)
             else:
                 if proc or otherProc:
-                    kill_proc_tree(pid = pid)
-                    #killProcessUsingOsKill(pid = pid)
+                    if isCompiledToExe:
+                        killProcessUsingOsKill(pid = pid)
+                    else:
+                        kill_proc_tree(pid = pid)
                     print('Subprocess killed')
                 proc = False
                 otherProc = False
@@ -700,8 +704,10 @@ def main(config):
 
         elif event in (None, 'Close'):
             if proc or otherProc:
-                kill_proc_tree(pid = pid)
-                #killProcessUsingOsKill(pid = pid)
+                if isCompiledToExe:
+                    killProcessUsingOsKill(pid = pid)
+                else:
+                    kill_proc_tree(pid = pid)
                 print('Subprocess killed')
             proc = False
             otherProc = False
@@ -761,12 +767,25 @@ def main(config):
             window['rgbComplement'].update(values['rgbComplement'])
 
     if proc or otherProc:
-        kill_proc_tree(pid = pid)
-        #killProcessUsingOsKill(pid = pid)
+        if isCompiledToExe:
+            killProcessUsingOsKill(pid = pid)
+        else:
+            kill_proc_tree(pid = pid)
+
+            print("killed last subprocess")
+    print("close window")
     window.close()
 
 
 if __name__ == '__main__':
+    # --------- DEV FLAGS ----------
+    #  -------------------------------
+
+    isCompiledToExe = False
+
+    #  -------------------------------
+    # --------- DEV FLAGS ----------
+
     cleanup_mei()  # see comment inside
     config = CaseConfigParser()
     #parseList = CaseConfigParser(converters = {'list': lambda x: [i.strip() for i in x.split(',')]})

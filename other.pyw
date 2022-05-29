@@ -25,7 +25,7 @@ from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TR
 from win32api import RGB
 from datetime import datetime
 from time import sleep
-from psutil import cpu_percent, virtual_memory
+from psutil import cpu_percent, virtual_memory, Process
 from threading import Thread
 import configparser
 from os import path, listdir, environ
@@ -125,12 +125,8 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     imagePath = str(config.get("OTHER", "imagePath"))
 
 
-class POINT(Structure):
+class POINT(Structure):  # used for the mouse position
     _fields_ = [("x", c_int), ("y", c_int)]
-    # def human_size(bytes, units=(' bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB')):
-    #     """ Returns a human readable string reprentation of bytes"""
-    #     return str(bytes) + units[0] if bytes < 1024 else human_size(bytes >> 10, units[1:])
-    # What's that from?? I'll leave it here for now
 
 
 # Sum of the min & max of (a, b, c)
@@ -167,14 +163,21 @@ def convertFloatTupleToInt(tup):
 
 
 def cpu_Percent():
-    global cpuPercent
-    while True:
-        cpuPercent = cpu_percent(interval = 1)
+    global cpuPercent, loop, devShowOwnCPUPercentInstead
+    processID = Process()
+    if devShowOwnCPUPercentInstead:
+        print(processID)
+    while loop:
+        if devShowOwnCPUPercentInstead:
+            cpuPercent = processID.cpu_percent(interval = 1)
+        else:
+            cpuPercent = cpu_percent(interval = 1)
+        # cpu percent of THIS process
 
 
 def ram_Percent():
-    global ramPercent
-    while True:
+    global ramPercent, loop
+    while loop:
         ramPercent = virtual_memory().percent
         sleep(1)
 
@@ -202,7 +205,7 @@ def _circlepoints(r):
 
 
 def renderTextWithOutline(text, font, fontColor, outlineColor, outlineThickness):
-    textSurface = font.render(text, True, fontColor).convert_alpha()
+    textSurface = font.render(text, True, fontColor)  # .convert_alpha() was there, but made the outline worse
     width = textSurface.get_width() + 2 * outlineThickness
     height = textSurface.get_height() + 2 * outlineThickness
     outlineSurface = pygame.Surface((width, height)).convert_alpha()
@@ -211,7 +214,7 @@ def renderTextWithOutline(text, font, fontColor, outlineColor, outlineThickness)
     outlineSurface.blit(font.render(text, True, outlineColor).convert_alpha(), (0, 0))
 
     #  Paint areas left blank black otherwise if outlineThickness is greater than 2. Heavy on CPU because I'm dumb
-    if outlineThickness > 2:
+    if outlineThickness > 3:
         j = outlineThickness
         outlineThickness = []
         i = 0
@@ -229,6 +232,26 @@ def renderTextWithOutline(text, font, fontColor, outlineColor, outlineThickness)
     return wholeSurface
 
 
+def textWithOutline(text, font, fontColor, outlineColor, outlineThickness):
+    outlineSurf = font.render(text, False, outlineColor)
+    outlineSize = outlineSurf.get_size()
+    textSurf = pygame.Surface((outlineSize[0] + outlineThickness*2, outlineSize[1] + 2*outlineThickness))
+    textRect = textSurf.get_rect()
+    offsets = [(ox, oy)
+               for ox in range(-outlineThickness, 2*outlineThickness, outlineThickness)
+               for oy in range(-outlineThickness, 2*outlineThickness, outlineThickness)
+               if ox != 0 or ox != 0]
+    listOffsets = [list(x) for x in offsets]
+    listOffsets[1][0] -= outlineThickness/2-0.5
+    listOffsets[4][0] += outlineThickness/2-0.5
+    for ox, oy in offsets:
+        px, py = textRect.center
+        textSurf.blit(outlineSurf, outlineSurf.get_rect(center = (px+ox, py+oy)))
+    innerText = font.render(text, False, fontColor)  # .convert_alpha() why are the these everywhere when they make the outline look worse
+    textSurf.blit(innerText, innerText.get_rect(center = textRect.center))
+    return textSurf
+
+
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
     SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
     SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_TRANSPARENT | WS_EX_LAYERED)
@@ -243,32 +266,53 @@ def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
     # LWA_COLORKEY: ... and make that color the transparent color of the window.
 
 
-def loop(loop, old_blit_rect, old_color_rect):
+def loop(old_blit_rect, old_color_rect):
+    global loop
     old_rect = blit_rect
     old_blit_rect = blit_rect
     old_color_rect = blit_rect
     while loop:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                loop = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+        try:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print("loop false, return")
                     loop = False
+                    return  # probably redundant
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        print("loop false, return")
+                        loop = False
+                        return  # probably redundant
+        except KeyboardInterrupt:  # almost never gets killed at a point where this will get triggered. idk
+            loop = False
+            return
 
         windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
 
+        if mousePosition.x > windowWidth - 125 or mousePosition.y > windowHeight - 55:
+            if useOffset:
+                blit_rect.topleft = (mousePosition.x - offsetX - 65, mousePosition.y - offsetY - 60)  # update rectangle position
+            else:
+                blit_rect.topleft = (mousePosition.x - 65, mousePosition.y - 60)
+        else:
+            if useOffset:
+                blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)  # set position of rectangle to mouse cursor
+            else:
+                blit_rect.topleft = (mousePosition.x, mousePosition.y)
+
         if showColor:
             colorPx = rgbIntToTuple(windll.gdi32.GetPixel(handleDeviceContext, mousePosition.x, mousePosition.y))
-            if mousePosition.x > windowWidth - 130 or mousePosition.y > windowHeight - 55:
+
+            if mousePosition.x > windowWidth - 125 or mousePosition.y > windowHeight - 55:
                 if useOffset:
                     color_rect.topleft = (mousePosition.x - offsetX - 65, mousePosition.y - offsetY - 45)  # update rectangle position
                 else:
                     color_rect.topleft = (mousePosition.x - 65, mousePosition.y - 45)
             else:
                 if useOffset:
-                    color_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY + 15)
+                    color_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY + text_height+2)
                 else:
-                    color_rect.topleft = (mousePosition.x, mousePosition.y + 15)
+                    color_rect.topleft = (mousePosition.x, mousePosition.y + text_height+2)
 
             if complementaryColor:
                 if rgbComplement:
@@ -287,76 +331,105 @@ def loop(loop, old_blit_rect, old_color_rect):
             colorSquare.fill(colorPx, small_color_rect)  # fill surface with color, the size and position of smaller rectangle, to create a 1px border
             display_window.blit(colorSquare, color_rect)  # blit'it
 
-            if mousePosition.x > windowWidth - 130 or mousePosition.y > windowHeight - 55:
-                if useOffset:
-                    blit_rect.topleft = (mousePosition.x - offsetX - 125, mousePosition.y - offsetY - 58)  # update rectangle position
-                else:
-                    blit_rect.topleft = (mousePosition.x - 125, mousePosition.y - 58)
-            else:
-                if useOffset:
-                    blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)  # set position of rectangle to mouse cursor
-                else:
-                    blit_rect.topleft = (mousePosition.x, mousePosition.y)
-            #
-            text = font.render(str(colorPx), True, fontColor, '#303030')  # gets color under cursor, then renders it in 'text' Surface object
+            text = font.render(str(colorPx), False, fontColor, '#303030')  # gets color under cursor, then renders it in 'text' Surface object
             display_window.blit(text, blit_rect)  # copy blit_rect to the display Surface object 'text'
 
             pygame.display.update((old_blit_rect, blit_rect, old_color_rect, color_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
             old_blit_rect = ((blit_rect.x - 1, blit_rect.y - 1), (blit_rect.width + 2, blit_rect.height + 2))  # set old_blit_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
             old_color_rect = ((color_rect.x - 1, color_rect.y - 1), (color_rect.width + 2, color_rect.height + 2))
+            display_window.fill(transparentColor, old_color_rect)
+
         elif showImage:
-            if useOffset:
-                blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)
-            else:
-                blit_rect.topleft = (mousePosition.x, mousePosition.y)
             display_window.blit(image, blit_rect)
             pygame.display.update((old_rect, blit_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
             old_rect = ((blit_rect.x - 1, blit_rect.y - 1), (blit_rect.width + 2, blit_rect.height + 2))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
         else:
-            if useOffset:
-                blit_rect.topleft = (mousePosition.x - offsetX, mousePosition.y - offsetY)  # set position of rectangle to mouse cursor
-            else:
-                blit_rect.topleft = (mousePosition.x, mousePosition.y)
             if showClock and showCPU and showRAM:
-                textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
-                textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
-                textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
+                textClock = textWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
+                textCPU = textWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
+                textRAM = textWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
                 display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height+2))
                 display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+(2*text_height+5)))
+
             elif showClock and showRAM and not showCPU:
-                textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
-                textCPU = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
+                textClock = textWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
+                textCPU = textWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
                 display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height+2))
+
             elif showCPU and showRAM and not showClock:
-                textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
-                textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
+                textRAM = textWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
+                textCPU = textWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textCPU, blit_rect)  # copy blit_rect to the display Surface object 'text'
                 display_window.blit(textRAM, (blit_rect[0], blit_rect[1]+text_height+2))
+
             elif showClock and showCPU and not showRAM:
-                textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
-                textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
+                textClock = textWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)
+                textCPU = textWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textClock, blit_rect)  # copy blit_rect to the display Surface object 'text'
                 display_window.blit(textCPU, (blit_rect[0], blit_rect[1]+text_height+2))
+
             elif showClock and not (showCPU or showRAM):
-                textClock = renderTextWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
+                textClock = textWithOutline(str(datetime.now().time()), font, fontColor, outlineColor, outlineThickness)  # gets current time from datetime.now() and formats it to get rid of date, then renders it in 'text' Surface object
                 display_window.blit(textClock, blit_rect)
+
             elif showCPU and not (showClock or showRAM):
-                textCPU = renderTextWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
+                textCPU = textWithOutline(str('CPU: %s' % cpuPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textCPU, blit_rect)
+
             elif showRAM and not (showCPU or showClock):
-                textRAM = renderTextWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
+                textRAM = textWithOutline(str('RAM: %s' % ramPercent), font, fontColor, outlineColor, outlineThickness)
                 display_window.blit(textRAM, blit_rect)
+
             pygame.display.update((old_rect, blit_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
-            old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+6))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
 
-        # display_window.fill(transparentColor)
-        display_window.fill(transparentColor)#, old_rect)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
+            if showClock and showCPU and showRAM:  # Fine tuning of updating rect
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + 2*text_height+0))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
+            elif showClock and showRAM and not showCPU:
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            elif showCPU and showRAM and not showClock:
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            elif showClock and showCPU and not showRAM:
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            elif showClock and showCPU and not showRAM:
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            elif showClock and not (showCPU or showRAM):
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            elif showCPU and not (showClock or showRAM):
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            elif showRAM and not (showCPU or showClock):
+                old_rect = ((blit_rect.x-2, blit_rect.y-2), (blit_rect.width+4, blit_rect.height + text_height+0))
+            # ----------  showCPU, showRAM, showClock only END -----------
+        # display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
+        if devVisibleUpdateRect:
+            display_window.fill("#ff0000", old_rect)
+        else:
+            display_window.fill(transparentColor, old_rect)  # instead of filling the whole screen, fill only small rect
+        # that saves about 7 to 10% time overall
 
-        # limit the fps of the program
-        clock.tick()
-        # print(int(clock.get_fps()))
+        if devPrintFPS:
+            clock.tick(0)
+            print(int(clock.get_fps()))  # print fps in console (average)
+        else:
+            clock.tick(FPS) # limit the fps of the program
+        # print(_circlepoints.cache_info())
+
+
+# --------- DEV FLAGS ----------
+#  -------------------------------
+
+devDebugging = False  # To make it no longer TOPMOST
+devShowOwnCPUPercentInstead = True  # Maybe wrong? Taskmanager different, lower.
+devPrintFPS = False
+devVisibleUpdateRect = False
+
+#  -------------------------------
+# --------- DEV FLAGS ----------
+
+
+
+
 
 
 config = CaseConfigParser()
@@ -404,9 +477,15 @@ if numDisplays != 1:
     print("combinedWidth = ", combinedWidth)
     print()
 
-    display_window = pygame.display.set_mode((combinedWidth, highestHeight[1]), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
+    if devDebugging:
+        display_window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN, vsync = 0)  # not TOPMOST
+    else:
+        display_window = pygame.display.set_mode((combinedWidth, highestHeight[1]), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
 else:
-    display_window = pygame.display.set_mode((0, 0), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
+    if devDebugging:
+        display_window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN, vsync = 0)  # not TOPMOST
+    else:
+        display_window = pygame.display.set_mode((0, 0), 0, vsync = 0)  # vsync only works with OPENGL flag, so far. Might change in the future
 
 #display_window = pygame.display.set_mode((0, 0), 0, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
 display_window.fill(transparentColor)  # fill with transparent color set in win32gui.SetLayeredWindowAttributes
@@ -420,8 +499,17 @@ windowHeight = int(displayInfo.current_h)
 
 #----------------- Other
 clock = pygame.time.Clock()  # for FPS limiting
-font = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)  # Set Font and font size
-outlineFont = pygame.font.Font(resource_path("./fonts/Pixel LCD-7.ttf"), fontSize)
+font = pygame.font.Font(resource_path("./fonts/Nouveau_IBM_Stretch.TTF"), fontSize)  # Set Font and font size
+outlineFont = pygame.font.Font(resource_path("./fonts/Nouveau_IBM_Stretch.TTF"), fontSize)
+# Topaz8: good above 12pt
+# Pixel LCD-7: good above 8, 10
+# Digital Dismay: good above 12
+# ComputoMonospace: good above 8
+# speculum: good for above 7
+# ShareTechMono-Regular: 10, maybe 8 min
+# OxygenMono-Regular: 10 plus
+# Nouveau_IBM_Stretch: very small and suprisingly readable at 8, 9 perfect
+# Nouveau_IBM: min 9, ok looking
 #font = pygame.font.Font("./fonts/Pixel LCD-7.ttf", fontSize)
 text_height = font.get_linesize()
 blit_rect = []  # also
@@ -430,7 +518,7 @@ old_color_rect = []
 
 #----------------- Conditionals
 if showColor:
-    textColor = font.render("(888, 888, 888)", True, fontColor, transparentColor)
+    textColor = font.render("(888, 888, 888)", False, fontColor, transparentColor)
     blit_rect = textColor.get_rect()
     blit_rect.update(0, 0, blit_rect.width + 2, blit_rect.height + 2)
     colorSquare = pygame.Surface((42, 42))  # make surface
@@ -448,31 +536,31 @@ elif showImage:
     looping = True
 elif showCPU or showRAM or showClock:
     if showClock:
-        textClock = renderTextWithOutline("88:88:88.8888888", font, fontColor, outlineColor, outlineThickness)  # draw text to a new Surface. 'transparentColor' is text background color
+        textClock = textWithOutline("88:88:88.8888888", font, fontColor, outlineColor, outlineThickness)  # draw text to a new Surface. 'transparentColor' is text background color
         # "88:88:88.8888888" defines size of resulting rectangle, so we don't have to text.get_rect() inside the while loop
         # 'True' declares use of antialiasing. Antialiasing does not only look better, it is also more optimized. (See: https://www.pygame.org/docs/ref/font.html#pygame.font.Font.render)
         blit_rect = textClock.get_rect()
     if showCPU:
-        textCPU = renderTextWithOutline("CPU: 888.8", font, fontColor, outlineColor, outlineThickness)
+        textCPU = textWithOutline("CPU: 888.8", font, fontColor, outlineColor, outlineThickness)
         getCPU = Thread(target = cpu_Percent)  # define function as separate thread
         getCPU.start()  # start thread
         cpuPercent = 0.0  # initialize variable
         blit_rect = textCPU.get_rect()
     if showRAM:
-        textRAM = renderTextWithOutline("RAM: 888.8", font, fontColor, outlineColor, outlineThickness)
+        textRAM = textWithOutline("RAM: 888.8", font, fontColor, outlineColor, outlineThickness)
         getRAM = Thread(target = ram_Percent)  # define function as separate thread
         getRAM.start()  # start thread
         ramPercent = 0.0  # initialize variable
         blit_rect = textRAM.get_rect()
     if showClock and showCPU and showRAM:
         blit_rect = textClock.get_rect()
-        blit_rect = blit_rect.inflate(0, 18)
+        blit_rect = blit_rect.inflate(0, 2*text_height+2)
     elif showClock and showCPU or showClock and showRAM:
         blit_rect = textClock.get_rect()  # get rectangle size and position (0,0) from Surface 'text', save as Rectangle
-        blit_rect = blit_rect.inflate(0, 8)  # double height
+        blit_rect = blit_rect.inflate(0, text_height+2)  # double height
     elif showCPU and showRAM and not showClock:
         blit_rect = textCPU.get_rect()  # get rectangle size and position (0,0) from Surface 'text', save as Rectangle
-        blit_rect = blit_rect.inflate(0, 8)
+        blit_rect = blit_rect.inflate(0, text_height+2)
     old_rect = blit_rect  # initialize as aswell
     looping = True
 else:
@@ -480,9 +568,11 @@ else:
 
 
 setFocus(handleWindowDeviceContext)  # sets focus on pygame window
-loop(looping, old_blit_rect, old_color_rect)
-
+loop(old_blit_rect, old_color_rect)
+print("exited loop")
 if showColor: ReleaseDC(0, handleDeviceContext)
-if showCPU: getCPU.join()
-if showRAM: getRAM.join()
+print("window handle released")
+if showCPU: getCPU.join(5)
+if showRAM: getRAM.join(5)
+print("threads killed")
 pygame.quit()
