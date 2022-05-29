@@ -248,19 +248,15 @@ def loop(loop, old_blit_rect, old_color_rect):
     old_blit_rect = blit_rect
     old_color_rect = blit_rect
     while loop:
-        display_window.fill(transparentColor)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
-        windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
         for event in pygame.event.get():
-            setFocus(handleWindowDeviceContext) # Brings window back to focus if any key or mouse button is pressed.
-            # WELL IT SHOULD DO THIS, BUT NO... OF COURSE NOT
-            # This is done in order to put the display_window back on top of z-order, because HWND_TOPMOST doesn't work. (Probably because display_window is a child window)
-            # (Doing this too often, like once per frame, crashes pygame without error message. Probably some Windows internal spam protection thing)
             if event.type == pygame.QUIT:
                 loop = False
-            elif event.type == pygame.KEYDOWN:  # --- Note: practically uneccessary because window isn't focused
-                # Wait. If window isn't focused then why is it still on top of z-order (sometimes) AND doesn't react to this event??
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     loop = False
+
+        windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
+
         if showColor:
             colorPx = rgbIntToTuple(windll.gdi32.GetPixel(handleDeviceContext, mousePosition.x, mousePosition.y))
             if mousePosition.x > windowWidth - 130 or mousePosition.y > windowHeight - 55:
@@ -354,6 +350,9 @@ def loop(loop, old_blit_rect, old_color_rect):
                 display_window.blit(textRAM, blit_rect)
             pygame.display.update((old_rect, blit_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
             old_rect = ((blit_rect.x-1, blit_rect.y-1), (blit_rect.width+2, blit_rect.height+6))  # set old_rect size and position so it's one pixel bigger on every side. Removes glitches due to uneven monospace fonts
+
+        # display_window.fill(transparentColor)
+        display_window.fill(transparentColor)#, old_rect)  # fill with color set to be transparent in win32gui.SetLayeredWindowAttributes
 
         # limit the fps of the program
         clock.tick()
