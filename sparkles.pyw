@@ -28,9 +28,8 @@ import pygame
 import pygame.gfxdraw
 from pygame.locals import *  # for Color
 from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, SetWindowPos
-from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED
+from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED, WS_EX_TOOLWINDOW
 from win32api import RGB
-
 # import cProfile
 # import pstats
 # from functools import lru_cache
@@ -180,6 +179,7 @@ class ParticleClass(Particle):
         self.drag = drag
         self.age = particleAge
 
+
     def updateParticle(self):
         #self.vel = (self.vel + self.gravity) * self.drag
         self.vel += self.gravity  # Optimization or not?
@@ -242,6 +242,7 @@ def clamp(val, minval, maxval):
 
 
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
+    windll.user32.SetWindowLongPtrW(hwnd, GWL_EXSTYLE, windll.user32.GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW)  # no taskbar button
     SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT,)
     SetLayeredWindowAttributes(hwnd, RGB(*transparentColorTuple), 255, LWA_COLORKEY)
     SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)

@@ -8,69 +8,72 @@
 ```
 Yea boy! It's the 90s again! Get some _*very elegant*_ poop stuck to your mouse - *like ppl did in the 90s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 90s!! Who cares about 5% CPU! Get this poop stuck to your mouse cursor! Now! NOW!
 
-Draws mouse-cursor-following text, cursor coordinates, color of pixel under cursor, pictures or a clock - for when you really need to keep an eye on the time. Uses PyGame for 'low' resource usage. Works by creating a transparent full-screen window that is click-through, on top of the z-order. (But not on top of the context menus, start menu and all these things.)
+Draws a very nice looking sparkle/glitter/smoke/fire effect following/on your mouse.
+Can also draw mouse-cursor-following text, CPU and RAM usage, pictures or a clock with milliseconds - for when you really need to keep an eye on the time.  
+It can also show you the color of the pixel under the cursor in real RGB, complementary RGB or complementary RYB. (RYB is kinda inaccurate between the r, y, and b colors)  
+Uses PyGame for 'low' resource usage. Works by creating a TOPMOST transparent full-screen window that is click-through and has no taskbar button. (But not on top of the context menus, start menu and all these things.)
 
 The intention for this is to build upon it to create something interesting - like cellular automata to draw fancy graphics over/around mouse cursor. Something like that. We'll see.
+(Hahaha, a year ago I wrote "cellular automata". Pffff.)
 
 ---
 
 Usage:
-- Run PoopStuckToYourMouse.exe for a heavily configurable, nice sparkle effect with velocity and gravity and more. (not optimized)
+- Run PoopStuckToYourMouse.exe for a heavily configurable, very nice sparkle effect with velocity and gravity and more. (not optimized)
 - ^--- "Do it!" - Palpatine
 - Other possibilities: 
    - Display color under mouse cursor
+      - RGB, RGB complementary and RYB complementary (With caveats)
    - Display a clock
    - CPU usage
    - RAM usage
    - Both/All
    - An image
-- You can also run 'other.exe' or 'sparkles.exe' alone. (Or the .py versions) They'll use the settings stored in the 'config.ini' - or if the files doesn't exist, create it with the values saved in 'defaults.ini'.
-
-Important notice:
-- If you execute PoopStuckToYourMouse.exe, (or main.pyw) don't have any other programs running that are also named "other.exe" or "sparkles.exe", otherwise they'll be terminated. So far this is the only working solution to kill the spawned processes. :(
-- ^-- Maybe not?
+- You can also run 'other.exe' or 'sparkles.exe' alone. (Or the .py versions) They'll use the settings stored in the 'config.ini' - or if that file doesn't exist, create it with the values saved in 'defaults.ini'.
 
 ---
 
 Special features:
 - Name is stupid! (Now less vulgar!)
-- Single core capable
+- Single core capable, but sometimes with threads!
 - Fancy colors!
-- Basically just experimentation
+- Basically just an experimentation!
 - It's at least something. *shrugs*
 - Rainbow colors!
-- I completely disregard all Linux users.
+- I completely disregard all Linux users!
+- Good performance!
 
 ---
-
+Sparkles:  
 Performance with 20 particles per frame @60fps: (runs only on a single core)
-- Laptop with AMD A4-6210:              25% CPU usage. (max per core: 25%)
-- Desktop with AMD Ryzen 5 2600 @4Ghz:  5.14% avg CPU usage. (max per core: 8.33%)
+- Laptop with AMD A4-6210:              20 to 25% CPU usage. (max per core: 25%) Now with double the framerate!
+- Desktop with AMD Ryzen 5 2600 @4Ghz:  1.7 to 3.5% CPU usage. (max per core: 8.33%)
 
-Performance of Clock, Color, Image, CPU, RAM ...:
-- Laptop:   3 to 5% CPU usage. (max per core: 25%)
-- Desktop:  0.00 to 0.20% avg CPU usage. (max per core: 8.33%)
-(measured using Resource Monitor)
-
-Ah... currently using the sparkles increases the energy usage of my PC by 20W. Maybe don't use it untill I find a better suited package than PyGame.
-
-For some reason, if no subprocesses are running, PoopStuckToYourMouse.exe (or main.pyw) uses 4 to 5% CPU on my laptop.
-
-Also, running any of the executables for the first time in, maybe, 30 minutes, takes a long time because Windows Defender needs to scan the file again and again. (And, I guess, because they are basically ~15MB big archives full of pure code, they take a long time to scan) If you exclude the folder in the security center then the starting time is only 1/10th or less.
 
 ---
 
 Prerequisites:
-- Windows (I used Windows 10 21H1)
-- PyGame
-- PySimpleGUI
-- psutil
-- pywin32
+- Windows (I used Windows 10 21H2)
 - Pillow
+- configparser 
+- pywin32
+- psutil 
+- pygame 
+- pyinstaller
+- pefile
+- setuptools
+- PySimpleGUI
+- acrylic - Only for the RYB complemantary color
 
 ---
 
-![Current GUI](https://i.imgur.com/u55J7IS.png?raw=true)
+Here you can see what the GUI looks like. There are also small samples of the capabilities of this thing visible.
+
+![Current GUI](https://i.imgur.com/eDaJJLI.png?raw=true)  
+![Current GUI](https://i.imgur.com/powKnfT.png?raw=true)  
+![Current GUI](https://i.imgur.com/E73vlHL.png?raw=true)  
+![Current GUI](https://i.imgur.com/PQeCyuU.png?raw=true)  
+
 
 ---
 Thank you, various netizens, for all the StackOverflow questions and answers that helped me grasp an incredibly rudimentary understanding of Python.

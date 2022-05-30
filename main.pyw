@@ -115,6 +115,7 @@ def getVariablesFromConfig(window):
     window['fontSize'].update(int(config.get("OTHER", "fontSize")))
     window['outlineColor'].update(str(config.get("OTHER", "outlineColor")))
     window['outlineThickness'].update(int(config.get("OTHER", "outlineThickness")))
+    window['fontAntialiasing'].update(config.getboolean("OTHER", "fontAntialiasing"))
     window['showColor'].update(config.getboolean("OTHER", "showColor"))
     window['complementaryColor'].update(config.getboolean("OTHER", "complementaryColor"))
     window['rgbComplement'].update(config.getboolean("OTHER", "rgbComplement"))
@@ -166,6 +167,7 @@ def updateConfig(values):
     config.set("OTHER", "fontSize", str(values['fontSize']))
     config.set("OTHER", "outlineColor", str(values['outlineColor']))
     config.set("OTHER", "outlineThickness", str(values['outlineThickness']))
+    config.set("OTHER", "fontAntialiasing", str(values['fontAntialiasing']))
     config.set("OTHER", "showColor", str(values['showColor']))
     config.set("OTHER", "complementaryColor", str(values['complementaryColor']))
     config.set("OTHER", "rgbComplement", str(values['rgbComplement']))
@@ -345,6 +347,7 @@ def make_window(theme):
                      sg.T('Font size in pt.')],
                     [sg.Spin([i for i in range(0, 10)], initial_value = 1, font = ("Segoe UI", 16), k = 'outlineThickness', enable_events = True),
                      sg.T('Thickness of the outline in pixel. Use "0" to deactivate the outline')],
+                    [sg.Checkbox("Enable antialiasing for the font. (''Pixel-smearing'' of the edges to reduce blockiness. Can be blurry)", default = False, k = 'fontAntialiasing', disabled = False, enable_events = True)],
                     [sg.HorizontalSeparator()],
                     [sg.T('Untick all in order to activate the sparkly particles again.', font = ("Segoe UI", 16))],
                     [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default = False, k = 'showColor', disabled = False, enable_events = True)],
@@ -800,6 +803,6 @@ if __name__ == '__main__':
     outlineColor = str(config.get("OTHER", "outlineColor"))
     ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))
     imagePath = str(config.get("OTHER", "imagePath"))
-    # I forgot why those four up there were necessary...
+    # I forgot why those five up there were necessary...
     main(config)
 #dead
