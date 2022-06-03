@@ -16,7 +16,7 @@ Uses PyGame for 'low' resource usage. Works by creating a TOPMOST transparent fu
 The intention for this is to build upon it to create something interesting - like cellular automata to draw fancy graphics over/around mouse cursor. Something like that. We'll see.
 (Hahaha, a year ago I wrote "cellular automata". Pffff.)
 
---- I FUCKING HATE GIHUB INTEGRATION!!! WHT NOTHING FUCKING WORKS FFFFFFFFFFS
+---
 
 Usage:
 - Run ShitStuckToYourMouse.exe for a heavily configurable, very nice sparkle effect with velocity and gravity and more. (not optimized)
