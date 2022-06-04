@@ -6,15 +6,15 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
-Yea boy! It's the 90s again! Get some _*very elegant*_ shit stuck to your mouse - *like ppl did in the 90s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 90s!! Who cares about 5% CPU! Get this shit stuck to your mouse cursor! Now! NOW!
+Yea boy! It's the 00s again! Get some _*very elegant*_ shit stuck to your mouse - *like ppl did in the early 00s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 00s!! Who cares about 5% CPU! Sense? 00! Get this shit stuck to your mouse cursor! Now! NOW!
 
 Draws a very nice looking sparkle/glitter/smoke/fire effect following/on your mouse.
 Can also draw mouse-cursor-following text, CPU and RAM usage, pictures or a clock with milliseconds - for when you really need to keep an eye on the time.  
-It can also show you the color of the pixel under the cursor in real RGB, complementary RGB or complementary RYB. (RYB is kinda inaccurate between the r, y, and b colors)  
+It can also show you the color of the pixel under the cursor in real RGB, complementary RGB or complementary RYB. (RYB is kinda inaccurate between the r, y, and b colors.)  
 Uses PyGame for 'low' resource usage. Works by creating a TOPMOST transparent full-screen window that is click-through and has no taskbar button. (But not on top of the context menus, start menu and all these things.)
 
 The intention for this is to build upon it to create something interesting - like cellular automata to draw fancy graphics over/around mouse cursor. Something like that. We'll see.
-(Hahaha, a year ago I wrote "cellular automata". Pffff.)
+(Hahaha, a year ago I wrote "cellular automata". Pffff. Boids maybe next though)
 
 ---
 
