@@ -6,7 +6,7 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
-Yea boy! It's the 00s again! Get some _*very elegant*_ shit stuck to your mouse - *like ppl did in the early 00s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 00s!! Who cares about 5% CPU! Sense? 00! Get this shit stuck to your mouse cursor! Now! NOW!
+Yea boy! You like the 00s? Radical! Get some _*very elegant*_ shit stuck to your mouse - *like ppl did in the early 00s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 00s!! Who cares about 5% CPU! Sense? 00! Get this shit stuck to your mouse cursor! Now! NOW!
 
 Draws a very nice looking sparkle/glitter/smoke/fire effect following/on your mouse.
 Can also draw mouse-cursor-following text, CPU and RAM usage, pictures or a clock with milliseconds - for when you really need to keep an eye on the time.  
