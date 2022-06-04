@@ -300,18 +300,18 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
                 # mouse_Speed_Pixel_Per_Frame = sqrt((mouse_Velocity[0] * mouse_Velocity[0]) + (mouse_Velocity[1] * mouse_Velocity[1]))
                 if print_Mouse_Speed:
                     print("Mouse speed in pixel distance traveled this frame: ", mouse_Speed_Pixel_Per_Frame)
-                if mouse_Speed_Pixel_Per_Frame == 0:
+                if mouse_Speed_Pixel_Per_Frame == 0:  # For dynamic behaviour. No movement = no particles spawned
                     draw_Particles = False
-                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[0]:
+                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[0]:  # For dynamic behaviour.
                     num_Particles = numParticlesBackup
                     draw_Particles = True
-                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[1]:
+                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[1]:  # For dynamic behaviour.
                     num_Particles = level_Num_Particles[0]
                     draw_Particles = True
-                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[2]:
+                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[2]:  # For dynamic behaviour.
                     num_Particles = level_Num_Particles[1]
                     draw_Particles = True
-                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[3]:
+                elif mouse_Speed_Pixel_Per_Frame < level_Velocity[3]:  # For dynamic behaviour.
                     num_Particles = level_Num_Particles[2]
                     draw_Particles = True
                 else:
@@ -376,10 +376,10 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
             partsYcoordinates = list()
             if particle_Container:
                 for part in particle_Container:
-                    partsXcoordinates.append(int(part.pos.x))
+                    partsXcoordinates.append(int(part.pos.x))  # fill lists with all particle positions X and Y
                     partsYcoordinates.append(int(part.pos.y))
             else:
-                partsXcoordinates = list((0, 0))
+                partsXcoordinates = list((0, 0))  # at least initialize if no movement/particles
                 partsYcoordinates = list((0, 0))
 
             rightestPart = max(partsXcoordinates)
@@ -387,6 +387,12 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
             lowestPart = max(partsYcoordinates)
             highestPart = min(partsYcoordinates)
             activeRect = pygame.Rect((leftestPart - 1, highestPart - 1), (rightestPart - leftestPart + 1, lowestPart - highestPart + 1))
+
+            if mark_Position:
+                if activeRect[2] < 50:  # if rect size less than 50 pixel, increase by 5
+                    activeRect[2] += 5  # for the red dot. It otherwise leaves red marks
+                if activeRect[3] < 50:
+                    activeRect[3] += 5
 
             if devVisibleUpdateRect:
                 highlight = pygame.Surface((activeRect.w + 2, activeRect.h + 2))
