@@ -21,27 +21,22 @@ import configparser
 from ctypes import byref, c_int, Structure, windll
 
 import pygame
-
-# import pyximport
-# import cython
-# pyximport.install(pyimport = True, inplace = False)  # changew to true to stop compiling
 import pygame.gfxdraw
+from pygame.math import Vector2
+from os import path, listdir, environ
 from pygame.locals import *  # for Color
 from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, SetWindowPos
 from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED, WS_EX_TOOLWINDOW
 from win32api import RGB
 from time import sleep, process_time
-
-# import cProfile
-# import pstats
-# from functools import lru_cache
-from multiprocessing import Pool, Process, Pipe
 from math import sqrt
 from random import uniform, randrange
 
-# numpy is slower
-from pygame.math import Vector2
-from os import path, listdir, environ
+# pyximport.install(pyimport = True, inplace = False)  # change "inplace" to true to start compiling everytime to cython
+# from functools import lru_cache
+# from multiprocessing import Pool, Process, Pipe
+
+# numpy is slower than random.random()
 
 
 def cleanup_mei():
@@ -63,17 +58,17 @@ def cleanup_mei():
 
 
 class CaseConfigParser(configparser.ConfigParser):
-    def optionxform(self, optionstr):  # It's so annoying io keep thing's FUCKING case! WTH, configparser devs?
+    def optionxform(self, optionstr):  # For things to keep case
         return optionstr
 
-    def getlist(self, section, option):  # It's so annoying.
+    def getlist(self, section, option):  # More case keeping
         value = self.get(section, option)
         return list(filter(None, (x.strip() for x in value.split(","))))
 
-    def getlistint(self, section, option):  # It's so annoying.
+    def getlistint(self, section, option):  # The keeper of cases
         return [int(x) for x in self.getlist(section, option)]
 
-    def getlistfloat(self, section, option):  # It's so annoying.
+    def getlistfloat(self, section, option):  # Case caseing of case
         return [float(x) for x in self.getlist(section, option)]
 
 
@@ -84,15 +79,8 @@ def setDefaults():  # Set Defaults and/or write ini-file if it doesn't exist
         config.write(configfile)
 
 
-# settings = dict(config.items('SPARKLES'))
-def readVariables():  # --- I do not like this, but now it's done and I don't care anymore
-    # global config, transparentColor, particleSize, particleAge, ageBrightnessMod, ageBrightnessNoise, velocityMod,\
-    #     velocityClamp, GRAVITY, drag, FPS, interpolateMouseMovement, particleColor, particleColorRandom, ageColor, ageColorSpeed,\
-    #     ageColorSlope, ageColorSlopeConcavity, ageColorNoise, ageColorNoiseMod, useOffset, offsetX, offsetY, markPosition,\
-    #     numParticles, randomMod, dynamic, randomModDynamic, printMouseSpeed, levelVelocity, levelNumParticles, brownianMotion  # God damn it
-
+def readVariables():
     global settings
-
     settings = dict()  # config.items('OTHER')
 
     settings["transparentColor"] = str(config.get("SPARKLES", "transparentColor"))
@@ -126,7 +114,6 @@ def readVariables():  # --- I do not like this, but now it's done and I don't ca
     settings["printMouseSpeed"] = config.getboolean("SPARKLES", "printMouseSpeed")
     settings["levelVelocity"] = config.getlistint("SPARKLES", "levelVelocity")
     settings["levelNumParticles"] = config.getlistint("SPARKLES", "levelNumParticles")
-    # I didn't like this whole ordeal. I suck and expect things to be more easy. :P
 
 
 class Particle(object):
@@ -156,6 +143,7 @@ class ParticleClass(Particle):
         gravity : (x,y) : tuple/list x,y gravity effecting the particle.
         container : list : The passed in list that contains all the particles to draw.
         color : Color : Used so particles can be deleted.
+        mouse_Speed_Pixel_Per_Frame : self explanatory
         """
         self.ageStep = None  # I don't understand why this IDE wants me to do this
         self.surface = surface
@@ -168,7 +156,7 @@ class ParticleClass(Particle):
         elif settings["randomMod"] > 0:
             vel = [vel[0] + uniform(-randrange(settings["randomMod"]), randrange(settings["randomMod"])), vel[1] + uniform(-randrange(settings["randomMod"]), randrange(settings["randomMod"]))]
         # else:
-        #     vel = [vel[0], vel[1]]
+        #     vel = [vel[0], vel[1]]  # I forgot why commented out
 
         vel = [vel[0], vel[1]]
         if settings["velocityMod"] > 0:
@@ -176,13 +164,14 @@ class ParticleClass(Particle):
         else:
             self.vel = Vector2(vel) * 0
         # if self.vel.length > settings['velocityClamp']:  # Clamp any huge velocities
-        #     self.vel.length = settings['velocityClamp']
+        #     self.vel.length = settings['velocityClamp']  # old version for vec2d.py
         if self.vel.length() > settings["velocityClamp"]:  # Clamp any huge velocities
             self.vel = self.vel.normalize() * settings["velocityClamp"]
 
         self.gravity = Vector2(settings["GRAVITY"])
         self.container = container
         self.color = Color(color)
+        self.colorFixed = Color(color)
         hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         hue = hsva[0]  # unpack hue from hsva tuple
         hue = hue + uniform(-settings["ageColorNoise"] + shiftAgeColorNoise, settings["ageColorNoise"] + shiftAgeColorNoise)
@@ -220,7 +209,10 @@ class ParticleClass(Particle):
         hue = hsva[0]
         if settings["ageColor"]:
             if settings["ageColorSlope"]:
-                hue -= self.ageStep * (self.ageStep * ((self.ageStep / (10 ** settings["ageColorSlopeConcavity"])) / (10 ** settings["ageColorSlopeConcavity"])))
+                if self.colorFixed.hsva[0] > 180:
+                    hue -= self.ageStep * (self.ageStep * ((self.ageStep / (10 ** settings["ageColorSlopeConcavity"])) / (10 ** settings["ageColorSlopeConcavity"])))
+                else:
+                    hue += self.ageStep * (self.ageStep * ((self.ageStep / (10 ** settings["ageColorSlopeConcavity"])) / (10 ** settings["ageColorSlopeConcavity"])))
             else:
                 hue += self.ageStep * settings["ageColorSpeed"]
 
@@ -405,7 +397,7 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
             oldActiveRect = pygame.Rect((activeRect[0] - 2, activeRect[1] - 2), (activeRect[2] + 4, activeRect[3] + 4))
             display_window.fill(transparent_Color, oldActiveRect)  # instead of filling the whole screen, fill only a small rect
 
-            # pygame.display.update()
+            # pygame.display.update()  # old. Keep for now
             # display_window.fill(transparent_Color)
 
             if devMeasureLoop:  # Activates a timer and exec ceiling for this loop
@@ -428,7 +420,7 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
                     clock.tick(settings["FPS"])
 
     finally:  # catch every exception and make sure to leave correctly, however it suppresses all tracebacks :(
-        print("loop ended")
+        print("loop ended")  # Wait, does it? IDK anymore
         # looping = False
         # return  # Should be redundant
 
@@ -462,7 +454,7 @@ devVisibleUpdateRect = False
 if __name__ == "__main__":
     # ---------- multiproc initialisation
     #
-    # pool=Pool(processes=4)
+    # pool=Pool(processes=4)  # not yet working or wasting processing power itself
     # res=pool.apply_async(square,(10,))
     # print(res.get())
 
@@ -477,7 +469,7 @@ if __name__ == "__main__":
     # --------- Initiatlize variables:
     startTime = 0
     looping = True
-    # settings['numParticles'] = 0
+    # settings['numParticles'] = 0  #       initialization no longer necessary since dictionary??
     # settings['ageColorNoiseMod'] = 0
     # settings['ageColorNoise'] = 0
     # settings['transparentColor'] = ""
@@ -581,7 +573,7 @@ if __name__ == "__main__":
     if devMeasureLoop:
         startTime = process_time()
 
-    loop(
+    loop(  # looks better
         settings["transparentColor"],
         settings["interpolateMouseMovement"],
         particleContainer,
