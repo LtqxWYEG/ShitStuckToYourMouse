@@ -388,7 +388,7 @@ def make_window(theme):
                       [sg.T('scatter plot with color map that changes?? X is time, Y is brightness (to death) and the color is color, of course?')],
                       [sg.T('')]]
 
-    console_layout = [[sg.Output(size=(120, 33), font=("Segoe UI", 10))],
+    console_layout = [#[sg.Output(size=(120, 33), font=("Segoe UI", 10))],
                       [sg.T("Please don't look under the rug.")]]
 
     tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
@@ -648,10 +648,19 @@ def main():
             # F5                               65474     0xFFC2
             elif event in (None, 'Save-n-Run') or event in (None, 'F5 pressed'):
                 values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range=(0, 100),  resolution=1)". GRRR
+                if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
+                    values['particleColor'] = config.get("SPARKLES", "particleColor")
+                if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    fontColor = config.get("OTHER", "fontColor")  # Get last saved values
+                    values['fontColor'] = config.get("OTHER", "fontColor")
+                if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    outlineColor = config.get("OTHER", "outlineColor")  # Get last saved values
+                    values['outlineColor'] = config.get("OTHER", "outlineColor")
                 updateConfig(values)
                 print('All values saved to config.ini')
                 # print(values)
-                event, values = window.read(timeout=250)
+                event, values = window.read(timeout=1000)
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
@@ -722,10 +731,19 @@ def main():
 
             elif event in (None, 'Save'):
                 values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
+                if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
+                    values['particleColor'] = config.get("SPARKLES", "particleColor")
+                if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    fontColor = config.get("SPARKLES", "fontColor")  # Get last saved values
+                    values['fontColor'] = config.get("SPARKLES", "fontColor")
+                if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    outlineColor = config.get("SPARKLES", "outlineColor")  # Get last saved values
+                    values['outlineColor'] = config.get("SPARKLES", "outlineColor")
                 updateConfig(values)
                 print('All values saved to config.ini')
                 # print(values)
-                event, values = window.read(timeout=250)
+                event, values = window.read(timeout=1000)
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
@@ -809,22 +827,23 @@ def main():
                 break
 
             elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
-                if particleColor == "None":
-                    particleColor = config.get("SPARKLES", "particleColor")
+                if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
                     values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
+                event, values = window.read(timeout=1000)
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
 
             elif event in (None, 'fontColor'):  # Update color and text of the color-picker button
-                if fontColor == "None":
-                    fontColor = config.get("OTHER", "fontColor")
+                if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    fontColor = config.get("OTHER", "fontColor")  # Get last saved values
                     values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
 
             elif event in (None, 'outlineColor'):  # Update color and text of the color-picker button
-                if outlineColor == "None":
-                    outlineColor = config.get("OTHER", "outlineColor")
+                if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    outlineColor = config.get("OTHER", "outlineColor")  # Get last saved values
                     values['outlineColor'] = config.get("OTHER", "outlineColor")
                 outlineColor = values['outlineColor']
                 window['outline color picker button'].update(('Outline color picker: %s' % outlineColor), button_color=("#808080", outlineColor))

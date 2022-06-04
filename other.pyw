@@ -374,7 +374,8 @@ def loop(main_rect, last_rect, last_main_rect, last_color_rect):
                 colorSquare.fill(colorPx, small_color_rect)  # fill surface with color, the size and position of smaller rectangle, to create a 1px border
                 display_window.blit(colorSquare, color_rect)  # blit'it
 
-                text = font.render(str(colorPx), False, settings["fontColor"], "#303030")  # gets color under cursor, then renders it in 'text' Surface object
+                #text = font.render(str(colorPx), False, settings["fontColor"], "#303030")  # gets color under cursor, then renders it in 'text' Surface object
+                text = drawOutlineAroundText(str(colorPx), font, settings["fontColor"], settings["outlineColor"], settings["outlineThickness"])
                 display_window.blit(text, main_rect)  # copy main_rect to the display Surface object 'text'
 
                 pygame.display.update((last_main_rect, main_rect, last_color_rect, color_rect))  # First overwrite old rectangle with fill(RGB) color, then draw new rectangle with text in it
@@ -675,12 +676,11 @@ outlineFont = pygame.font.Font(resource_path("./fonts/Nouveau_IBM_Stretch.TTF"),
 # OxygenMono-Regular: 10 plus
 # Nouveau_IBM_Stretch: very small and suprisingly readable at 8, perfect at 9 and 12
 # Nouveau_IBM: min 9, ok looking
-# font = pygame.font.Font("./fonts/Pixel LCD-7.ttf", fontSize)
-text_height = font.get_linesize()  # sized_height_w?
+text_height = font.get_linesize()  # sized_height_w when freetype
 
 # ----------------- Conditionals
 if settings["showColor"]:
-    textColor = font.render("(888, 888, 888)", settings["fontColor"], settings["transparentColor"], settings["fontSize"])
+    textColor = drawOutlineAroundText("(888, 888, 888)", font, settings["fontColor"], settings["outlineColor"], settings["outlineThickness"])
     blit_rect = textColor.get_rect()
     blit_rect.update(0, 0, blit_rect.width + 2, blit_rect.height + 2)
     colorSquare = pygame.Surface((42, 42))  # make surface
