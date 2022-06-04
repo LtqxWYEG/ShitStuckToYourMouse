@@ -38,10 +38,10 @@ poopImage = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAMAAAC7IEhfAAADAF
 
 
 def image_file_to_bytes(image64, size):
-    image_file = io.BytesIO(base64.b64decode(image64))
+    image_file = BytesIO(base64.b64decode(image64))
     img = Image.open(image_file)
     img.thumbnail(size, Image.ANTIALIAS)
-    bio = io.BytesIO()
+    bio = BytesIO()
     img.save(bio, format='PNG')
     imgbytes = bio.getvalue()
     return imgbytes
