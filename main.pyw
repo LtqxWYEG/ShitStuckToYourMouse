@@ -32,9 +32,8 @@ import psutil
 import signal
 import base64
 
-
-
 poopImage = base64.b64decode("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")
+poopImage2 = "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"
 
 
 def image_file_to_bytes(image64, size):
@@ -45,6 +44,14 @@ def image_file_to_bytes(image64, size):
     img.save(bio, format='PNG')
     imgbytes = bio.getvalue()
     return imgbytes
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = path.abspath(".")
+    return path.join(base_path, relative_path)
 
 
 def cleanup_mei():
@@ -236,7 +243,6 @@ def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, 
     return gone, alive  # Thank you very much Mr. PySimpleGUI :)
 
 
-
 def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compiled to exe
     kill(pid, sig)
     return
@@ -388,14 +394,14 @@ def make_window(theme):
                       [sg.T('scatter plot with color map that changes?? X is time, Y is brightness (to death) and the color is color, of course?')],
                       [sg.T('')]]
 
-    console_layout = [#[sg.Output(size=(120, 33), font=("Segoe UI", 10))],
+    console_layout = [[sg.Output(size=(120, 33), font=("Segoe UI", 10))],
                       [sg.T("Please don't look under the rug.")]]
 
     tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
                                   sg.Tab('Color settings', color_layout),
                                   sg.Tab('Dynamics', dynamic_layout),
                                   sg.Tab('Other things stuck to your mouse', other_layout),
-                                  sg.Tab('Preview', preview_layout),
+                                  #sg.Tab('Preview', preview_layout),
                                   sg.Tab('Console output', console_layout)]])]]
 
     layout = [[sg.T('ShitStuckToYourMouse', size=(74, 1), justification='center', font=("Segoe UI", 16), relief=sg.RELIEF_RIDGE)],
@@ -430,7 +436,7 @@ def main():
     # add them browser? naaaah
     window.bind('<F5>', 'F5 pressed')
     window.bind('<Escape>', 'Escape pressed')
-    tray = SystemTray(menu, single_click_events=False, window=window, tooltip="ShitStuckToYourMouse", icon="poop.png")
+    tray = SystemTray(menu, single_click_events=False, window=window, tooltip="ShitStuckToYourMouse", icon=resource_path(".\poop.ico"))
     print(sg.get_versions())
     proc = False  # Initiate variable for check if subprocess.Popen == True
     otherProc = False
@@ -463,10 +469,7 @@ def main():
             if event in (None, 'Exit'):
                 if proc or otherProc:
                     if psutil.pid_exists(pid):
-                        if isCompiledToExe:
-                            killProcessUsingOsKill(pid=pid)
-                        else:
-                            kill_proc_tree(pid=pid)
+                        kill_proc_tree(pid=pid)
                         print('Subprocess killed')
                     else:
                         print("Subprocess already dead")
@@ -611,10 +614,7 @@ def main():
                 if answer == 'Yes' or answer == 'yes':
                     if proc or otherProc:
                         if psutil.pid_exists(pid):
-                            if isCompiledToExe:
-                                killProcessUsingOsKill(pid=pid)
-                            else:
-                                kill_proc_tree(pid=pid)
+                            kill_proc_tree(pid=pid)
                             print("Subprocess killed")
                         else:
                             print("Subprocess already dead")
@@ -688,10 +688,7 @@ def main():
                         doesImageFileExist = True
                 if proc or otherProc:
                     if psutil.pid_exists(pid):
-                        if isCompiledToExe:
-                            killProcessUsingOsKill(pid=pid)
-                        else:
-                            kill_proc_tree(pid=pid)
+                        kill_proc_tree(pid=pid)
                         print('Subprocess killed')
                     else:
                         print("Subprocess already dead")
@@ -718,10 +715,7 @@ def main():
                 else:
                     if proc or otherProc:
                         if psutil.pid_exists(pid):
-                            if isCompiledToExe:
-                                killProcessUsingOsKill(pid=pid)
-                            else:
-                                kill_proc_tree(pid=pid)
+                            kill_proc_tree(pid=pid)
                             print('Subprocess killed')
                         else:
                             print("Subprocess already dead")
@@ -770,14 +764,10 @@ def main():
                         window['image'].update(data=get_img_data(imagePath, first=True))
                         doesImageFileExist = True
             # ---------------------
-            #Escape                           65307     0xFF1B
             elif event in (None, 'Close') or event in (None, 'Escape pressed'):
                 if proc or otherProc:
                     if psutil.pid_exists(pid):
-                        if isCompiledToExe:
-                            killProcessUsingOsKill(pid=pid)
-                        else:
-                            kill_proc_tree(pid=pid)
+                        kill_proc_tree(pid=pid)
                         print('Subprocess killed')
                     else:
                         print("Subprocess already dead")
@@ -792,10 +782,7 @@ def main():
                 tray.hide_icon()
                 if proc or otherProc:
                     if psutil.pid_exists(pid):
-                        if isCompiledToExe:
-                            killProcessUsingOsKill(pid=pid)
-                        else:
-                            kill_proc_tree(pid=pid)
+                        kill_proc_tree(pid=pid)
                         print('Subprocess killed')
                     else:
                         print("Subprocess already dead")
@@ -815,10 +802,7 @@ def main():
                 tray.hide_icon()
                 if proc or otherProc:
                     if psutil.pid_exists(pid):
-                        if isCompiledToExe:
-                            killProcessUsingOsKill(pid=pid)
-                        else:
-                            kill_proc_tree(pid=pid)
+                        kill_proc_tree(pid=pid)
                         print('Subprocess killed')
                     else:
                         print("Subprocess already dead")
@@ -839,6 +823,7 @@ def main():
                     fontColor = config.get("OTHER", "fontColor")  # Get last saved values
                     values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
+                event, values = window.read(timeout=1000)
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
 
             elif event in (None, 'outlineColor'):  # Update color and text of the color-picker button
@@ -846,6 +831,7 @@ def main():
                     outlineColor = config.get("OTHER", "outlineColor")  # Get last saved values
                     values['outlineColor'] = config.get("OTHER", "outlineColor")
                 outlineColor = values['outlineColor']
+                event, values = window.read(timeout=1000)
                 window['outline color picker button'].update(('Outline color picker: %s' % outlineColor), button_color=("#808080", outlineColor))
 
             elif event in (None, 'ageColorSpeed'):  # Update ageColorSpeedFine slider
@@ -895,20 +881,14 @@ def main():
         tray.hide_icon()
         if proc or otherProc:
             if psutil.pid_exists(pid):
-                if isCompiledToExe:
-                    killProcessUsingOsKill(pid=pid)
-                else:
-                    kill_proc_tree(pid=pid)
+                kill_proc_tree(pid=pid)
                 print('Subprocess killed err')
             else:
                 print("Subprocess already dead err")
 
     if proc or otherProc:
         if psutil.pid_exists(pid):
-            if isCompiledToExe:
-                killProcessUsingOsKill(pid=pid)
-            else:
-                kill_proc_tree(pid=pid)
+            kill_proc_tree(pid=pid)
             print('Subprocess killed main')
         else:
             print("Subprocess already dead main")

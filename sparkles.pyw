@@ -468,8 +468,6 @@ if __name__ == "__main__":
     environ["SDL_VIDEO_WINDOW_POS"] = "0,0"  # Set window position to (0,0) as that is necessary now for some reason
     pygame.init()
     pygame.display.set_caption("ShitStuckToYourMouse - Sparkles")  # title(stupid)
-    icon = pygame.image.load(".\poop.png")
-    pygame.display.set_icon(icon)
     # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
     # --------- Initiatlize variables:

@@ -612,8 +612,6 @@ else:
 environ["SDL_VIDEO_WINDOW_POS"] = "0,0"  # Set window position to (0,0) as that is necessary now for some reason
 pygame.init()
 pygame.display.set_caption("ShitStuckToYourMouse - Other")  # title(stupid)
-icon = pygame.image.load("poop.png")  # icon(stupid)
-pygame.display.set_icon(icon)
 numDisplays = pygame.display.get_num_displays()
 
 # ----------------- Multi-monitor handling
