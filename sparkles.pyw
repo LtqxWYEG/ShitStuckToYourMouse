@@ -184,7 +184,7 @@ class ParticleClass(Particle):
     def updateParticle(self):
         # self.vel = (self.vel + self.gravity) * self.drag
         self.vel += self.gravity  # Optimization or not?
-        self.vel *= self.drag  # Optimization or not?
+        self.vel *= self.drag  # probably only unreadable. One line to two lines and less readable. :(
         self.pos += self.vel
 
         if self.pos[0] < 0 or self.pos[0] > self.surfSize[0]:
@@ -387,6 +387,10 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
             lowestPart = max(partsYcoordinates)
             highestPart = min(partsYcoordinates)
             activeRect = pygame.Rect((leftestPart - 1, highestPart - 1), (rightestPart - leftestPart + 1, lowestPart - highestPart + 1))
+            activeRect[0] -= settings['particleSize']  # otherwise bigger particles would leave render-area
+            activeRect[1] -= settings['particleSize']
+            activeRect[2] += 2*settings['particleSize']
+            activeRect[3] += 2*settings['particleSize']  # otherwise bigger particles would leave render-area
 
             if mark_Position:
                 if activeRect[2] < 50:  # if rect size less than 50 pixel, increase by 5
@@ -522,8 +526,7 @@ if __name__ == "__main__":
     transparentColorTuple = tuple(int(settings["transparentColor"].lstrip("#")[i : i + 2], 16) for i in (0, 2, 4))  # convert settings['transparentColor'] to tuple for win32api.RGB(), to reduce hard-coded values. Thanks John1024
 
     # ---------- Set things up:
-    numDisplays = pygame.display.get_num_displays()
-    if numDisplays != 1:
+    if (numDisplays := pygame.display.get_num_displays()) > 1:  # numDisplays declaration AND if
         print()
         print("----------- More than one displays detected -----------")
         print("pygame.display.get_num_displays = ", pygame.display.get_num_displays())
@@ -539,7 +542,7 @@ if __name__ == "__main__":
         i = 0
         while i < numDisplays:
             combinedWidth = combinedWidth + info[i][0]
-            i = i + 1
+            i += 1
         highestHeight = max(info, key=lambda x: x[1])
 
         print("biggestHeight = ", highestHeight[1])
