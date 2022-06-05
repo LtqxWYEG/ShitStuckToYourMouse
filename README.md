@@ -19,7 +19,7 @@ The intention for this is to build upon it to create something interesting - lik
 ---
 
 Usage:
-- Run ShitStuckToYourMouse.exe for a heavily configurable, very nice sparkle effect with velocity and gravity and more. (not optimized)
+- Run ShitStuckToYourMouse.exe for a heavily configurable, very nice sparkle effect with velocity and gravity and more. (now optimized!)
 - ^--- "Do it!" - Palpatine
 - Other possibilities: 
    - Display color under mouse cursor
