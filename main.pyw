@@ -298,7 +298,7 @@ def make_window(theme):
                        sg.Slider(range=(-3.000, 3.000), default_value=0.025, font=("Segoe UI", 14), resolution=.001, size=(35, 10),
                                  orientation='horizontal', k='GRAVITY_Y', enable_events=True)],
                       [sg.HorizontalSeparator()],
-                      [sg.T('Particle drag, higher equals less drag: (drag * particle speed) per frame. --If >1 then particles speed up--', pad=(10, (15, 0)))],
+                      [sg.T('Particle drag, higher equals more movement, less drag: drag * particle speed per frame. (If >1 then particles speed up)', pad=(10, (15, 0)))],
                       [sg.Slider(range=(0.000, 2.999), default_value=0.850, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
                                  orientation='horizontal', k='drag', enable_events=True)]
                       ]

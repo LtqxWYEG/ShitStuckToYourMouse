@@ -220,6 +220,8 @@ class ParticleClass(Particle):
         brightness -= self.ageStep / settings["ageBrightnessMod"]
         if settings["ageBrightnessNoise"] > 0:
             brightness += uniform(-settings["ageBrightnessNoise"], settings["ageBrightnessNoise"])
+            if brightness < 10:  # to avoid killing them with this
+                brightness += 10  # never kills them with brightness now though... hm... keep for now
         brightness = clamp(brightness, 0, 99)
         hue = clamp(hue, 0, 359)  # Clamp hue within limits
 
