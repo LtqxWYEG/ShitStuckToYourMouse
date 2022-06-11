@@ -272,7 +272,7 @@ def make_window(theme):
                       [sg.Spin([i for i in range(1, 1000)], initial_value=60, font=("Segoe UI", 16), k='particleAge', enable_events=True), sg.T('Particle age (in frames) OR modifier for time until brightness < 7 (death)'),
                        sg.T('                                                                                           v')],
                       [sg.T('Increase slider to slow down brightness decline. Faster dimming equals faster death. Sets concavity. (Slower first, then faster)', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.001, 9.999), default_value=5.300, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
+                      [sg.Slider(range=(0.001, 29.999), default_value=5.300, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
                                  orientation='horizontal', k='ageBrightnessMod', enable_events=True)],
                       [sg.HorizontalSeparator()],
                       [sg.T('Adds random motion, like brownian motion, to particles. Increases exponentially over time and with gravity. Deactivate with 0.', pad=(10, (15, 0)))],
@@ -319,17 +319,16 @@ def make_window(theme):
                     [sg.Checkbox('Change hue over time. (Hue aging)', default=True, k='ageColor', enable_events=True)],
                     [sg.T('')],
                     [sg.T('Hue aging speed factor. Negative values decrease hue [of hsv color] over time, positive increase it. (Neg: towards orange. Pos: towards purple)', pad=(10, (15, 0)))],
-                    [sg.Slider(range=(-99.99, 99.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
+                    [sg.Slider(range=(-19.99, 19.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.10, size=(70, 10),
                                orientation='horizontal', k='ageColorSpeed', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
                     [sg.T('Fine adjustment: ', font=("Segoe UI", 14)),
-                     sg.Slider(range=(ageColorSpeed-2.00, ageColorSpeed+2.00), default_value=ageColorSpeed, font=("Segoe UI", 14), resolution=.001, size=(56.9, 10),
+                     sg.Slider(range=(ageColorSpeed-1.00, ageColorSpeed+1.00), default_value=ageColorSpeed, font=("Segoe UI", 14), resolution=.005, size=(56.9, 10),
                                orientation='horizontal', k='ageColorSpeedFine', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster decline of hue value.', default=True, k='ageColorSlope', disabled=False, enable_events=True)],
-                    [sg.T('(More pronounced upper colors. [Like purple and blue])', pad=(10, (0, 15)))],
-                    [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad=(10, (15, 0)))],
-                    [sg.T('If "age on a concave slope" is off, this slider divides ')],
+                    [sg.T('(More pronounced upper colors. [Like purple and blue])', pad=(10, (0, 0)))],
+                    [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad=(10, (0, 0)))],
                     [sg.Slider(range=(0.001, 1.999), default_value=0.420, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
                                orientation='horizontal', k='ageColorSlopeConcavity', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())]
                     ]
@@ -696,9 +695,9 @@ def main():
                 otherProc = False
                 if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                     if isCompiledToExe:
-                        otherProc = Popen("other.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
+                        otherProc = Popen("other.exe", shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                     else:
-                        otherProc = Popen("py other.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
+                        otherProc = Popen("py other.pyw", shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
                     pid = otherProc.pid
                     print('Subprocess Started')
                     print(otherProc, " with process id: ", pid)
@@ -706,9 +705,9 @@ def main():
                     sg.popup_no_wait('Starting ... ', text_color='#00ff00', button_type=5, auto_close=True,
                                      auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
                     if isCompiledToExe:
-                        proc = Popen("sparkles.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
-                    else:
-                        proc = Popen("py sparkles.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
+                        proc = Popen("sparkles.exe", shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
+                    else:  # getcwd() because of an error that thw current working directory couldn't be opened, I think
+                        proc = Popen("py sparkles.pyw", shell=True, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
                     pid = proc.pid
                     print('Subprocess Started')
                     print(proc, " with process id: ", pid)
@@ -895,7 +894,8 @@ def main():
 
             print("killed last subprocess")
     print("close window")
-    tray.close()  # optional but without a close, the icon may "linger" until moused over
+    tray.hide_icon()  # sometimes doesn't have an effect and the icon stays ...
+    tray.close()  # optional but without a close, the icon may "linger" until moused over | still with it
     window.close()
 
 
