@@ -46,8 +46,8 @@ Special features:
 ---
 Sparkles:  
 Performance with 20 particles per frame @60fps: (runs only on a single core)
-- Laptop with AMD A4-6210:              20 to 25% CPU usage. (max per core: 25%) Now with double the framerate!
-- Desktop with AMD Ryzen 5 2600 @4Ghz:  average 4.1% CPU usage. (max per core: 8.33%) That's way more than with dynamics on.
+- Laptop with AMD A4-6210:              20 to 25% CPU usage. (max possible per core: 25% = 4 core/ht) Now with double the framerate!
+- Desktop with AMD Ryzen 5 2600 @4Ghz:  average 4.1% CPU usage. (max possible per core: 8.33% =  12 core/ht) That's way more than with dynamics on.
 
 
 ---
