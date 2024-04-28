@@ -13,11 +13,13 @@
 #  See the GNU General Public License for more details.                        \
 #                                                                              \
 #  You should have received a copy of the GNU General Public License           \
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.      \
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.      \
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
 import configparser
+import math
+import random
 from ctypes import byref, c_int, Structure, windll
 
 import pygame
@@ -29,7 +31,7 @@ from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, S
 from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED, WS_EX_TOOLWINDOW
 from win32api import RGB
 from time import sleep, process_time
-from math import sqrt
+from math import sqrt, sin
 from random import uniform, randrange
 
 # pyximport.install(pyimport = True, inplace = False)  # change "inplace" to true to start compiling everytime to cython
@@ -94,24 +96,39 @@ def readVariables():
     settings["drag"] = float(config.get("SPARKLES", "drag"))
     settings["FPS"] = int(config.get("SPARKLES", "FPS"))
     settings["interpolateMouseMovement"] = config.getboolean("SPARKLES", "interpolateMouseMovement")
-    settings["particleColor"] = str(config.get("SPARKLES", "particleColor"))
-    settings["particleColorRandom"] = config.getboolean("SPARKLES", "particleColorRandom")
-    settings["ageColor"] = config.getboolean("SPARKLES", "ageColor")
-    settings["ageColorSpeed"] = float(config.get("SPARKLES", "ageColorSpeed"))
-    settings["ageColorSlope"] = config.getboolean("SPARKLES", "ageColorSlope")
-    settings["ageColorSlopeConcavity"] = float(config.get("SPARKLES", "ageColorSlopeConcavity"))
-    settings["ageColorNoise"] = int(config.get("SPARKLES", "ageColorNoise"))
-    settings["ageColorNoiseMod"] = float(config.get("SPARKLES", "ageColorNoiseMod"))
     settings["useOffset"] = config.getboolean("SPARKLES", "useOffset")
     settings["offsetX"] = int(config.get("SPARKLES", "offsetX"))
     settings["offsetY"] = int(config.get("SPARKLES", "offsetY"))
     settings["markPosition"] = config.getboolean("SPARKLES", "markPosition")
     settings["numParticles"] = int(config.get("SPARKLES", "numParticles"))
-    settings["randomMod"] = int(config.get("SPARKLES", "randomMod"))
-    settings["brownianMotion"] = float(config.get("SPARKLES", "brownianMotion"))
+    settings["randomMod"] = float(config.get("SPARKLES", "randomMod"))
+
+    settings["particleColor"] = str(config.get("SPARKLES", "particleColor"))
+    settings["particleColorRandom"] = config.getboolean("SPARKLES", "particleColorRandom")
+    settings["ageColor"] = config.getboolean("SPARKLES", "ageColor")
+    settings["colorRollover"] = config.getboolean("SPARKLES", "colorRollover")
+    settings["ageLinear"] = config.getboolean("SPARKLES", "ageLinear")
+    settings["ageLinearSpeed"] = float(config.get("SPARKLES", "ageLinearSpeed"))
+    settings["ageColorSpeed"] = float(config.get("SPARKLES", "ageColorSpeed"))
+    settings["ageColorSlope"] = config.getboolean("SPARKLES", "ageColorSlope")
+    settings["ageColorSlopeConcavity"] = float(config.get("SPARKLES", "ageColorSlopeConcavity"))
+    settings["ageColorNoise"] = int(config.get("SPARKLES", "ageColorNoise"))
+    settings["ageColorNoiseMod"] = float(config.get("SPARKLES", "ageColorNoiseMod"))
+
+    settings["randomizeVelocity"] = config.getboolean("SPARKLES", "randomizeVelocity")
+    settings["constantMotion"] = float(config.get("SPARKLES", "constantMotion"))
+    settings["chaoticMotion"] = float(config.get("SPARKLES", "chaoticMotion"))
+    settings["cumulativeChaoticMotion"] = config.getboolean("SPARKLES", "cumulativeChaoticMotion")
+    settings["chaoticMotionClamped"] = config.getboolean("SPARKLES", "chaoticMotionClamped")
+
+    settings["vectorRotation"] = float(config.get("SPARKLES", "vectorRotation"))
+    settings["randomRotation"] = config.getboolean("SPARKLES", "randomRotation")
+    settings["cumulativeVectorRotation"] = config.getboolean("SPARKLES", "cumulativeVectorRotation")
+    settings["temporalVectorRotation"] = config.getboolean("SPARKLES", "temporalVectorRotation")
+    settings["particleVectorRotation"] = config.getboolean("SPARKLES", "particleVectorRotation")
+
     settings["dynamic"] = config.getboolean("SPARKLES", "dynamic")
     settings["randomModDynamic"] = float(config.get("SPARKLES", "randomModDynamic"))
-    settings["printMouseSpeed"] = config.getboolean("SPARKLES", "printMouseSpeed")
     settings["levelVelocity"] = config.getlistint("SPARKLES", "levelVelocity")
     settings["levelNumParticles"] = config.getlistint("SPARKLES", "levelNumParticles")
 
@@ -143,38 +160,57 @@ class ParticleClass(Particle):
         gravity : (x,y) : tuple/list x,y gravity effecting the particle.
         container : list : The passed in list that contains all the particles to draw.
         color : Color : Used so particles can be deleted.
-        mouse_Speed_Pixel_Per_Frame : self explanatory
+        mouse_Speed_Pixel_Per_Frame : selfexplanatory
         """
         self.ageStep = None  # I don't understand why this IDE wants me to do this
         self.surface = surface
         self.pos = Vector2(pos)
-        if settings["dynamic"]:
-            vel = [
-                vel[0] + uniform(-(mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"]), (mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"])),
-                vel[1] + uniform(-(mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"]), (mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"])),
-            ]
-        elif settings["randomMod"] > 0:
-            vel = [vel[0] + uniform(-randrange(settings["randomMod"]), randrange(settings["randomMod"])), vel[1] + uniform(-randrange(settings["randomMod"]), randrange(settings["randomMod"]))]
-        # else:
-        #     vel = [vel[0], vel[1]]  # I forgot why commented out
+        self.rotationRate = 0
+        self.counter = 0
+        if settings["chaoticMotion"] > 0 and settings["chaoticMotionClamped"]:
+            self.maxGravitySpeed = settings["velocityClamp"] / (400 / settings["chaoticMotion"])
 
-        vel = [vel[0], vel[1]]
+        if settings["dynamic"]:
+            if settings["randomizeVelocity"]:
+                vel = [vel[0] + uniform(-(mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"]), (mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"])),
+                       vel[1] + uniform(-(mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"]), (mouse_Speed_Pixel_Per_Frame * settings["randomModDynamic"])),]
+            else:
+                vel = [vel[0] + mouse_Velocity[0], vel[1] + mouse_Velocity[1]]
+        elif settings["randomMod"] > 0:
+            vel = [vel[0] + uniform(-settings["randomMod"], settings["randomMod"]),
+                   vel[1] + uniform(-settings["randomMod"], settings["randomMod"])]
+        else:
+            vel = [vel[0], vel[1]]  # ... then just initialize with mouse_Velocity
+
         if settings["velocityMod"] > 0:
             self.vel = Vector2(vel) * settings["velocityMod"]
         else:
-            self.vel = Vector2(vel) * 0
+            self.vel = Vector2(vel)
+
         # if self.vel.length > settings['velocityClamp']:  # Clamp any huge velocities
         #     self.vel.length = settings['velocityClamp']  # old version for vec2d.py
         if self.vel.length() > settings["velocityClamp"]:  # Clamp any huge velocities
             self.vel = self.vel.normalize() * settings["velocityClamp"]
 
         self.gravity = Vector2(settings["GRAVITY"])
+
+        if settings["constantMotion"] > 0:  # Reset vector2 to random. Can then be changed with rotation
+            self.gravity[0] = uniform(-settings["constantMotion"], settings["constantMotion"])
+            self.gravity[1] = uniform(-settings["constantMotion"], settings["constantMotion"])
+
+        if settings["vectorRotation"] > 0 and self.counter == 0:  # initialize rotation rate
+            if settings["randomRotation"]:
+                self.rotationRate = uniform(-settings["vectorRotation"], settings["vectorRotation"]) / 100
+            else:
+                self.rotationRate = random.choice([settings["vectorRotation"] / 100, -settings["vectorRotation"] / 100])
+            self.counter = 1  # set rotation speed only once at time of creation
+
         self.container = container
         self.color = Color(color)
-        self.colorFixed = Color(color)
+        self.colorStatic = Color(color)
         hsva = self.color.hsva  # H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         hue = hsva[0]  # unpack hue from hsva tuple
-        hue = hue + uniform(-settings["ageColorNoise"] + shiftAgeColorNoise, settings["ageColorNoise"] + shiftAgeColorNoise)
+        hue += uniform(-settings["ageColorNoise"] + shiftAgeColorNoise, settings["ageColorNoise"] + shiftAgeColorNoise)
         hue = clamp(hue, 0, 359)  # Clamp hue within limits
         self.color.hsva = (hue, int(hsva[1]), int(hsva[2]))  # pack new hue value into hsva tuple
         self.surfSize = surface.get_size()
@@ -182,12 +218,14 @@ class ParticleClass(Particle):
         self.age = settings["particleAge"]
 
     def updateParticle(self):
-        # self.vel = (self.vel + self.gravity) * self.drag
-        self.vel += self.gravity  # Optimization or not?
-        self.vel *= self.drag  # probably only unreadable. One line to two lines and less readable. :(
-        self.pos += self.vel
+        self.vel = (self.vel + self.gravity) * self.drag
+        #self.vel += self.gravity  # Optimization or not?
+        #self.vel *= self.drag     # Probably only "unreadable". One line to two lines and less readable. :(
 
-        if self.pos[0] < 0 or self.pos[0] > self.surfSize[0]:
+        self.pos += self.vel
+        #self.rotationRate = self.rotationRate  # what?
+
+        if self.pos[0] < 0 or self.pos[0] > self.surfSize[0]:  # remove if color: black or outside surface bounds
             try:
                 self.color.hsva = (0, 0, 0)  # , alpha)
                 self.container.remove(self)
@@ -200,30 +238,68 @@ class ParticleClass(Particle):
             except ValueError:
                 pass
 
-        if settings["brownianMotion"] > 0:
-            self.gravity[0] += uniform(-settings["brownianMotion"], settings["brownianMotion"])
-            self.gravity[1] += uniform(-settings["brownianMotion"], settings["brownianMotion"])
+        # if settings["constantMotion"] > 0:
+        #     self.gravity[0] = self.gravityX
+        #     self.gravity[1] = self.gravityY
+
+        if settings["chaoticMotion"] > 0:
+            if settings["cumulativeChaoticMotion"]:
+                self.gravity[0] += uniform(-settings["chaoticMotion"], settings["chaoticMotion"]) * 0.25
+                self.gravity[1] += uniform(-settings["chaoticMotion"], settings["chaoticMotion"]) * 0.25
+            else:
+                self.gravity[0] = uniform(-settings["chaoticMotion"], settings["chaoticMotion"])
+                self.gravity[1] = uniform(-settings["chaoticMotion"], settings["chaoticMotion"])
+            if settings["chaoticMotionClamped"]:
+                self.gravity[0] = clamp(self.gravity[0], -self.maxGravitySpeed, self.maxGravitySpeed)
+                self.gravity[1] = clamp(self.gravity[1], -self.maxGravitySpeed, self.maxGravitySpeed)
+
+        if settings["vectorRotation"] > 0:
+            if settings["cumulativeVectorRotation"]:
+                self.rotationRate += self.rotationRate * 0.25
+            if settings["temporalVectorRotation"]:
+                self.gravity.rotate_ip_rad(self.rotationRate)
+            if settings["particleVectorRotation"]:
+                self.vel.rotate_ip_rad(self.rotationRate)
+            self.rotationRate = clamp(self.rotationRate, -359, 359)
+
         self.ageStep = 100.0 / float(self.age)
         # Update color, and existence based on color:
         hsva = self.color.hsva  # Limits: H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
         hue = hsva[0]
         if settings["ageColor"]:
-            if settings["ageColorSlope"]:
-                if self.colorFixed.hsva[0] > 180:
-                    hue -= self.ageStep * (self.ageStep * ((self.ageStep / (10 ** settings["ageColorSlopeConcavity"])) / (10 ** settings["ageColorSlopeConcavity"])))
-                else:
-                    hue += self.ageStep * (self.ageStep * ((self.ageStep / (10 ** settings["ageColorSlopeConcavity"])) / (10 ** settings["ageColorSlopeConcavity"])))
+            if settings["ageLinear"]:
+                hue += settings["ageLinearSpeed"]
+                if settings["colorRollover"]:
+                    if hue < 1 and settings["ageLinearSpeed"] < 0:
+                        hue = 360
+                    if hue > 359 and settings["ageLinearSpeed"] > 0:
+                        hue = 0
+            elif settings["ageColorSlope"]:
+                hue += self.ageStep * (self.ageStep * ((self.ageStep / (10 ** settings["ageColorSlopeConcavity"])) / (10 ** settings["ageColorSlopeConcavity"])))
+                if settings["colorRollover"]:
+                    if hue < 1 and settings["ageColorSlopeConcavity"] < 0:
+                        hue = 360
+                    if hue > 359 and settings["ageColorSlopeConcavity"] > 0:
+                        hue = 0
             else:
                 hue += self.ageStep * settings["ageColorSpeed"]
+                if settings["colorRollover"]:
+                    if hue < 1 and settings["ageColorSpeed"] < 0:
+                        hue = 360
+                    if hue > 359 and settings["ageColorSpeed"] > 0:
+                        hue = 0
 
         brightness = hsva[2]
-        brightness -= self.ageStep / settings["ageBrightnessMod"]
+        if settings["ageBrightnessMod"] > 0:
+            brightness -= self.ageStep / settings["ageBrightnessMod"]
+
         if settings["ageBrightnessNoise"] > 0:
             brightness += uniform(-settings["ageBrightnessNoise"], settings["ageBrightnessNoise"])
-            if brightness < 10:  # to avoid killing them with this
-                brightness += 10  # never kills them with brightness now though... hm... keep for now
+            if brightness < 9 and self.age > 10:  # to avoid killing them with this
+                brightness = 9  # never kills them with brightness now though... hm... keep for now
+
         brightness = clamp(brightness, 0, 99)
-        hue = clamp(hue, 0, 359)  # Clamp hue within limits
+        hue = clamp(hue, 1, 357)  # Clamp hue within limits. Has to be 357, otherwise it will roll over with high ageBrightnessNoise for some reason
 
         self.age -= 1
         if brightness < 7 or self.age == 0:  # If brightness falls below 7, remove particle
@@ -234,6 +310,13 @@ class ParticleClass(Particle):
                 pass
         else:
             self.color.hsva = (hue, int(hsva[1]), brightness)  # , alpha)
+
+        # if self.vel == [0, 0] or self.vel == [-0, 0] and settings["dynamic"]:
+        #     try:  # It's possible this particle was removed already.
+        #         self.color.hsva = (0, 0, 0)  # , alpha)
+        #         self.container.remove(self)
+        #     except ValueError:
+        #         pass
 
         if settings["particleSize"] <= 2:
             # Draw just a simple point:
@@ -270,10 +353,11 @@ def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
 
 
 # @lru_cache(maxsize = 1024)  # TypeError: unhashable type: 'list' because particleContainer?
-def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, particle_Color, particle_Color_Random, offset_X, offset_Y, mark_Position, num_Particles, print_Mouse_Speed, level_Velocity, level_Num_Particles, second_Pos, draw_Particles):
-    global looping, length, timer
+#def loop(first_Run, transparent_Color, interpolate_Mouse_Movement, particle_Container, particle_Color, particle_Color_Random, offset_X, offset_Y, mark_Position, num_Particles, mouse_Speed_Pixel_Per_Frame, mouse_Velocity, level_Velocity, level_Num_Particles, second_Pos, mouse_Position, draw_Particles):
+def loop(first_Run, transparent_Color, interpolate_Mouse_Movement, particle_Container, particle_Color, particle_Color_Random, offset_X, offset_Y, mark_Position, num_Particles, level_Velocity, level_Num_Particles, second_Pos, mouse_Position, draw_Particles):
+    global looping, devMeasureLoopLength, timer, mouse_Velocity
     particle_Container_append = particle_Container.append
-    ONE_THIRD = 1.0 / 3.0
+    ONE_THIRD = 1.0 / 3.0  # optimization, if I remember correctly
     oldActiveRect = pygame.Rect((0, 0), (0, 0))
     try:
         while looping:
@@ -287,21 +371,33 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
                         print("loop false, return")
                         looping = False
                         return  # probably redundant
+                # if event.type == pygame.MOUSEMOTION:
+                #     # mouse_Position = pygame.mouse.get_pos()
+                #     distanceX, distanceY = event.rel
+                #     mouse_Speed_Pixel_Per_Frame = (distanceX ** 2 + distanceY ** 2) **0.5  # Pythagoras theorem.
+                #     if devPrintMouseSpeed:
+                #         print("Mouse speed by pygame: ", pygame.mouse.get_rel())  # --- Note: doesn't work because window is usually not focused or something like that
 
-            windll.user32.GetCursorPos(byref(mousePosition))  # get mouse cursor position and save it in the POINT() structure
-            first_Pos = (mousePosition.x - offset_X, mousePosition.y - offset_Y)
-            mouse_Velocity = ((first_Pos[0] - second_Pos[0]), (first_Pos[1] - second_Pos[1]))
+            windll.user32.GetCursorPos(byref(mouse_Position))  # get mouse cursor position and save it in the POINT() structure
+            # mouse_Position = pygame.mouse.get_pos()
+            first_Pos = (mouse_Position.x - offset_X, mouse_Position.y - offset_Y)
+            if first_Run:
+                mouse_Velocity = (0, 0)
+                first_Run = False
+            else:
+                mouse_Velocity = ((first_Pos[0] - second_Pos[0]), (first_Pos[1] - second_Pos[1]))
+            # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
+            mouse_Speed_Pixel_Per_Frame = (mouse_Velocity[0] ** 2 + mouse_Velocity[1] ** 2) ** 0.5  # Pythagoras theorem
+
             if interpolate_Mouse_Movement:
                 firstMiddlePos = (first_Pos[0] - (mouse_Velocity[0] * ONE_THIRD), first_Pos[1] - (mouse_Velocity[1] * ONE_THIRD))  # To triple resolution
                 secondMiddlePos = (first_Pos[0] - (mouse_Velocity[0] - (mouse_Velocity[0] * ONE_THIRD)), first_Pos[1] - (mouse_Velocity[1] - (mouse_Velocity[1] * ONE_THIRD)))
-            # pygame.mouse.get_rel()  # --- Note: doesn't work because window is usually not focused or something like that
+            #  old position mouse speed pixel
+            if devPrintMouseSpeed:
+                print("Mouse speed in pixel distance traveled this frame: ", mouse_Speed_Pixel_Per_Frame)
+                # print("Mouse speed by pygame: ", pygame.mouse.get_rel())  # --- Note: doesn't work because window is usually not focused or something like that
 
-            # fastest tuple arithmatic solution: (a[0] - b[0], a[1] - b[1]). NOT np, sub, lambda, zip...
-            mouse_Speed_Pixel_Per_Frame = sqrt((mouse_Velocity[0] * mouse_Velocity[0]) + (mouse_Velocity[1] * mouse_Velocity[1]))
             if settings["dynamic"]:
-                # mouse_Speed_Pixel_Per_Frame = sqrt((mouse_Velocity[0] * mouse_Velocity[0]) + (mouse_Velocity[1] * mouse_Velocity[1]))
-                if print_Mouse_Speed:
-                    print("Mouse speed in pixel distance traveled this frame: ", mouse_Speed_Pixel_Per_Frame)
                 if mouse_Speed_Pixel_Per_Frame == 0:  # For dynamic behaviour. No movement = no particles spawned
                     draw_Particles = False
                 elif mouse_Speed_Pixel_Per_Frame < level_Velocity[0]:  # For dynamic behaviour.
@@ -330,7 +426,7 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
                 if particle_Color_Random:
                     particle_Color = (randrange(256), randrange(256), randrange(256))
                 if not interpolate_Mouse_Movement:
-                    print("pool")
+                    #print("pool")
                     particle_Container_append(ParticleClass(display_window, first_Pos, mouse_Velocity, settings["GRAVITY"], particle_Container, particle_Color, mouse_Speed_Pixel_Per_Frame))
                     y = -1
                 elif y == 0:
@@ -365,11 +461,12 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
                 # until thex are finished with simulating theri one particle. :(
                 # existing processes use only ~1% CPU time because they only have to update one particle.
                 # So I'd need four processes that never stop.
-                # But i've read that they aren't closing anyways, so why only 1% cpu?
+                # But I've read that they aren't closing anyway, so why only 1% cpu?
                 # can it really be that updateParticle() is not the culprit, even though it takes over 50 to 70% of the process time?
                 #
 
             second_Pos = first_Pos  # for getting mouse velocity
+            #first_Run = False
 
             if mark_Position:
                 pygame.draw.circle(display_window, "#ff0000", first_Pos, 2)  # Circle at origin point used by user for tuning offset
@@ -413,7 +510,7 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
             # display_window.fill(transparent_Color)
 
             if devMeasureLoop:  # Activates a timer and exec ceiling for this loop
-                if timer == length:
+                if timer == devMeasureLoopLength:
                     looping = False
                     return
                 timer += 1
@@ -442,20 +539,18 @@ def loop(transparent_Color, interpolate_Mouse_Movement, particle_Container, part
 #
 #
 # --------- DEV FLAGS ----------
-#  -------------------------------
 timer = 0  # Initialization only
 
 devDebugging = False  # To make it no longer TOPMOST and 400x400 in the upper left corner
 devMeasureLoop = False  # don't forget to make fps unlimited too
-length = 300
+devMeasureLoopLength = 300  # if  true
 devMeasureLoopParticlesAmount = 20
 devShowOwnCPUPercentInstead = False  # Maybe wrong? Taskmanager different, lower.
+devPrintMouseSpeed = False
 devPrintFPS = False
 devFPSUnlimited = False
-devSnakevizIt = True  # no sleep(10) at the end of execution if devMeasureLoop is True
+devSnakevizIt = True  # if devMeasureLoop is True: no sleep(10) at the end of execution
 devVisibleUpdateRect = False
-
-#  -------------------------------
 # --------- DEV FLAGS ----------
 #
 #
@@ -473,12 +568,13 @@ if __name__ == "__main__":
     cleanup_mei()  # see comment inside
     environ["SDL_VIDEO_WINDOW_POS"] = "0,0"  # Set window position to (0,0) as that is necessary now for some reason
     pygame.init()
-    pygame.display.set_caption("ShitStuckToYourMouse - Sparkles")  # title(stupid)
+    pygame.display.set_caption("ShitStuckToYourMouse - Sparkles")  # title. (stupid)
     # pygame.mouse.set_visible(False)  # set mouse cursor visibility  --- Note: This does NOT work
 
     # --------- Initiatlize variables:
     startTime = 0
     looping = True
+    firstRun = True
     # settings['numParticles'] = 0  #       initialization no longer necessary since dictionary??
     # settings['ageColorNoiseMod'] = 0
     # settings['ageColorNoise'] = 0
@@ -494,7 +590,6 @@ if __name__ == "__main__":
     # settings['offsetY'] = 0
     # settings['markPosition'] = 0
     # settings['dynamic'] = False
-    # settings['printMouseSpeed'] = False
     # settings['levelVelocity'] = []
     # settings['levelNumParticles'] = []
     config = CaseConfigParser()
@@ -508,11 +603,12 @@ if __name__ == "__main__":
     particleContainer = []
     mostUppereLeftPart = []
     numParticlesBackup = settings["numParticles"]
-    mouseSpeedPixelPerFrame = 0
     mousePosition = POINT()
+    mouseSpeedPixelPerFrame = 0
     firstPos = (mousePosition.x, mousePosition.y)  # Initiate positions
     secondPos = firstPos
-    mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
+    #mouseVelocity = ((firstPos[0] - secondPos[0]), (firstPos[1] - secondPos[1]))
+    mouseVelocity = (0, 0)
     blitRectSize = 5
     clock = pygame.time.Clock()  # for FPS limiting
     info = pygame.display.Info()  # get screen information like size, to set in pygame.display.set_mode
@@ -535,35 +631,49 @@ if __name__ == "__main__":
         print("pygame.display.Info = ", pygame.display.Info())
         print("pygame.display.get_desktop_sizes = ", pygame.display.get_desktop_sizes())
         print()
-
         info = pygame.display.get_desktop_sizes()
-
-        # Get highest display height and widest width
+        # Get the highest display height and widest width
         listHeights = []
         combinedWidth = 0
         i = 0
         while i < numDisplays:
             combinedWidth = combinedWidth + info[i][0]
             i += 1
-        highestHeight = max(info, key=lambda x: x[1])
 
+        highestHeight = max(info, key=lambda x: x[1])
         print("biggestHeight = ", highestHeight[1])
         print("combinedWidth = ", combinedWidth)
         print()
 
         if devDebugging:
-            display_window = pygame.display.set_mode((400, 400), pygame.RESIZABLE)  # not TOPMOST
+            display_window = pygame.display.set_mode((400, 400), pygame.RESIZABLE, vsync=0)  # not TOPMOST
         else:
             display_window = pygame.display.set_mode((combinedWidth, highestHeight[1]), 0, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
     else:
         if devDebugging:
-            display_window = pygame.display.set_mode((400, 400), pygame.RESIZABLE)  # not TOPMOST
+            display_window = pygame.display.set_mode((400, 400), pygame.RESIZABLE, vsync=0)  # not TOPMOST
         else:
             display_window = pygame.display.set_mode((0, 0), 0, vsync=0)  # vsync only works with OPENGL flag, so far. Might change in the future
+
     display_window.fill(settings["transparentColor"])  # fill with transparent color set in win32gui.SetLayeredWindowAttributes
     setFocus = windll.user32.SetFocus  # sets focus to
-    handleWindowDeviceContext = pygame.display.get_wm_info()["window"]  # get window manager information about this pygame window, in order to address it in setWindowAttributes()
-    setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
+    hWnd = pygame.display.get_wm_info()["window"]  # get window handle (hWnd => handleWindow) about this pygame window, in order to address it in setWindowAttributes()
+    if devDebugging:
+        SetWindowPos(hWnd, 0, 0, 0, 0, 0, SWP_NOSIZE)
+    else:
+        windll.user32.SetWindowLongPtrW(hWnd, GWL_EXSTYLE, windll.user32.GetWindowLongPtrW(hWnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW)  # no taskbar button
+        SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT,)
+        SetLayeredWindowAttributes(hWnd, RGB(*transparentColorTuple), 255, LWA_COLORKEY)
+        SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+    # HWND_TOPMOST: Places the window above all non-topmost windows. The window maintains its topmost position even when it is deactivated. (Well, it SHOULD. But doesn't.)
+    # It's not necessary to set the SWP_SHOWWINDOW flag.
+    # SWP_NOMOVE: Retains the current position (ignores X and Y parameters).
+    # SWP_NOSIZE: Retains the current size (ignores the cx and cy parameters).
+    # GWL_EXSTYLE: Retrieve the extended window styles of the window.
+    # WS_EX_TRANSPARENT: The window should not be painted until siblings beneath the window have been painted, making it transparent.
+    # WS_EX_LAYERED: The window is a layered window, so that we can set attributes like color with SetLayeredWindowAttributes ...
+    # LWA_COLORKEY: ... and make that color the transparent color of the window.
+    # setWindowAttributes(handleWindowDeviceContext)  # set all kinds of option for win32 windows. Makes it transparent and clickthrough
     if not settings["useOffset"]:
         settings["offsetX"] = 0
         settings["offsetY"] = 0
@@ -583,6 +693,7 @@ if __name__ == "__main__":
         startTime = process_time()
 
     loop(  # looks better
+        firstRun,
         settings["transparentColor"],
         settings["interpolateMouseMovement"],
         particleContainer,
@@ -592,12 +703,31 @@ if __name__ == "__main__":
         settings["offsetY"],
         settings["markPosition"],
         settings["numParticles"],
-        settings["printMouseSpeed"],
         settings["levelVelocity"],
         settings["levelNumParticles"],
         secondPos,
+        mousePosition,
         drawParticles,
     )
+    # loop(  # looks better
+    #     firstRun,
+    #     settings["transparentColor"],
+    #     settings["interpolateMouseMovement"],
+    #     particleContainer,
+    #     settings["particleColor"],
+    #     settings["particleColorRandom"],
+    #     settings["offsetX"],
+    #     settings["offsetY"],
+    #     settings["markPosition"],
+    #     settings["numParticles"],
+    #     mouseSpeedPixelPerFrame,
+    #     mouseVelocity,
+    #     settings["levelVelocity"],
+    #     settings["levelNumParticles"],
+    #     secondPos,
+    #     mousePosition,
+    #     drawParticles,
+    # )
 
     if devMeasureLoop:
         endTime = process_time()

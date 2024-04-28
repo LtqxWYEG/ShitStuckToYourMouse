@@ -13,7 +13,7 @@
 #  See the GNU General Public License for more details.                        \
 #                                                                              \
 #  You should have received a copy of the GNU General Public License           \
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.      \
+#  along with this program. If not, see <https://www.gnu.org/licenses/>.      \
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
@@ -31,6 +31,7 @@ from shutil import rmtree
 import psutil
 import signal
 import base64
+import acrylic
 
 poopImage = base64.b64decode("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")
 poopImage2 = "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"
@@ -106,21 +107,38 @@ def getVariablesFromConfig(window):
     window['drag'].update(float(config.get("SPARKLES", "drag")))
     window['FPS'].update(int(config.get("SPARKLES", "FPS")))
     window['interpolateMouseMovement'].update(config.getboolean("SPARKLES", "interpolateMouseMovement"))
-    window['particleColor'].update(str(config.get("SPARKLES", "particleColor")))
-    window['particleColorRandom'].update(config.getboolean("SPARKLES", "particleColorRandom"))
-    window['ageColor'].update(config.getboolean("SPARKLES", "ageColor"))
-    window['ageColorSpeed'].update(float(config.get("SPARKLES", "ageColorSpeed")))
-    window['ageColorSlope'].update(config.getboolean("SPARKLES", "ageColorSlope"))
-    window['ageColorSlopeConcavity'].update(float(config.get("SPARKLES", "ageColorSlopeConcavity")))
-    window['ageColorNoise'].update(int(config.get("SPARKLES", "ageColorNoise")))
-    window['ageColorNoiseMod'].update(float(config.get("SPARKLES", "ageColorNoiseMod")))
     window['useOffset'].update(config.getboolean("SPARKLES", "useOffset"))
     window['offsetX'].update(int(config.get("SPARKLES", "offsetX")))
     window['offsetY'].update(int(config.get("SPARKLES", "offsetY")))
     window['markPosition'].update(config.getboolean("SPARKLES", "markPosition"))
     window['numParticles'].update(int(config.get("SPARKLES", "numParticles")))
-    window['randomMod'].update(int(config.get("SPARKLES", "randomMod")))
-    window['brownianMotion'].update(float(config.get("SPARKLES", "brownianMotion")))
+    window['randomMod'].update(float(config.get("SPARKLES", "randomMod")))
+
+    window['particleColor'].update(str(config.get("SPARKLES", "particleColor")))
+    window['particleColorHue'].update(float(config.get("SPARKLES", "particleColorHue")))
+    window['particleColorRandom'].update(config.getboolean("SPARKLES", "particleColorRandom"))
+    window['ageColor'].update(config.getboolean("SPARKLES", "ageColor"))
+    window['colorRollover'].update(config.getboolean("SPARKLES", "colorRollover"))
+    window['ageLinear'].update(config.getboolean("SPARKLES", "ageLinear"))
+    window['ageLinearSpeed'].update(float(config.get("SPARKLES", "ageLinearSpeed")))
+    window['ageColorSpeed'].update(float(config.get("SPARKLES", "ageColorSpeed")))
+    window['ageColorSlope'].update(config.getboolean("SPARKLES", "ageColorSlope"))
+    window['ageColorSlopeConcavity'].update(float(config.get("SPARKLES", "ageColorSlopeConcavity")))
+    window['ageColorNoise'].update(int(config.get("SPARKLES", "ageColorNoise")))
+    window['ageColorNoiseMod'].update(float(config.get("SPARKLES", "ageColorNoiseMod")))
+
+    window['randomizeVelocity'].update(config.getboolean("SPARKLES", "randomizeVelocity"))
+    window['constantMotion'].update(float(config.get("SPARKLES", "constantMotion")))
+    window['chaoticMotion'].update(float(config.get("SPARKLES", "chaoticMotion")))
+    window['cumulativeChaoticMotion'].update(config.getboolean("SPARKLES", "cumulativeChaoticMotion"))
+    window['chaoticMotionClamped'].update(config.getboolean("SPARKLES", "chaoticMotionClamped"))
+
+    window['vectorRotation'].update(float(config.get("SPARKLES", "vectorRotation")))
+    window['randomRotation'].update(config.getboolean("SPARKLES", "randomRotation"))
+    window['cumulativeVectorRotation'].update(config.getboolean("SPARKLES", "cumulativeVectorRotation"))
+    window['temporalVectorRotation'].update(config.getboolean("SPARKLES", "temporalVectorRotation"))
+    window['particleVectorRotation'].update(config.getboolean("SPARKLES", "particleVectorRotation"))
+
     window['dynamic'].update(config.getboolean("SPARKLES", "dynamic"))
     window['randomModDynamic'].update(float(config.get("SPARKLES", "randomModDynamic")))
     string = config.getlistint("SPARKLES", "levelVelocity")
@@ -133,6 +151,7 @@ def getVariablesFromConfig(window):
     window['levelNumParticles_2'].update(string[1])
     window['levelNumParticles_3'].update(string[2])
     window['levelNumParticles_4'].update(string[3])
+
     window['fontColor'].update(str(config.get("OTHER", "fontColor")))
     window['fontSize'].update(int(config.get("OTHER", "fontSize")))
     window['outlineColor'].update(str(config.get("OTHER", "outlineColor")))
@@ -162,21 +181,38 @@ def updateConfig(values):
     config.set("SPARKLES", "drag", str(values['drag']))
     config.set("SPARKLES", "FPS", str(values['FPS']))
     config.set("SPARKLES", "interpolateMouseMovement", str(values['interpolateMouseMovement']))
-    config.set("SPARKLES", "particleColor", values['particleColor'])
-    config.set("SPARKLES", "particleColorRandom", str(values['particleColorRandom']))
-    config.set("SPARKLES", "ageColor", str(values['ageColor']))
-    config.set("SPARKLES", "ageColorSpeed", str(values['ageColorSpeed']))
-    config.set("SPARKLES", "ageColorSlope", str(values['ageColorSlope']))
-    config.set("SPARKLES", "ageColorSlopeConcavity", str(values['ageColorSlopeConcavity']))
-    config.set("SPARKLES", "ageColorNoise", str(values['ageColorNoise']))
-    config.set("SPARKLES", "ageColorNoiseMod", str(values['ageColorNoiseMod']))
     config.set("SPARKLES", "useOffset", str(values['useOffset']))
     config.set("SPARKLES", "offsetX", str(values['offsetX']))
     config.set("SPARKLES", "offsetY", str(values['offsetY']))
     config.set("SPARKLES", "markPosition", str(values['markPosition']))
     config.set("SPARKLES", "numParticles", str(values['numParticles']))
     config.set("SPARKLES", "randomMod", str(values['randomMod']))
-    config.set("SPARKLES", "brownianMotion", str(values['brownianMotion']))
+
+    config.set("SPARKLES", "particleColor", values['particleColor'])
+    config.set("SPARKLES", "particleColorHue", str(values['particleColorHue']))
+    config.set("SPARKLES", "particleColorRandom", str(values['particleColorRandom']))
+    config.set("SPARKLES", "ageColor", str(values['ageColor']))
+    config.set("SPARKLES", "colorRollover", str(values['colorRollover']))
+    config.set("SPARKLES", "ageLinear", str(values['ageLinear']))
+    config.set("SPARKLES", "ageLinearSpeed", str(values['ageLinearSpeed']))
+    config.set("SPARKLES", "ageColorSpeed", str(values['ageColorSpeed']))
+    config.set("SPARKLES", "ageColorSlope", str(values['ageColorSlope']))
+    config.set("SPARKLES", "ageColorSlopeConcavity", str(values['ageColorSlopeConcavity']))
+    config.set("SPARKLES", "ageColorNoise", str(values['ageColorNoise']))
+    config.set("SPARKLES", "ageColorNoiseMod", str(values['ageColorNoiseMod']))
+
+    config.set("SPARKLES", "randomizeVelocity", str(values['randomizeVelocity']))
+    config.set("SPARKLES", "constantMotion", str(values['constantMotion']))
+    config.set("SPARKLES", "chaoticMotion", str(values['chaoticMotion']))
+    config.set("SPARKLES", "cumulativeChaoticMotion", str(values['cumulativeChaoticMotion']))
+    config.set("SPARKLES", "chaoticMotionClamped", str(values['chaoticMotionClamped']))
+
+    config.set("SPARKLES", "vectorRotation", str(values['vectorRotation']))
+    config.set("SPARKLES", "randomRotation", str(values['randomRotation']))
+    config.set("SPARKLES", "cumulativeVectorRotation", str(values['cumulativeVectorRotation']))
+    config.set("SPARKLES", "temporalVectorRotation", str(values['temporalVectorRotation']))
+    config.set("SPARKLES", "particleVectorRotation", str(values['particleVectorRotation'])
+               )
     config.set("SPARKLES", "dynamic", str(values['dynamic']))
     config.set("SPARKLES", "randomModDynamic", str(values['randomModDynamic']))
     string = [str(values['levelVelocity_1']), ', ', str(values['levelVelocity_2']), ', ', str(values['levelVelocity_3']), ', ', str(values['levelVelocity_4'])]
@@ -185,6 +221,7 @@ def updateConfig(values):
     string = [str(values['levelNumParticles_1']), ', ', str(values['levelNumParticles_2']), ', ', str(values['levelNumParticles_3']), ', ', str(values['levelNumParticles_4'])]
     levelNumParticlesStr = "".join(string)
     config.set("SPARKLES", "levelNumParticles", levelNumParticlesStr)
+
     config.set("OTHER", "fontColor", str(values['fontColor']))
     config.set("OTHER", "fontSize", str(values['fontSize']))
     config.set("OTHER", "outlineColor", str(values['outlineColor']))
@@ -249,12 +286,12 @@ def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compil
 
 
 def make_window(theme):
-    global particleColor, fontColor, outlineColor, ageColorSpeed, imagePath
+    global particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath
     sg.theme(theme)
     file_types = [("Images", "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"), ("All files (*.*)", "*.*")]
 
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value=60, font=("Segoe UI", 16), k='FPS', enable_events=True),
-                       sg.T('Frames per second. Also affects number of particles as they are spawned per frame.')],
+                       sg.T('Frames per second. Also affects number of particles - as they are spawned per frame.')],
                       [sg.Checkbox('Interpolate mouse movement', default=True, k='interpolateMouseMovement', enable_events=True)],
                       [sg.T('Exp.: Draw some particles between current position of the cursor and that of last frame. (Interpolation should have almost no effect on performance)', pad=(10, (0, 15)))],
                       [sg.Spin([i for i in range(1, 100)], initial_value=1, font=("Segoe UI", 16), k='numParticles', enable_events=True), sg.T('Number of particles to spawn per frame'),
@@ -266,98 +303,159 @@ def make_window(theme):
                        sg.T('Y='), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=("Segoe UI", 16), k='offsetY', disabled=False, enable_events=True),
                        sg.T('Offset in pixel. (0, 0=tip of cursor)')]],)],
 
+                      [sg.Spin([i for i in range(1, 1000)], initial_value = 200, font = ("Segoe UI", 16), k = 'velocityClamp', enable_events = True),
+                       sg.T('Global particle velocity maximum in pixel-per-frame. (Can also clamp chaotic motion, if chosen.)')],
                       [sg.Spin([i for i in range(0, 100)], initial_value=12, font=("Segoe UI", 16), k='ageBrightnessNoise', enable_events=True),
-                       sg.T('Adds random noise (twinkling) to age/brightness: brightness = random(+|-value). 0 for no noise'),
-                       sg.T('                                     Scroll down  |')],
+                       sg.T('Adds random noise (twinkling) to brightness: brightness = random(+|-value). Deactivate with 0'),
+                       sg.T('                                     Scroll down      |')],
                       [sg.Spin([i for i in range(1, 1000)], initial_value=60, font=("Segoe UI", 16), k='particleAge', enable_events=True), sg.T('Particle age (in frames) OR modifier for time until brightness < 7 (death)'),
                        sg.T('                                                                                           v')],
-                      [sg.T('Increase slider to slow down brightness decline. Faster dimming equals faster death. Sets concavity. (Slower first, then faster)', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.001, 9.999), default_value=5.300, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
+                      [sg.T('Increase slider to >1.00 to slow down brightness decline. Faster dimming leads to earlier death. (Exponential) Deactivate with 0.', pad=(10, (15, 0)))],
+                      [sg.Slider(range=(0.00, 29.95), default_value=5.300, font=("Segoe UI", 14), resolution=.05, size=(70, 10), pad=(5, (0, 25)),
                                  orientation='horizontal', k='ageBrightnessMod', enable_events=True)],
                       [sg.HorizontalSeparator()],
-                      [sg.T('Adds random motion, like brownian motion, to particles. Increases exponentially over time and with gravity. Deactivate with 0.', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.000, 1.000), default_value=10, font=("Segoe UI", 14), resolution=0.0001, size=(70, 10),
-                                 orientation='horizontal', disabled=False, k='brownianMotion', enable_events=True, trough_color=sg.theme_slider_color())],
-                      #[sg.T('--- Scroll down ---')],
                       [sg.HorizontalSeparator()],
-                      [sg.T('Adds random motion in random direction to particles depending on mouse velocity.', pad=(10, (15, 0)))],
-                      [sg.T('mouseVelocity[x][y] +- rnd(randomMod). Ignored if dynamic is on. Deactivate with 0.', pad=(10, (0, 0)))],
-                      [sg.Slider(range=(0, 100), default_value=10, font=("Segoe UI", 14), resolution=1, size=(70, 10),
-                                 orientation='horizontal', disabled=False, k='randomMod', enable_events=True, trough_color=sg.theme_slider_color())],
+
+                      [sg.T('Explanation of how all this behaves: ', font = ("Segoe UI", 13), pad = (10, (25, 0)))],
+                      [sg.T('Every particle has a vector. Here, a vector is a motion with velocity(N) in direction(X,Y) from position(X,Y).', font = ("Segoe UI", 11), pad = (10, (0, 10)))],
+                      [sg.T('There are mainly two different ways to affect the vector: By manipulating velocity or direction either directly or by adding a second vector.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
+                      [sg.T("You can set that the vector and amount of created particles to be influenced by mouse movement or not. This is done in the Dynamic tab.", font = ("Segoe UI", 8), pad = (10, (2, 0)))],
+                      [sg.T('A vector can be manipulated once at time of particle genesis or every frame. See indicator in titles.'
+                            'a second vector that will be added to the inherent first one can be manipulated with some sliders.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
                       [sg.HorizontalSeparator()],
-                      [sg.T('Add to and multiply velocity of particle dependant on mouse movement direction and speed: velocity[x][y] * velocityMod', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(-2.99, 2.99), default_value=1.00, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
-                                 orientation='horizontal', k='velocityMod', enable_events=True)],
-                      [sg.Spin([i for i in range(1, 1000)], initial_value=200, font=("Segoe UI", 16), k='velocityClamp', enable_events=True),
-                       sg.T('Max. particle velocity in pixel per frame')],
+
+                      [sg.T("(Any Vector) ONCE/PER FRAME: Add degrees of rotation into any vector.", font = ("Segoe UI", 15),  pad = (10, (15, 0)))],
+                      [sg.T("--Deactivate with 0 or uncheck all boxes--", pad = (10, (10, 0)))],
+                      [sg.Checkbox('Add again every frame (cumulative)', default = False, k = 'cumulativeVectorRotation', enable_events = True),
+                       sg.Checkbox('ADD to particle vector', default = False, k = 'particleVectorRotation', enable_events = True),
+                       sg.Checkbox('ADD to second vector', default = True, k = 'temporalVectorRotation', enable_events = True),
+                       sg.Checkbox('Randomize initial rotation for particles', default = True, k = 'randomRotation', enable_events = True)],
+                      [sg.Slider(range = (0.0, 100.0), default_value = 1, font = ("Segoe UI", 14), resolution = 0.1, size = (70, 10),
+                                 orientation = 'horizontal', disabled = False, k = 'vectorRotation', enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.HorizontalSeparator()],
-                      [sg.T('X and Y motion added to any particle each frame. Can be gravity or wind.', pad=(10, (15, 0)))],
-                      [sg.T('(Motion vector with direction: 0.0, 0.1 = a motion of .1 in downwards direction.)', pad=(10, (0, 0)))],
-                      [sg.Slider(range=(-9.999, 9.999), default_value=0.000, font=("Segoe UI", 14), resolution=.001, size=(34, 10),
+                      [sg.HorizontalSeparator()],
+
+                      [sg.T('NOTE: These next sliders will be influenced by sliders from the "dynamic" tab.', font = ("Segoe UI", 15), pad = (100, (15, 0)))],
+                      [sg.HorizontalSeparator()],
+                      [sg.T('(Second Vector) PER FRAME: INITIALIZE and ADD with these values. --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (10, 0)))],
+                      [sg.T('-- IGNORED if last slider is not at position 0 and without "cumulative" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('Can simulate gravity or wind force. (i.e. For gravity: X=0.0, Y=0.1) - Results in a constant motion downwards motion with a speed of 0.1 to all particles.', pad=(10, (10, 0)))],
+                      [sg.T('( vector2(X/Y) = vector2(X/Y) + VALUE(X/Y) )', pad=(10, (0, 0)))],
+                      [sg.Slider(range=(-9.95, 9.95), default_value=0.00, font=("Segoe UI", 14), resolution=.05, size=(34, 10),
                                  orientation='horizontal', k='GRAVITY_X', enable_events=True),
-                       sg.Slider(range=(-3.000, 3.000), default_value=0.025, font=("Segoe UI", 14), resolution=.001, size=(35, 10),
+                       sg.Slider(range=(-3.00, 3.00), default_value=0.00, font=("Segoe UI", 14), resolution=.01, size=(35, 10),
                                  orientation='horizontal', k='GRAVITY_Y', enable_events=True)],
+
+                      [sg.T('(Second Vector) ONCE: RESET with random values. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('-- IGNORED if last slider is not at position 0 and without "cumulative" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('Once at time of particle generation. Spreads them apart.', pad = (10, (10, 0)))],
+                      [sg.T('( vector2(X/Y) = random_between(+-VALUE) )', pad = (10, (0, 0)))],
+                      [sg.Slider(range = (0.00, 1.00), default_value = 0.1, font = ("Segoe UI", 14), resolution = 0.005, size = (70, 10),
+                                 orientation = 'horizontal', disabled = False, k = 'constantMotion', enable_events = True, trough_color = sg.theme_slider_color())],
+
+                      [sg.T('(Second Vector) PER FRAME: RESET with random values or ADD to it . --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (15, 0)))],
+                      [sg.T('-- OVERRIDES last two sliders if not at position 0 and without "cumulative" checkbox checked--', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('Once at time of particle generation or every frame.', pad = (10, (10, 0)))],
+                      [sg.T('( vector2(X/Y) = random_between(+-VALUE) )', pad = (10, (0, 0)))],
+                      [sg.Checkbox('-ADD- to second vector instead every frame (cumulative) - ( vector2(X/Y) = vector2(X/Y) + random_between(+-VALUE) * 0.25 )', default = False, k = 'cumulativeChaoticMotion',
+                                   enable_events = True, pad = (5, (0, 0)))],
+                      [sg.Checkbox('Lower sensitivity of slider by SOME percentage of VALUE. Aso clamps +-VALUE to SOME percentage of VALUE. Useful when cumulative is on. ',
+                                   default = False, k = 'chaoticMotionClamped', enable_events = True, pad = (5, (0, 0)))],
+                      [sg.Slider(range=(0.00, 1.00), default_value= 0.2, font=("Segoe UI", 14), resolution=0.005, size=(70, 10),
+                                 orientation='horizontal', disabled=False, k='chaoticMotion', enable_events=True, trough_color=sg.theme_slider_color())],
+                      [sg.T('', pad = (10, (0, 0)))],
+                      [sg.T('', pad = (10, (0, 0)))],
+                      ]
+
+    dynamic_layout = [[sg.Checkbox('Enable dynamic behavior (i.e. mouseSpeed dependant particle creation)', font = ("Segoe UI", 15), pad = (10, (15, 0)), default = True, k = 'dynamic', enable_events = True)],
+                      [sg.T('Exp.: No particles are created when mouse is held still. When moved, the faster the movement, the more particles are created.', pad = (10, (0, 15)))],
+                      [sg.Frame('Number of particles:',
+                                [[sg.Spin([i for i in range(1, 100)], initial_value = 5, font = ("Segoe UI", 16), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
+                                  sg.Spin([i for i in range(1, 100)], initial_value = 8, font = ("Segoe UI", 16), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
+                                  sg.Spin([i for i in range(1, 100)], initial_value = 14, font = ("Segoe UI", 16), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
+                                  sg.Spin([i for i in range(1, 100)], initial_value = 20, font = ("Segoe UI", 16), k = 'levelNumParticles_4', disabled = False, enable_events = True),
+                                  sg.T('Level 4 - spawn this many particles per frame ...')]], )],
+                      [sg.Frame('At mouse velocity in pixel per frame:',
+                                [[sg.Spin([i for i in range(1, 1000)], initial_value = 15, font = ("Segoe UI", 16), k = 'levelVelocity_1', disabled = False, enable_events = True), sg.T('Level 1'),
+                                  sg.Spin([i for i in range(1, 1000)], initial_value = 30, font = ("Segoe UI", 16), k = 'levelVelocity_2', disabled = False, enable_events = True), sg.T('Level 2'),
+                                  sg.Spin([i for i in range(1, 1000)], initial_value = 65, font = ("Segoe UI", 16), k = 'levelVelocity_3', disabled = False, enable_events = True), sg.T('Level 3 '),
+                                  sg.Spin([i for i in range(1, 1000)], initial_value = 130, font = ("Segoe UI", 16), k = 'levelVelocity_4', disabled = False, enable_events = True),
+                                  sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')]], )],
+                      [sg.T('Exp.: Sets the number of particles created per frame at the specified speed of mouse movement. (Below "Level 1" is defined in the General tab.', pad = (10, (0, 15)))],
                       [sg.HorizontalSeparator()],
-                      [sg.T('Particle drag, higher equals more movement, less drag: drag * particle speed per frame. (If >1 then particles speed up)', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.000, 2.999), default_value=0.850, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
-                                 orientation='horizontal', k='drag', enable_events=True)]
+                      [sg.HorizontalSeparator()],
+
+                      [sg.T('(Particle Vector) ONCE: Add random velocity to vector. --Only dynamic OFF // Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('Kick particles apart in RANDOM directions right after creation.', pad = (10, (10, 0)))],
+                      [sg.T('( vector(X/Y) = vector(X/Y) + random_between(+-VALUE)', pad = (10, (0, 0)))],
+                      [sg.Slider(range = (0.0, 100.0), default_value = 10, font = ("Segoe UI", 14), resolution = 0.5, size = (70, 10),
+                                 orientation = 'horizontal', disabled = False, k = 'randomMod', enable_events = True, trough_color = sg.theme_slider_color())],
+
+                      [sg.Checkbox('(Particle Vector) ONCE: Influence vector randomly by how fast you have moved the mouse.', default = False,
+                                   k = 'randomizeVelocity', disabled = False, enable_events = True, font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T("( vector(X/Y) = vector(X/Y) + random_between(+-mouseSpeed) )", pad = (10, (0, 0)))],
+                      [sg.T("Control strength of influence. (Random velocity in random direction) --Only dynamic ON--", font = ("Segoe UI", 14), pad = (10, (5, 0)))],
+                      [sg.T("Kicks particles apart without much regards to direction.", pad = (10, (0, 0)))],
+                      [sg.T("( vector(X/Y) = vector(X/Y) + random_between(+-mouseSpeed * VALUE) )", pad = (10, (0, 0)))],
+                      [sg.Slider(range = (0.0, 10.0), default_value = 0.160, font = ("Segoe UI", 14), resolution = .005, size = (70, 10),
+                                 orientation = 'horizontal', k = 'randomModDynamic', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
+                      [sg.HorizontalSeparator()],
+
+                      [sg.T('(Particle Vector) ONCE: Multiply velocity by VALUE. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('Push particles apart, but keep direction. Applied once at particle genesis, at vector conversion into velocity. Equal to mouse movement at 1.', pad = (10, (10, 0)))],
+                      [sg.T('( velocity * VALUE )', pad = (10, (0, 0)))],
+                      [sg.Slider(range = (0.0, 3.0), default_value = 1.00, font = ("Segoe UI", 14), resolution = .005, size = (70, 10),
+                                 orientation = 'horizontal', k = 'velocityMod', enable_events = True)],
+
+                      [sg.T('(Particle Vector) PER FRAME: Multiply velocity by VALUE. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('Can simulate drag or drive: Like air does to you in windy weather. Every frame velocity is multiplied by this value.', pad = (10, (10, 0)))],
+                      [sg.T('If it is bigger than 1.0 then particles will speed up instead. If it is 0, all particles stand still.', pad=(10, (0, 0)))],
+                      [sg.T('( velocity * VALUE )', pad=(10, (0, 0)))],
+                      [sg.Slider(range = (0.0, 3.0), default_value = 0.850, font = ("Segoe UI", 14), resolution = .005, size = (70, 10),
+                                 orientation = 'horizontal', k = 'drag', enable_events = True)]
                       ]
 
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor),
-                                                                                                           size=(25, 2), font=("Segoe UI", 16), k='color picker button')],
-                    [sg.T('Use "#ff0001" for full HSV color when ageColor is True. (Full 255 red plus 1 blue=hsv hue of 360°)', pad=(10, (0, 15)))],
-                    [sg.Checkbox('Sets color of particles to a random one.', default=False, k='particleColorRandom', enable_events=True)],
+                              size=(25, 2), font=("Segoe UI", 16), k='color picker button'),
+                    sg.Frame('', border_width = 0, layout =[[sg.T('Hue slider', expand_x = True, justification='center', font=("Segoe UI", 16))],
+                                                                 [sg.Slider(range=(0.00, 360.00), default_value=particleColorHue, font=("Segoe UI", 14), resolution=0.01, size=(45, 10),
+                                                                            orientation='horizontal', k='particleColorHue', disabled=False, enable_events=True)]],)],  # , trough_color=particleColor
+                    [sg.Checkbox('Randomize initial particle color.', default=False, k='particleColorRandom', enable_events=True)],
+                    [sg.Checkbox('Rollover from hue = 360 to 0 or the other way around. (Depending on if positive or negative aging is used.', default=False, k='colorRollover', enable_events=True)],
 
                     [sg.HorizontalSeparator()],
                     [sg.Spin([i for i in range(0, 200)], initial_value=50, font=("Segoe UI", 16), k='ageColorNoise', enable_events=True),
-                     sg.T('Add random hue variation to combat too uniform-looking sparkles: hue = random(+|-value). "0" disables this.')],
-                    [sg.T('Hue variation bias towards more positive or negative values: 0 = only negative noise | 0.5 = balanced | 1.0 = only positive noise', pad=(10, (15, 0)))],
+                    sg.Frame('', border_width = 0, layout =[[sg.T('Add randomness to hue. (inject noise) A number between range +-value is added at time of creation.', pad=(0, (0, 0)))],
+                                                                 [sg.T('Use to combat too uniform looking particle color change. Deactivate with 0.', pad=(0, (0, 0))), ]])],
+                    [sg.T('Skew this number with a bias more towards positive or negative values: 0 = only negative noise | 0.5 = balanced | 1.0 = only positive noise', pad=(10, (15, 0)))],
                     [sg.Slider(range=(0.00, 1.00), default_value=0.42, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
                                orientation='horizontal', k='ageColorNoiseMod', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
-                    [sg.Checkbox('Change hue over time. (Hue aging)', default=True, k='ageColor', enable_events=True)],
-                    [sg.T('')],
-                    [sg.T('Hue aging speed factor. Negative values decrease hue [of hsv color] over time, positive increase it. (Neg: towards orange. Pos: towards purple)', pad=(10, (15, 0)))],
-                    [sg.Slider(range=(-99.99, 99.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
+                    [sg.Checkbox('Change hue over time. (hue - age * VALUE)', font = ("Segoe UI", 15), default=True, k='ageColor', enable_events=True)],
+                    [sg.T('Hue aging speed factor. Negative values decrease hue over time, positive increase it. (i.e. if Cyan, then Neg: towards green, Pos: towards blue)', pad=(10, (0, 0)))],
+                    [sg.Slider(range=(-19.99, 19.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.10, size=(70, 10),
                                orientation='horizontal', k='ageColorSpeed', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
                     [sg.T('Fine adjustment: ', font=("Segoe UI", 14)),
-                     sg.Slider(range=(ageColorSpeed-2.00, ageColorSpeed+2.00), default_value=ageColorSpeed, font=("Segoe UI", 14), resolution=.001, size=(56.9, 10),
+                     sg.Slider(range=(ageColorSpeed-1.00, ageColorSpeed+1.00), default_value=ageColorSpeed, font=("Segoe UI", 14), resolution=.005, size=(56.9, 10),
                                orientation='horizontal', k='ageColorSpeedFine', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
-                    [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster decline of hue value.', default=True, k='ageColorSlope', disabled=False, enable_events=True)],
-                    [sg.T('(More pronounced upper colors. [Like purple and blue])', pad=(10, (0, 15)))],
-                    [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad=(10, (15, 0)))],
-                    [sg.T('If "age on a concave slope" is off, this slider divides ')],
-                    [sg.Slider(range=(0.001, 1.999), default_value=0.420, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
+                    [sg.Checkbox('Linear aging instead  (hue - time)', default = True, k = 'ageLinear', enable_events = True)],
+                    [sg.T('Speed of linear aging')],
+                    [sg.Slider(range = (-30.0, 30.0), default_value = .5, font = ("Segoe UI", 14), resolution = .1, size = (70, 10),
+                               orientation = 'horizontal', k = 'ageLinearSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
+
+                    [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster change of hue value.', default=True, k='ageColorSlope', disabled=False, enable_events=True)],
+                    [sg.T('(i.e. Longer stay of earlier colors. May be "logarithmic" aging.)', pad=(10, (0, 0)))],
+                    [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad=(10, (0, 0)))],
+                    [sg.Slider(range=(-2.00, 2.00), default_value=0.420, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
                                orientation='horizontal', k='ageColorSlopeConcavity', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())]
                     ]
 
-    dynamic_layout = [[sg.Text('Dynamics settings')],
-                      [sg.Checkbox('Enable dynamic behavior', default=True, k='dynamic', enable_events=True)],
-                      [sg.T('Exp.: The faster the movement, the more particles are created and the more random motion will be added.', pad=(10, (0, 15)))],
-
-                      [sg.HorizontalSeparator()],
-                      [sg.T('Adds random motion to random direction to DYNAMIC particles: mouseSpeed(direction) * randomMod.', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.000, 0.999), default_value=0.160, font=("Segoe UI", 14), resolution=.001, size=(70, 10),
-                                 orientation='horizontal', k='randomModDynamic', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
-
-                      [sg.HorizontalSeparator()],  # find better way to do this. Maybe tables? There's a demo for that. Frames are ok though
-                      [sg.Frame('Number of particles:',[[sg.Spin([i for i in range(1, 100)], initial_value=5, font=("Segoe UI", 16), k='levelNumParticles_1', disabled=False, enable_events=True), sg.T('Level 1 '),
-                       sg.Spin([i for i in range(1, 100)], initial_value=8, font=("Segoe UI", 16), k='levelNumParticles_2', disabled=False, enable_events=True), sg.T('Level 2 '),
-                       sg.Spin([i for i in range(1, 100)], initial_value=14, font=("Segoe UI", 16), k='levelNumParticles_3', disabled=False, enable_events=True), sg.T('Level 3'),
-                       sg.Spin([i for i in range(1, 100)], initial_value=20, font=("Segoe UI", 16), k='levelNumParticles_4', disabled=False, enable_events=True), sg.T('Level 4 - spawn this many particles ...')]],)],
-                      [sg.Frame('At mouse velocity in pixel per frame:',[[sg.Spin([i for i in range(1, 1000)], initial_value=15, font=("Segoe UI", 16), k='levelVelocity_1', disabled=False, enable_events=True), sg.T('Level 1'),
-                       sg.Spin([i for i in range(1, 1000)], initial_value=30, font=("Segoe UI", 16), k='levelVelocity_2', disabled=False, enable_events=True), sg.T('Level 2'),
-                       sg.Spin([i for i in range(1, 1000)], initial_value=60, font=("Segoe UI", 16), k='levelVelocity_3', disabled=False, enable_events=True), sg.T('Level 3 '),
-                       sg.Spin([i for i in range(1, 1000)], initial_value=120, font=("Segoe UI", 16), k='levelVelocity_4', disabled=False, enable_events=True), sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')]],)],
-                      [sg.T('Number of particles at mouse velocities below "Level 1" are defined by the value (numParticles) in the General tab.')]
-                      ]
-
-    other_layout = [[sg.Text("Anything else one could find interesting to adhere to your mouse-cursor!", font=("Segoe UI", 16))],
-                    [sg.Text('Notice: FPS and offset from the "General"-tab are also used here:')],
-                    [sg.Checkbox('Add offset to the position of the upper-right corner of these stupid things', default=False, k='useOffset2', enable_events=True)],
+    other_layout = [[sg.Text("Anything else one could find interesting to adhere to your mouse cursor!", font=("Segoe UI", 16))],
+                    [sg.Text('Notice: FPS and the origin-offset from the "General"-tab are also used here:'),
+                     sg.Checkbox('Add offset to the position of the upper-right corner of these stupid things', default=False, k='useOffset2', enable_events=True)],
                     [sg.T('X '), sg.Spin([i for i in range(-99, 99)], initial_value=20, font=("Segoe UI", 16), k='offsetX2', disabled=False, enable_events=True),
                      sg.T('Y '), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=("Segoe UI", 16), k='offsetY2', disabled=False, enable_events=True),
                      sg.T('Offset in pixel. (0, 0=tip of cursor)')],
@@ -390,16 +488,16 @@ def make_window(theme):
                     [sg.Image(data=get_img_data(imagePath, first=True), k='image')]
                     ]
 
-    preview_layout = [[sg.Canvas(size=(120, 33), k='graph')],
-                      [sg.T('scatter plot with color map that changes?? X is time, Y is brightness (to death) and the color is color, of course?')],
-                      [sg.T('')]]
+    # preview_layout = [[sg.Canvas(size=(120, 33), k='graph')],
+    #                   [sg.T('scatter plot with color map that changes?? X is time, Y is brightness (to death) and the color is color, of course?')],
+    #                   [sg.T('')]]
 
     console_layout = [[sg.Output(size=(120, 33), font=("Segoe UI", 10))],
                       [sg.T("Please don't look under the rug.")]]
 
-    tabs_layout = [[sg.TabGroup([[sg.Tab('General settings', general_layout),
+    tabs_layout = [[sg.TabGroup([[sg.Tab('General particle settings', general_layout),
+                                  sg.Tab('Particle dynamics', dynamic_layout),
                                   sg.Tab('Color settings', color_layout),
-                                  sg.Tab('Dynamics', dynamic_layout),
                                   sg.Tab('Other things stuck to your mouse', other_layout),
                                   #sg.Tab('Preview', preview_layout),
                                   sg.Tab('Console output', console_layout)]])]]
@@ -428,7 +526,7 @@ def make_window(theme):
 #   print 'Hex is not valid'
 
 def main():
-    global config, particleColor, fontColor, outlineColor, ageColorSpeed, imagePath
+    global config, particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath
     #sg.theme('Dark')  # redundant
     sg.set_options(font=("Segoe UI", 10))  # global font
     menu = ["", ["Show Window", "Hide Window", "---", "Exit"]]  # Tray-icon context-menu
@@ -458,15 +556,22 @@ def main():
     window['useOffset2'].update(values['useOffset2'])
     window['offsetX2'].update(values['offsetX2'])
     window['offsetY2'].update(values['offsetY2'])
+    values['particleColorHue'] = particleColorHue
+    window['particleColorHue'].update(values['particleColorHue'])
+
     try:
         while True:
-            event, values = window.read(timeout=1000)
+            event, values = window.read(timeout=1000)  # value['particleColor'] and the other revert here after being set twice?
+            #colorHEX = ''
+            #colorHSV = ''
             particleColor = values['particleColor']
+            particleColorHue = values['particleColorHue']
             fontColor = values['fontColor']
             outlineColor = values['outlineColor']
             imagePath = values['imagePath']
 
             if event in (None, 'Exit'):
+                updateConfig(values)
                 if proc or otherProc:
                     if psutil.pid_exists(pid):
                         kill_proc_tree(pid=pid)
@@ -517,26 +622,43 @@ def main():
                 window['artistComplement'].update(disabled=True)
 
             if not values['ageColor']:
+                window['colorRollover'].update(disabled=True)
                 window['ageColorSpeed'].update(disabled=True)
                 window['ageColorSpeed'].Widget.config(troughcolor=sg.theme_background_color())
                 window['ageColorSpeedFine'].update(disabled=True)
                 window['ageColorSpeedFine'].Widget.config(troughcolor=sg.theme_background_color())
+                window['ageLinear'].update(disabled=True)
+                window['ageLinearSpeed'].Widget.config(troughcolor=sg.theme_background_color())
                 window['ageColorSlope'].update(disabled=True)
                 window['ageColorSlopeConcavity'].update(disabled=True)
                 window['ageColorSlopeConcavity'].Widget.config(troughcolor=sg.theme_background_color())
             else:
+                window['colorRollover'].update(disabled=False)
                 window['ageColorSpeed'].update(disabled=False)
                 window['ageColorSpeed'].Widget.config(troughcolor=sg.theme_slider_color())
                 window['ageColorSpeedFine'].update(disabled=False)
                 window['ageColorSpeedFine'].Widget.config(troughcolor=sg.theme_slider_color())
+                window['ageLinear'].update(disabled=False)
+                window['ageLinearSpeed'].Widget.config(troughcolor=sg.theme_slider_color())
                 window['ageColorSlope'].update(disabled=False)
                 window['ageColorSlopeConcavity'].update(disabled=False)
                 window['ageColorSlopeConcavity'].Widget.config(troughcolor=sg.theme_slider_color())
-                if values['ageColorSlope']:
+                if values['ageLinear']:
                     window['ageColorSpeed'].update(disabled=True)
                     window['ageColorSpeed'].Widget.config(troughcolor=sg.theme_background_color())
                     window['ageColorSpeedFine'].update(disabled=True)
                     window['ageColorSpeedFine'].Widget.config(troughcolor=sg.theme_background_color())
+                    window['ageColorSlope'].update(disabled=True)
+                    window['ageColorSlopeConcavity'].update(disabled=True)
+                    window['ageColorSlopeConcavity'].Widget.config(troughcolor=sg.theme_background_color())
+                elif values['ageColorSlope']:
+                    window['ageColorSpeed'].update(disabled=True)
+                    window['ageColorSpeed'].Widget.config(troughcolor=sg.theme_background_color())
+                    window['ageColorSpeedFine'].update(disabled=True)
+                    window['ageColorSpeedFine'].Widget.config(troughcolor=sg.theme_background_color())
+                    window['ageLinear'].update(disabled=True)
+                    window['ageLinearSpeed'].Widget.config(troughcolor=sg.theme_background_color())
+                    window['ageColorSlope'].update(disabled=False)
                     window['ageColorSlopeConcavity'].update(disabled=False)
                     window['ageColorSlopeConcavity'].Widget.config(troughcolor=sg.theme_slider_color())
                 else:
@@ -544,14 +666,22 @@ def main():
                     window['ageColorSpeed'].Widget.config(troughcolor=sg.theme_slider_color())
                     window['ageColorSpeedFine'].update(disabled=False)
                     window['ageColorSpeedFine'].Widget.config(troughcolor=sg.theme_slider_color())
+                    window['ageLinear'].update(disabled=False)
+                    window['ageLinearSpeed'].Widget.config(troughcolor=sg.theme_background_color())
+                    window['ageColorSlope'].update(disabled=False)
                     window['ageColorSlopeConcavity'].update(disabled=False)
                     window['ageColorSlopeConcavity'].Widget.config(troughcolor=sg.theme_background_color())
 
             if values['dynamic']:
-                window['randomMod'].update(disabled=True)
+                window['randomMod'].update(disabled = True)
                 window['randomMod'].Widget.config(troughcolor=sg.theme_background_color())
-                window['randomModDynamic'].update(disabled=False)
-                window['randomModDynamic'].Widget.config(troughcolor=sg.theme_slider_color())
+                window['randomizeVelocity'].update(disabled=False)
+                if values['randomizeVelocity']:
+                    window['randomModDynamic'].update(disabled=False)
+                    window['randomModDynamic'].Widget.config(troughcolor=sg.theme_slider_color())
+                else:
+                    window['randomModDynamic'].update(disabled=True)
+                    window['randomModDynamic'].Widget.config(troughcolor=sg.theme_background_color())
                 window['levelVelocity_1'].update(disabled=False)
                 window['levelVelocity_2'].update(disabled=False)
                 window['levelVelocity_3'].update(disabled=False)
@@ -563,6 +693,7 @@ def main():
             else:
                 window['randomMod'].update(disabled=False)
                 window['randomMod'].Widget.config(troughcolor=sg.theme_slider_color())
+                window['randomizeVelocity'].update(disabled=True)
                 window['randomModDynamic'].update(disabled=True)
                 window['randomModDynamic'].Widget.config(troughcolor=sg.theme_background_color())
                 window['levelVelocity_1'].update(disabled=True)
@@ -622,10 +753,14 @@ def main():
                     otherProc = False
                     setDefaults()
                     getVariablesFromConfig(window)
-                    event, values = window.read(timeout=250)
+                    event, values = window.read(timeout=1250)
                     values['particleColor'] = config.get("SPARKLES", "particleColor")
                     particleColor = values['particleColor']
                     window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+                    values['particleColorHue'] = float(config.get("SPARKLES", "particleColorHue"))
+                    particleColorHue = values['particleColorHue']
+                    #window['particleColorHue'].update(trough_color=particleColor)  # Does not work at all
+                    window['particleColorHue'].update(values['particleColorHue'])
                     values['fontColor'] = config.get("OTHER", "fontColor")
                     fontColor = values['fontColor']
                     window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
@@ -647,16 +782,19 @@ def main():
             # ---------------------
             # F5                               65474     0xFFC2
             elif event in (None, 'Save-n-Run') or event in (None, 'F5 pressed'):
-                values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range=(0, 100),  resolution=1)". GRRR
+                #values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range=(0, 100),  resolution=1)". GRRR
                 if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
                     particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
-                    values['particleColor'] = config.get("SPARKLES", "particleColor")
+                    values['particleColor'] = particleColor
+                if particleColorHue == "None" or values['particleColorHue'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    particleColorHue = float(config.get("SPARKLES", "particleColorHue"))  # Get last saved values
+                    values['particleColorHue'] = particleColorHue
                 if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
-                    fontColor = config.get("OTHER", "fontColor")  # Get last saved values
-                    values['fontColor'] = config.get("OTHER", "fontColor")
+                    fontColor = config.get("SPARKLES", "fontColor")  # Get last saved values
+                    values['fontColor'] = fontColor
                 if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
-                    outlineColor = config.get("OTHER", "outlineColor")  # Get last saved values
-                    values['outlineColor'] = config.get("OTHER", "outlineColor")
+                    outlineColor = config.get("SPARKLES", "outlineColor")  # Get last saved values
+                    values['outlineColor'] = outlineColor
                 updateConfig(values)
                 print('All values saved to config.ini')
                 # print(values)
@@ -664,6 +802,10 @@ def main():
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+                values['particleColorHue'] = float(config.get("SPARKLES", "particleColorHue"))
+                particleColorHue = values['particleColorHue']
+                #window['particleColorHue'].update(trough_color=particleColor)  # Does not work at all
+                window['particleColorHue'].update(values['particleColorHue'])
                 values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
@@ -724,16 +866,19 @@ def main():
             # ---------------------
 
             elif event in (None, 'Save'):
-                values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
+                #values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
                 if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
                     particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
-                    values['particleColor'] = config.get("SPARKLES", "particleColor")
+                    values['particleColor'] = particleColor
+                if particleColorHue == "None" or values['particleColorHue'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                    particleColorHue = float(config.get("SPARKLES", "particleColorHue"))  # Get last saved values
+                    values['particleColorHue'] = particleColorHue
                 if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
                     fontColor = config.get("SPARKLES", "fontColor")  # Get last saved values
-                    values['fontColor'] = config.get("SPARKLES", "fontColor")
+                    values['fontColor'] = fontColor
                 if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
                     outlineColor = config.get("SPARKLES", "outlineColor")  # Get last saved values
-                    values['outlineColor'] = config.get("SPARKLES", "outlineColor")
+                    values['outlineColor'] = outlineColor
                 updateConfig(values)
                 print('All values saved to config.ini')
                 # print(values)
@@ -741,6 +886,10 @@ def main():
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+                values['particleColorHue'] = float(config.get("SPARKLES", "particleColorHue"))
+                particleColorHue = values['particleColorHue']
+                #window['particleColorHue'].update(trough_color=particleColor)  # Does not work at all
+                window['particleColorHue'].update(values['particleColorHue'])
                 values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
@@ -810,16 +959,37 @@ def main():
                 otherProc = False
                 break
 
+            elif event in (None, 'particleColorHue'):
+                if particleColorHue == "None" or values['particleColorHue'] == "None":  # maybe??
+                    particleColorHue = float(config.get("SPARKLES", "particleColorHue"))  # Get last saved values
+                    values['particleColorHue'] = particleColorHue
+
+                #particleColorHue = values['particleColorHue']
+                colorHSV = acrylic.Color(hex = particleColor).hsv  # get S and V values for next step
+                colorHEX = acrylic.Color(hsv = [particleColorHue, colorHSV.s, colorHSV.v]).hex
+                particleColor = colorHEX  # convert hsv to hex
+                values['particleColor'] = colorHEX
+
+                #window['particleColorHue'].update(values['particleColorHue'])  # , trough_color=particleColor
+                window['particleColor'].update(values['particleColor'])
+                window['color picker button'].update(values['particleColor'])
+                window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+
             elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
-                if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if particleColor == "None" or values['particleColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
-                    values['particleColor'] = config.get("SPARKLES", "particleColor")
-                particleColor = values['particleColor']
-                event, values = window.read(timeout=1000)
+                    values['particleColor'] = particleColor
+
+                #particleColor = values['particleColor']
+                colorHSV = acrylic.Color(hex = particleColor).hsv  # convert hex to hsv
+                particleColorHue = colorHSV.h  # extract hue
+                values['particleColorHue'] = particleColorHue
+
+                window['particleColorHue'].update(values['particleColorHue'])  # , trough_color=particleColor
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
 
             elif event in (None, 'fontColor'):  # Update color and text of the color-picker button
-                if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if fontColor == "None" or values['fontColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     fontColor = config.get("OTHER", "fontColor")  # Get last saved values
                     values['fontColor'] = config.get("OTHER", "fontColor")
                 fontColor = values['fontColor']
@@ -827,7 +997,7 @@ def main():
                 window['font color picker button'].update(('Font color picker: %s' % fontColor), button_color=("#010101", fontColor))
 
             elif event in (None, 'outlineColor'):  # Update color and text of the color-picker button
-                if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if outlineColor == "None" or values['outlineColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     outlineColor = config.get("OTHER", "outlineColor")  # Get last saved values
                     values['outlineColor'] = config.get("OTHER", "outlineColor")
                 outlineColor = values['outlineColor']
@@ -895,7 +1065,8 @@ def main():
 
             print("killed last subprocess")
     print("close window")
-    tray.close()  # optional but without a close, the icon may "linger" until moused over
+    tray.hide_icon()  # sometimes doesn't have an effect and the icon stays ...
+    tray.close()  # optional but without a close, the icon may "linger" until moused over | still with it
     window.close()
 
 
@@ -920,6 +1091,8 @@ if __name__ == '__main__':
         print(config)
 
     particleColor = str(config.get("SPARKLES", "particleColor"))
+    colorHSV = acrylic.Color(hex = particleColor).hsv  # convert hex to hsv
+    particleColorHue = float(colorHSV.h)  # extract hue
     fontColor = str(config.get("OTHER", "fontColor"))
     outlineColor = str(config.get("OTHER", "outlineColor"))
     ageColorSpeed = float(config.get("SPARKLES", "ageColorSpeed"))
