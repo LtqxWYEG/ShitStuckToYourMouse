@@ -7,10 +7,11 @@
                                                 (__ /
 ```
 Updates:
---> MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?
-        - Performance now SOMETIMES multiplied by N of threads! SOMETIMES = Low amount of particles: 2 threads best; High amount: 4 best. Maybe the Windows desktop window manager craps on it?
-        - Can now spawn particles in the neighborhood of 300 - per frame - other with no FPS reduction. (Yea, I still don't understand time dilation. I'm not a physicist.)
-        - Performance is now only limited by how big the rectangle is that is being updated every frame. Need to find some way to lower area, but not with a huge amount of rectangles. Spacial hashes?
+
+- MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?: 
+   - Performance now SOMETIMES multiplied by N of threads! SOMETIMES = Low amount of particles: 2 threads best; High amount: 4 best. Maybe the Windows desktop window manager craps on it?
+   - Can now spawn particles in the neighborhood of 300 - per frame - other with no FPS reduction. (Yea, I still don't understand time dilation. I'm not a physicist.)
+   - Performance is now only limited by how big the rectangle is that is being updated every frame. Need to find some way to lower area, but not with a huge amount of rectangles. Spacial hashes?
 - Finally explained what is going on with each setting: There are two vectors. Sometimes they're added. You can manipulate them
 - Sparkles now with rotation! Random or controlled, bilateral and for both vector.
 - The strength of all slider and other options is now somewhat normalized and within practical bounds.
