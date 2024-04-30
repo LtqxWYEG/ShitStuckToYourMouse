@@ -6,6 +6,20 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
+Updates:
+--> MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?
+        - Performance now SOMETIMES multiplied by N of threads! SOMETIMES = Low amount of particles: 2 threads best; High amount: 4 best. Maybe the Windows desktop window manager craps on it?
+        - Can now spawn particles in the neighborhood of 300 - per frame - other with no FPS reduction. (Yea, I still don't understand time dilation. I'm not a physicist.)
+        - Performance is now only limited by how big the rectangle is that is being updated every frame. Need to find some way to lower area, but not with a huge amount of rectangles. Spacial hashes?
+- Finally explained what is going on with each setting: There are two vectors. Sometimes they're added. You can manipulate them
+- Sparkles now with rotation! Random or controlled, bilateral and for both vector.
+- The strength of all slider and other options is now somewhat normalized and within practical bounds.
+- Interpolation now no longer leaves out one "slot" of 1/3s of "moved distance" ... It's much more smooth looking!
+- Velocity limit not global and not hard. It's soft! Flacid even. No need to harden it, too: The particles rub it juuust right. :P
+- Internal: Variables now have much better names
+
+---
+
 Yea boy! You like the 00s? Radical! Get some _*very elegant*_ shit stuck to your mouse - *like ppl did in the early 00s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 00s!! Who cares about 5% CPU! Sense? 00! Get this shit stuck to your mouse cursor! Now! NOW!
 
 Draws a very nice looking sparkle/glitter/smoke/fire effect following/on your mouse.
@@ -23,7 +37,7 @@ Usage:
 - ^--- "Do it!" - Palpatine
 - Other possibilities: 
    - Display color under mouse cursor
-      - RGB, RGB complementary and RYB complementary (With caveats)
+      - RGB, RGB complementary and RYB complementary (RYB with caveats)
    - Display a clock
    - CPU usage
    - RAM usage
@@ -42,13 +56,7 @@ Special features:
 - Rainbow colors!
 - I completely disregard all Linux users!
 - Good performance!
-
----
-Sparkles:  
-Performance with 20 particles per frame @60fps: (runs only on a single core)
-- Laptop with AMD A4-6210:              20 to 25% CPU usage. (max possible per core: 25% = 4 core/ht) Now with double the framerate!
-- Desktop with AMD Ryzen 5 2600 @4Ghz:  average 4.1% CPU usage. (max possible per core: 8.33% =  12 core/ht) That's way more than with dynamics on.
-
+- ... because now it has multithreading!!
 
 ---
 
