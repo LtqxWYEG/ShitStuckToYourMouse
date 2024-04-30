@@ -99,20 +99,21 @@ def getVariablesFromConfig(window):
     window['particleAge'].update(int(config.get("SPARKLES", "particleAge")))
     window['ageBrightnessMod'].update(float(config.get("SPARKLES", "ageBrightnessMod")))
     window['ageBrightnessNoise'].update(int(config.get("SPARKLES", "ageBrightnessNoise")))
-    window['velocityMod'].update(float(config.get("SPARKLES", "velocityMod")))
-    window['velocityClamp'].update(int(config.get("SPARKLES", "velocityClamp")))
-    string = config.getlistfloat("SPARKLES", "GRAVITY")
-    window['GRAVITY_X'].update(string[0])
-    window['GRAVITY_Y'].update(string[1])
+    window['velocityFactorVector'].update(float(config.get("SPARKLES", "velocityFactorVector")))
+    window['softClampVelocityVector'].update(int(config.get("SPARKLES", "softClampVelocityVector")))
+    string = config.getlistfloat("SPARKLES", "manualSecondVector")
+    window["manualSecondVector_X"].update(string[0])
+    window["manualSecondVector_Y"].update(string[1])
     window['drag'].update(float(config.get("SPARKLES", "drag")))
     window['FPS'].update(int(config.get("SPARKLES", "FPS")))
+    window['multitasking'].update(int(config.get("SPARKLES", "multitasking")))
     window['interpolateMouseMovement'].update(config.getboolean("SPARKLES", "interpolateMouseMovement"))
     window['useOffset'].update(config.getboolean("SPARKLES", "useOffset"))
     window['offsetX'].update(int(config.get("SPARKLES", "offsetX")))
     window['offsetY'].update(int(config.get("SPARKLES", "offsetY")))
     window['markPosition'].update(config.getboolean("SPARKLES", "markPosition"))
     window['numParticles'].update(int(config.get("SPARKLES", "numParticles")))
-    window['randomMod'].update(float(config.get("SPARKLES", "randomMod")))
+    window['dynamic'].update(config.getboolean("SPARKLES", "dynamic"))
 
     window['particleColor'].update(str(config.get("SPARKLES", "particleColor")))
     window['particleColorHue'].update(float(config.get("SPARKLES", "particleColorHue")))
@@ -127,20 +128,20 @@ def getVariablesFromConfig(window):
     window['ageColorNoise'].update(int(config.get("SPARKLES", "ageColorNoise")))
     window['ageColorNoiseMod'].update(float(config.get("SPARKLES", "ageColorNoiseMod")))
 
-    window['randomizeVelocity'].update(config.getboolean("SPARKLES", "randomizeVelocity"))
-    window['constantMotion'].update(float(config.get("SPARKLES", "constantMotion")))
-    window['chaoticMotion'].update(float(config.get("SPARKLES", "chaoticMotion")))
-    window['cumulativeChaoticMotion'].update(config.getboolean("SPARKLES", "cumulativeChaoticMotion"))
-    window['chaoticMotionClamped'].update(config.getboolean("SPARKLES", "chaoticMotionClamped"))
+    window['addRandomMouseInfluenceVector'].update(config.getboolean("SPARKLES", "addRandomMouseInfluenceVector"))
+    window['randomSecondVector'].update(float(config.get("SPARKLES", "randomSecondVector")))
+    window['chaoticSecondVector'].update(float(config.get("SPARKLES", "chaoticSecondVector")))
+    window['addChaosSecondVector'].update(config.getboolean("SPARKLES", "addChaosSecondVector"))
+    window['clampVelocitySecondVector'].update(config.getboolean("SPARKLES", "clampVelocitySecondVector"))
 
+    window['addRandomParticleVector'].update(float(config.get("SPARKLES", "addRandomParticleVector")))
     window['vectorRotation'].update(float(config.get("SPARKLES", "vectorRotation")))
     window['randomRotation'].update(config.getboolean("SPARKLES", "randomRotation"))
     window['cumulativeVectorRotation'].update(config.getboolean("SPARKLES", "cumulativeVectorRotation"))
-    window['temporalVectorRotation'].update(config.getboolean("SPARKLES", "temporalVectorRotation"))
+    window['secondVectorRotation'].update(config.getboolean("SPARKLES", "secondVectorRotation"))
     window['particleVectorRotation'].update(config.getboolean("SPARKLES", "particleVectorRotation"))
-
-    window['dynamic'].update(config.getboolean("SPARKLES", "dynamic"))
-    window['randomModDynamic'].update(float(config.get("SPARKLES", "randomModDynamic")))
+    window['strengthMouseInfluenceVector'].update(float(config.get("SPARKLES", "strengthMouseInfluenceVector")))
+    
     string = config.getlistint("SPARKLES", "levelVelocity")
     window['levelVelocity_1'].update(string[0])
     window['levelVelocity_2'].update(string[1])
@@ -173,20 +174,21 @@ def updateConfig(values):
     config.set("SPARKLES", "particleAge", str(values['particleAge']))
     config.set("SPARKLES", "ageBrightnessMod", str(values['ageBrightnessMod']))
     config.set("SPARKLES", "ageBrightnessNoise", str(values['ageBrightnessNoise']))
-    config.set("SPARKLES", "velocityMod", str(values['velocityMod']))
-    config.set("SPARKLES", "velocityClamp", str(values['velocityClamp']))
-    string = [str(values['GRAVITY_X']), ', ', str(values['GRAVITY_Y'])]
-    GRAVITYStr = "".join(string)
-    config.set("SPARKLES", "GRAVITY", GRAVITYStr)
+    config.set("SPARKLES", "velocityFactorVector", str(values['velocityFactorVector']))
+    config.set("SPARKLES", "softClampVelocityVector", str(values['softClampVelocityVector']))
+    string = [str(values["manualSecondVector_X"]), ', ', str(values["manualSecondVector_Y"])]
+    secondVector_STRING = "".join(string)
+    config.set("SPARKLES", "manualSecondVector", secondVector_STRING)
     config.set("SPARKLES", "drag", str(values['drag']))
     config.set("SPARKLES", "FPS", str(values['FPS']))
+    config.set("SPARKLES", "multitasking", str(values['multitasking']))
     config.set("SPARKLES", "interpolateMouseMovement", str(values['interpolateMouseMovement']))
     config.set("SPARKLES", "useOffset", str(values['useOffset']))
     config.set("SPARKLES", "offsetX", str(values['offsetX']))
     config.set("SPARKLES", "offsetY", str(values['offsetY']))
     config.set("SPARKLES", "markPosition", str(values['markPosition']))
     config.set("SPARKLES", "numParticles", str(values['numParticles']))
-    config.set("SPARKLES", "randomMod", str(values['randomMod']))
+    config.set("SPARKLES", "dynamic", str(values['dynamic']))
 
     config.set("SPARKLES", "particleColor", values['particleColor'])
     config.set("SPARKLES", "particleColorHue", str(values['particleColorHue']))
@@ -201,20 +203,20 @@ def updateConfig(values):
     config.set("SPARKLES", "ageColorNoise", str(values['ageColorNoise']))
     config.set("SPARKLES", "ageColorNoiseMod", str(values['ageColorNoiseMod']))
 
-    config.set("SPARKLES", "randomizeVelocity", str(values['randomizeVelocity']))
-    config.set("SPARKLES", "constantMotion", str(values['constantMotion']))
-    config.set("SPARKLES", "chaoticMotion", str(values['chaoticMotion']))
-    config.set("SPARKLES", "cumulativeChaoticMotion", str(values['cumulativeChaoticMotion']))
-    config.set("SPARKLES", "chaoticMotionClamped", str(values['chaoticMotionClamped']))
+    config.set("SPARKLES", "addRandomMouseInfluenceVector", str(values['addRandomMouseInfluenceVector']))
+    config.set("SPARKLES", "randomSecondVector", str(values['randomSecondVector']))
+    config.set("SPARKLES", "chaoticSecondVector", str(values['chaoticSecondVector']))
+    config.set("SPARKLES", "addChaosSecondVector", str(values['addChaosSecondVector']))
+    config.set("SPARKLES", "clampVelocitySecondVector", str(values['clampVelocitySecondVector']))
 
+    config.set("SPARKLES", "addRandomParticleVector", str(values['addRandomParticleVector']))
     config.set("SPARKLES", "vectorRotation", str(values['vectorRotation']))
     config.set("SPARKLES", "randomRotation", str(values['randomRotation']))
     config.set("SPARKLES", "cumulativeVectorRotation", str(values['cumulativeVectorRotation']))
-    config.set("SPARKLES", "temporalVectorRotation", str(values['temporalVectorRotation']))
-    config.set("SPARKLES", "particleVectorRotation", str(values['particleVectorRotation'])
-               )
-    config.set("SPARKLES", "dynamic", str(values['dynamic']))
-    config.set("SPARKLES", "randomModDynamic", str(values['randomModDynamic']))
+    config.set("SPARKLES", "secondVectorRotation", str(values['secondVectorRotation']))
+    config.set("SPARKLES", "particleVectorRotation", str(values['particleVectorRotation']))
+    config.set("SPARKLES", "strengthMouseInfluenceVector", str(values['strengthMouseInfluenceVector']))
+    
     string = [str(values['levelVelocity_1']), ', ', str(values['levelVelocity_2']), ', ', str(values['levelVelocity_3']), ', ', str(values['levelVelocity_4'])]
     levelVelocityStr = "".join(string)
     config.set("SPARKLES", "levelVelocity", levelVelocityStr)
@@ -292,6 +294,7 @@ def make_window(theme):
 
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value=60, font=("Segoe UI", 16), k='FPS', enable_events=True),
                        sg.T('Frames per second. Also affects number of particles - as they are spawned per frame.')],
+                      [sg.Spin([i for i in range(1, 128)], initial_value=1, font=("Segoe UI", 16), k='multitasking', enable_events=True), sg.T("Number of Threads. (Multitasking) The more particles, the more benefit you'll get.")],
                       [sg.Checkbox('Interpolate mouse movement', default=True, k='interpolateMouseMovement', enable_events=True)],
                       [sg.T('Exp.: Draw some particles between current position of the cursor and that of last frame. (Interpolation should have almost no effect on performance)', pad=(10, (0, 15)))],
                       [sg.Spin([i for i in range(1, 100)], initial_value=1, font=("Segoe UI", 16), k='numParticles', enable_events=True), sg.T('Number of particles to spawn per frame'),
@@ -303,15 +306,15 @@ def make_window(theme):
                        sg.T('Y='), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=("Segoe UI", 16), k='offsetY', disabled=False, enable_events=True),
                        sg.T('Offset in pixel. (0, 0=tip of cursor)')]],)],
 
-                      [sg.Spin([i for i in range(1, 1000)], initial_value = 200, font = ("Segoe UI", 16), k = 'velocityClamp', enable_events = True),
-                       sg.T('Global particle velocity maximum in pixel-per-frame. (Can also clamp chaotic motion, if chosen.)')],
+                      [sg.Spin([i for i in range(1, 1000)], initial_value = 20, font = ("Segoe UI", 16), k = 'softClampVelocityVector', enable_events = True),
+                       sg.T('Soft LIMIT on velocity of particle vector. Allows exceeding. Is used as factor on velocity.')],
                       [sg.Spin([i for i in range(0, 100)], initial_value=12, font=("Segoe UI", 16), k='ageBrightnessNoise', enable_events=True),
                        sg.T('Adds random noise (twinkling) to brightness: brightness = random(+|-value). Deactivate with 0'),
                        sg.T('                                     Scroll down      |')],
                       [sg.Spin([i for i in range(1, 1000)], initial_value=60, font=("Segoe UI", 16), k='particleAge', enable_events=True), sg.T('Particle age (in frames) OR modifier for time until brightness < 7 (death)'),
                        sg.T('                                                                                           v')],
                       [sg.T('Increase slider to >1.00 to slow down brightness decline. Faster dimming leads to earlier death. (Exponential) Deactivate with 0.', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.00, 29.95), default_value=5.300, font=("Segoe UI", 14), resolution=.05, size=(70, 10), pad=(5, (0, 25)),
+                      [sg.Slider(range=(0.00, 29.95), default_value=5.300, font=("Segoe UI", 14), resolution=.05, size=(73.5, 10), pad=(5, (0, 25)),
                                  orientation='horizontal', k='ageBrightnessMod', enable_events=True)],
                       [sg.HorizontalSeparator()],
                       [sg.HorizontalSeparator()],
@@ -320,17 +323,20 @@ def make_window(theme):
                       [sg.T('Every particle has a vector. Here, a vector is a motion with velocity(N) in direction(X,Y) from position(X,Y).', font = ("Segoe UI", 11), pad = (10, (0, 10)))],
                       [sg.T('There are mainly two different ways to affect the vector: By manipulating velocity or direction either directly or by adding a second vector.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
                       [sg.T("You can set that the vector and amount of created particles to be influenced by mouse movement or not. This is done in the Dynamic tab.", font = ("Segoe UI", 8), pad = (10, (2, 0)))],
-                      [sg.T('A vector can be manipulated once at time of particle genesis or every frame. See indicator in titles.'
-                            'a second vector that will be added to the inherent first one can be manipulated with some sliders.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
+                      [sg.T('A vector can be manipulated once at time of particle genesis or every frame. See indicator in titles.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
+                      [sg.T('A second vector that will be added to the inherent first one can be manipulated with some sliders.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
                       [sg.HorizontalSeparator()],
 
                       [sg.T("(Any Vector) ONCE/PER FRAME: Add degrees of rotation into any vector.", font = ("Segoe UI", 15),  pad = (10, (15, 0)))],
                       [sg.T("--Deactivate with 0 or uncheck all boxes--", pad = (10, (10, 0)))],
+                      [sg.T("When added to particle vector, particles will turn around with N amount of strength.", pad = (10, (0, 0)))],
+                      [sg.T("When added to second vector, particles can spiral in one direction, making the rotation independent of its initial direction.", pad = (10, (0, 0)))],
+                      [sg.T("If no effect is visible, reduce the amount or increase velocity. Their turn radius is too small.", pad = (10, (0, 0)))],
                       [sg.Checkbox('Add again every frame (cumulative)', default = False, k = 'cumulativeVectorRotation', enable_events = True),
                        sg.Checkbox('ADD to particle vector', default = False, k = 'particleVectorRotation', enable_events = True),
-                       sg.Checkbox('ADD to second vector', default = True, k = 'temporalVectorRotation', enable_events = True),
-                       sg.Checkbox('Randomize initial rotation for particles', default = True, k = 'randomRotation', enable_events = True)],
-                      [sg.Slider(range = (0.0, 100.0), default_value = 1, font = ("Segoe UI", 14), resolution = 0.1, size = (70, 10),
+                       sg.Checkbox('ADD to second vector', default = True, k = 'secondVectorRotation', enable_events = True),
+                       sg.Checkbox('Randomize rotation for particles', default = True, k = 'randomRotation', enable_events = True)],
+                      [sg.Slider(range = (0.0, 100.0), default_value = 1, font = ("Segoe UI", 14), resolution = 0.1, size = (73.5, 10),
                                  orientation = 'horizontal', disabled = False, k = 'vectorRotation', enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.HorizontalSeparator()],
                       [sg.HorizontalSeparator()],
@@ -338,31 +344,31 @@ def make_window(theme):
                       [sg.T('NOTE: These next sliders will be influenced by sliders from the "dynamic" tab.', font = ("Segoe UI", 15), pad = (100, (15, 0)))],
                       [sg.HorizontalSeparator()],
                       [sg.T('(Second Vector) PER FRAME: INITIALIZE and ADD with these values. --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (10, 0)))],
-                      [sg.T('-- IGNORED if last slider is not at position 0 and without "cumulative" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('-- IGNORED if last slider is not at position 0 and without "ADD" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
                       [sg.T('Can simulate gravity or wind force. (i.e. For gravity: X=0.0, Y=0.1) - Results in a constant motion downwards motion with a speed of 0.1 to all particles.', pad=(10, (10, 0)))],
                       [sg.T('( vector2(X/Y) = vector2(X/Y) + VALUE(X/Y) )', pad=(10, (0, 0)))],
-                      [sg.Slider(range=(-9.95, 9.95), default_value=0.00, font=("Segoe UI", 14), resolution=.05, size=(34, 10),
-                                 orientation='horizontal', k='GRAVITY_X', enable_events=True),
-                       sg.Slider(range=(-3.00, 3.00), default_value=0.00, font=("Segoe UI", 14), resolution=.01, size=(35, 10),
-                                 orientation='horizontal', k='GRAVITY_Y', enable_events=True)],
+                      [sg.Slider(range=(-9.95, 9.95), default_value=0.00, font=("Segoe UI", 14), resolution=.05, size=(36.5, 10),
+                                 orientation='horizontal', k="manualSecondVector_X", enable_events=True),
+                       sg.Slider(range=(-3.00, 3.00), default_value=0.00, font=("Segoe UI", 14), resolution=.01, size=(36.5, 10),
+                                 orientation='horizontal', k="manualSecondVector_Y", enable_events=True)],
 
-                      [sg.T('(Second Vector) ONCE: RESET with random values. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
-                      [sg.T('-- IGNORED if last slider is not at position 0 and without "cumulative" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('(Second Vector) ONCE: RESET with random values. (SMOOTH) --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('-- IGNORED if last slider is not at position 0 and without "ADD" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
                       [sg.T('Once at time of particle generation. Spreads them apart.', pad = (10, (10, 0)))],
                       [sg.T('( vector2(X/Y) = random_between(+-VALUE) )', pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.00, 1.00), default_value = 0.1, font = ("Segoe UI", 14), resolution = 0.005, size = (70, 10),
-                                 orientation = 'horizontal', disabled = False, k = 'constantMotion', enable_events = True, trough_color = sg.theme_slider_color())],
+                      [sg.Slider(range = (0.00, 1.00), default_value = 0.1, font = ("Segoe UI", 14), resolution = 0.001, size = (73.5, 10),
+                                 orientation = 'horizontal', disabled = False, k = 'randomSecondVector', enable_events = True, trough_color = sg.theme_slider_color())],
 
-                      [sg.T('(Second Vector) PER FRAME: RESET with random values or ADD to it . --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (15, 0)))],
-                      [sg.T('-- OVERRIDES last two sliders if not at position 0 and without "cumulative" checkbox checked--', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
-                      [sg.T('Once at time of particle generation or every frame.', pad = (10, (10, 0)))],
+                      [sg.T('(Second Vector) PER FRAME: RESET with - or ADD random values. (CHAOTIC) --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (15, 0)))],
+                      [sg.T('-- OVERRIDES last two sliders if not at position 0 and without "ADD" checkbox checked--', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('Particles turn in other direction every frame. Makes it look like a angry swarm of bees or brownian motion.', pad = (10, (10, 0)))],
                       [sg.T('( vector2(X/Y) = random_between(+-VALUE) )', pad = (10, (0, 0)))],
-                      [sg.Checkbox('-ADD- to second vector instead every frame (cumulative) - ( vector2(X/Y) = vector2(X/Y) + random_between(+-VALUE) * 0.25 )', default = False, k = 'cumulativeChaoticMotion',
+                      [sg.Checkbox('ADD to second vector instead replace. Use to add chaotic movement to other motion. By nature cumulative.', default = False, k = 'addChaosSecondVector',
                                    enable_events = True, pad = (5, (0, 0)))],
-                      [sg.Checkbox('Lower sensitivity of slider by SOME percentage of VALUE. Aso clamps +-VALUE to SOME percentage of VALUE. Useful when cumulative is on. ',
-                                   default = False, k = 'chaoticMotionClamped', enable_events = True, pad = (5, (0, 0)))],
-                      [sg.Slider(range=(0.00, 1.00), default_value= 0.2, font=("Segoe UI", 14), resolution=0.005, size=(70, 10),
-                                 orientation='horizontal', disabled=False, k='chaoticMotion', enable_events=True, trough_color=sg.theme_slider_color())],
+                      [sg.Checkbox('LIMITS second vector velocity to "some dynamic value". Useful when ADD funktion is enabled. Off if 0.',
+                                   default = False, k = 'clampVelocitySecondVector', enable_events = True, pad = (5, (0, 0)))],
+                      [sg.Slider(range=(0.00, 1.0), default_value= 0.2, font=("Segoe UI", 14), resolution=0.001, size=(73.5, 10),
+                                 orientation='horizontal', disabled=False, k='chaoticSecondVector', enable_events=True, trough_color=sg.theme_slider_color())],
                       [sg.T('', pad = (10, (0, 0)))],
                       [sg.T('', pad = (10, (0, 0)))],
                       ]
@@ -371,9 +377,9 @@ def make_window(theme):
                       [sg.T('Exp.: No particles are created when mouse is held still. When moved, the faster the movement, the more particles are created.', pad = (10, (0, 15)))],
                       [sg.Frame('Number of particles:',
                                 [[sg.Spin([i for i in range(1, 100)], initial_value = 5, font = ("Segoe UI", 16), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
-                                  sg.Spin([i for i in range(1, 100)], initial_value = 8, font = ("Segoe UI", 16), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
-                                  sg.Spin([i for i in range(1, 100)], initial_value = 14, font = ("Segoe UI", 16), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
-                                  sg.Spin([i for i in range(1, 100)], initial_value = 20, font = ("Segoe UI", 16), k = 'levelNumParticles_4', disabled = False, enable_events = True),
+                                  sg.Spin([i for i in range(1, 200)], initial_value = 8, font = ("Segoe UI", 16), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
+                                  sg.Spin([i for i in range(1, 300)], initial_value = 14, font = ("Segoe UI", 16), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
+                                  sg.Spin([i for i in range(1, 400)], initial_value = 20, font = ("Segoe UI", 16), k = 'levelNumParticles_4', disabled = False, enable_events = True),
                                   sg.T('Level 4 - spawn this many particles per frame ...')]], )],
                       [sg.Frame('At mouse velocity in pixel per frame:',
                                 [[sg.Spin([i for i in range(1, 1000)], initial_value = 15, font = ("Segoe UI", 16), k = 'levelVelocity_1', disabled = False, enable_events = True), sg.T('Level 1'),
@@ -388,53 +394,53 @@ def make_window(theme):
                       [sg.T('(Particle Vector) ONCE: Add random velocity to vector. --Only dynamic OFF // Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
                       [sg.T('Kick particles apart in RANDOM directions right after creation.', pad = (10, (10, 0)))],
                       [sg.T('( vector(X/Y) = vector(X/Y) + random_between(+-VALUE)', pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 100.0), default_value = 10, font = ("Segoe UI", 14), resolution = 0.5, size = (70, 10),
-                                 orientation = 'horizontal', disabled = False, k = 'randomMod', enable_events = True, trough_color = sg.theme_slider_color())],
+                      [sg.Slider(range = (0.0, 100.0), default_value = 10, font = ("Segoe UI", 14), resolution = 0.5, size = (73.5, 10),
+                                 orientation = 'horizontal', disabled = False, k = 'addRandomParticleVector', enable_events = True, trough_color = sg.theme_slider_color())],
 
                       [sg.Checkbox('(Particle Vector) ONCE: Influence vector randomly by how fast you have moved the mouse.', default = False,
-                                   k = 'randomizeVelocity', disabled = False, enable_events = True, font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                                   k = 'addRandomMouseInfluenceVector', disabled = False, enable_events = True, font = ("Segoe UI", 15), pad = (10, (15, 0)))],
                       [sg.T("( vector(X/Y) = vector(X/Y) + random_between(+-mouseSpeed) )", pad = (10, (0, 0)))],
                       [sg.T("Control strength of influence. (Random velocity in random direction) --Only dynamic ON--", font = ("Segoe UI", 14), pad = (10, (5, 0)))],
                       [sg.T("Kicks particles apart without much regards to direction.", pad = (10, (0, 0)))],
                       [sg.T("( vector(X/Y) = vector(X/Y) + random_between(+-mouseSpeed * VALUE) )", pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 10.0), default_value = 0.160, font = ("Segoe UI", 14), resolution = .005, size = (70, 10),
-                                 orientation = 'horizontal', k = 'randomModDynamic', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
+                      [sg.Slider(range = (0.0, 2.0), default_value = 0.160, font = ("Segoe UI", 14), resolution = .001, size = (73.5, 10),
+                                 orientation = 'horizontal', k = 'strengthMouseInfluenceVector', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.HorizontalSeparator()],
 
-                      [sg.T('(Particle Vector) ONCE: Multiply velocity by VALUE. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('(Particle Vector) ONCE: Multiply velocity by VALUE. --Deactivate Vector with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
                       [sg.T('Push particles apart, but keep direction. Applied once at particle genesis, at vector conversion into velocity. Equal to mouse movement at 1.', pad = (10, (10, 0)))],
                       [sg.T('( velocity * VALUE )', pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 3.0), default_value = 1.00, font = ("Segoe UI", 14), resolution = .005, size = (70, 10),
-                                 orientation = 'horizontal', k = 'velocityMod', enable_events = True)],
+                      [sg.Slider(range = (0.0, 1.0), default_value = 1.00, font = ("Segoe UI", 14), resolution = .001 , size = (73.5, 10),
+                                 orientation = 'horizontal', k = 'velocityFactorVector', enable_events = True)],
 
                       [sg.T('(Particle Vector) PER FRAME: Multiply velocity by VALUE. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
                       [sg.T('Can simulate drag or drive: Like air does to you in windy weather. Every frame velocity is multiplied by this value.', pad = (10, (10, 0)))],
                       [sg.T('If it is bigger than 1.0 then particles will speed up instead. If it is 0, all particles stand still.', pad=(10, (0, 0)))],
                       [sg.T('( velocity * VALUE )', pad=(10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 3.0), default_value = 0.850, font = ("Segoe UI", 14), resolution = .005, size = (70, 10),
+                      [sg.Slider(range = (0.5, 1.5), default_value = 0.990, font = ("Segoe UI", 14), resolution = .001, size = (73.5, 10),
                                  orientation = 'horizontal', k = 'drag', enable_events = True)]
                       ]
 
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor),
                               size=(25, 2), font=("Segoe UI", 16), k='color picker button'),
                     sg.Frame('', border_width = 0, layout =[[sg.T('Hue slider', expand_x = True, justification='center', font=("Segoe UI", 16))],
-                                                                 [sg.Slider(range=(0.00, 360.00), default_value=particleColorHue, font=("Segoe UI", 14), resolution=0.01, size=(45, 10),
-                                                                            orientation='horizontal', k='particleColorHue', disabled=False, enable_events=True)]],)],  # , trough_color=particleColor
-                    [sg.Checkbox('Randomize initial particle color.', default=False, k='particleColorRandom', enable_events=True)],
+                                                            [sg.Slider(range=(0.00, 360.00), default_value=particleColorHue, font=("Segoe UI", 14), resolution=0.01, size=(45, 10),
+                                                                       orientation='horizontal', k='particleColorHue', disabled=False, enable_events=True)]],)],  # , trough_color=particleColor
+                    [sg.Checkbox('Randomize particle color.', default=False, k='particleColorRandom', enable_events=True)],
                     [sg.Checkbox('Rollover from hue = 360 to 0 or the other way around. (Depending on if positive or negative aging is used.', default=False, k='colorRollover', enable_events=True)],
 
                     [sg.HorizontalSeparator()],
                     [sg.Spin([i for i in range(0, 200)], initial_value=50, font=("Segoe UI", 16), k='ageColorNoise', enable_events=True),
                     sg.Frame('', border_width = 0, layout =[[sg.T('Add randomness to hue. (inject noise) A number between range +-value is added at time of creation.', pad=(0, (0, 0)))],
-                                                                 [sg.T('Use to combat too uniform looking particle color change. Deactivate with 0.', pad=(0, (0, 0))), ]])],
+                                                            [sg.T('Use to combat too uniform looking particle color change. Deactivate with 0.', pad=(0, (0, 0))), ]])],
                     [sg.T('Skew this number with a bias more towards positive or negative values: 0 = only negative noise | 0.5 = balanced | 1.0 = only positive noise', pad=(10, (15, 0)))],
-                    [sg.Slider(range=(0.00, 1.00), default_value=0.42, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
+                    [sg.Slider(range=(0.00, 1.00), default_value=0.42, font=("Segoe UI", 14), resolution=.01, size=(73.5, 10),
                                orientation='horizontal', k='ageColorNoiseMod', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Change hue over time. (hue - age * VALUE)', font = ("Segoe UI", 15), default=True, k='ageColor', enable_events=True)],
                     [sg.T('Hue aging speed factor. Negative values decrease hue over time, positive increase it. (i.e. if Cyan, then Neg: towards green, Pos: towards blue)', pad=(10, (0, 0)))],
-                    [sg.Slider(range=(-19.99, 19.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.10, size=(70, 10),
+                    [sg.Slider(range=(-19.99, 19.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.10, size=(73.5, 10),
                                orientation='horizontal', k='ageColorSpeed', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
                     [sg.T('Fine adjustment: ', font=("Segoe UI", 14)),
                      sg.Slider(range=(ageColorSpeed-1.00, ageColorSpeed+1.00), default_value=ageColorSpeed, font=("Segoe UI", 14), resolution=.005, size=(56.9, 10),
@@ -443,13 +449,13 @@ def make_window(theme):
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Linear aging instead  (hue - time)', default = True, k = 'ageLinear', enable_events = True)],
                     [sg.T('Speed of linear aging')],
-                    [sg.Slider(range = (-30.0, 30.0), default_value = .5, font = ("Segoe UI", 14), resolution = .1, size = (70, 10),
+                    [sg.Slider(range = (-30.0, 30.0), default_value = .5, font = ("Segoe UI", 14), resolution = .1, size = (73.5, 10),
                                orientation = 'horizontal', k = 'ageLinearSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
 
                     [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster change of hue value.', default=True, k='ageColorSlope', disabled=False, enable_events=True)],
                     [sg.T('(i.e. Longer stay of earlier colors. May be "logarithmic" aging.)', pad=(10, (0, 0)))],
                     [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad=(10, (0, 0)))],
-                    [sg.Slider(range=(-2.00, 2.00), default_value=0.420, font=("Segoe UI", 14), resolution=.01, size=(70, 10),
+                    [sg.Slider(range=(-2.00, 2.00), default_value=0.420, font=("Segoe UI", 14), resolution=.01, size=(73.5, 10),
                                orientation='horizontal', k='ageColorSlopeConcavity', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())]
                     ]
 
@@ -525,6 +531,7 @@ def make_window(theme):
 # else:
 #   print 'Hex is not valid'
 
+
 def main():
     global config, particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath
     #sg.theme('Dark')  # redundant
@@ -536,9 +543,9 @@ def main():
     window.bind('<Escape>', 'Escape pressed')
     tray = SystemTray(menu, single_click_events=False, window=window, tooltip="ShitStuckToYourMouse", icon=resource_path(".\poop.ico"))
     print(sg.get_versions())
-    proc = False  # Initiate variable for check if subprocess.Popen == True
+    proc = []  # Initiate variable for check if subprocess.Popen == True
     otherProc = False
-    pid = None
+    pid = []
     if not exists(imagePath) or imagePath == '':
         doesImageFileExist = False
     else:
@@ -572,15 +579,24 @@ def main():
 
             if event in (None, 'Exit'):
                 updateConfig(values)
-                if proc or otherProc:
-                    if psutil.pid_exists(pid):
-                        kill_proc_tree(pid=pid)
-                        print('Subprocess killed')
-                    else:
-                        print("Subprocess already dead")
-                proc = False
-                otherProc = False
+                numberPIDs = len(pid)
+                i = 0
+                while i < numberPIDs:
+                    if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i])
+                            print('Subprocess killed')
+                        else:
+                            print("Subprocess already dead")
+                    otherProc = False
+                    i += 1
+                    if i == numberPIDs:
+                        proc = []
+                        pid = []
                 break
+
+            # if values['multitasking'] > 1:
+            #     values['numParticles']
 
             if values['showColor'] or values['showImage']:
                 window['showClock'].update(disabled=True)
@@ -673,15 +689,15 @@ def main():
                     window['ageColorSlopeConcavity'].Widget.config(troughcolor=sg.theme_background_color())
 
             if values['dynamic']:
-                window['randomMod'].update(disabled = True)
-                window['randomMod'].Widget.config(troughcolor=sg.theme_background_color())
-                window['randomizeVelocity'].update(disabled=False)
-                if values['randomizeVelocity']:
-                    window['randomModDynamic'].update(disabled=False)
-                    window['randomModDynamic'].Widget.config(troughcolor=sg.theme_slider_color())
+                window['addRandomParticleVector'].update(disabled = True)
+                window['addRandomParticleVector'].Widget.config(troughcolor=sg.theme_background_color())
+                window['addRandomMouseInfluenceVector'].update(disabled=False)
+                if values['addRandomMouseInfluenceVector']:
+                    window['strengthMouseInfluenceVector'].update(disabled=False)
+                    window['strengthMouseInfluenceVector'].Widget.config(troughcolor=sg.theme_slider_color())
                 else:
-                    window['randomModDynamic'].update(disabled=True)
-                    window['randomModDynamic'].Widget.config(troughcolor=sg.theme_background_color())
+                    window['strengthMouseInfluenceVector'].update(disabled=True)
+                    window['strengthMouseInfluenceVector'].Widget.config(troughcolor=sg.theme_background_color())
                 window['levelVelocity_1'].update(disabled=False)
                 window['levelVelocity_2'].update(disabled=False)
                 window['levelVelocity_3'].update(disabled=False)
@@ -691,11 +707,11 @@ def main():
                 window['levelNumParticles_3'].update(disabled=False)
                 window['levelNumParticles_4'].update(disabled=False)
             else:
-                window['randomMod'].update(disabled=False)
-                window['randomMod'].Widget.config(troughcolor=sg.theme_slider_color())
-                window['randomizeVelocity'].update(disabled=True)
-                window['randomModDynamic'].update(disabled=True)
-                window['randomModDynamic'].Widget.config(troughcolor=sg.theme_background_color())
+                window['addRandomParticleVector'].update(disabled=False)
+                window['addRandomParticleVector'].Widget.config(troughcolor=sg.theme_slider_color())
+                window['addRandomMouseInfluenceVector'].update(disabled=True)
+                window['strengthMouseInfluenceVector'].update(disabled=True)
+                window['strengthMouseInfluenceVector'].Widget.config(troughcolor=sg.theme_background_color())
                 window['levelVelocity_1'].update(disabled=True)
                 window['levelVelocity_2'].update(disabled=True)
                 window['levelVelocity_3'].update(disabled=True)
@@ -743,14 +759,20 @@ def main():
             if event in (None, 'Reset'):
                 answer = sg.popup_yes_no('Reset all settings to defaults?')
                 if answer == 'Yes' or answer == 'yes':
-                    if proc or otherProc:
-                        if psutil.pid_exists(pid):
-                            kill_proc_tree(pid=pid)
-                            print("Subprocess killed")
-                        else:
-                            print("Subprocess already dead")
-                    proc = False
-                    otherProc = False
+                    numberPIDs = len(pid)
+                    i = 0
+                    while i < numberPIDs:
+                        if proc[i] or otherProc:
+                            if psutil.pid_exists(pid[i]):
+                                kill_proc_tree(pid = pid[i])
+                                print('Subprocess killed')
+                            else:
+                                print("Subprocess already dead")
+                        otherProc = False
+                        i += 1
+                        if i == numberPIDs:
+                            proc = []
+                            pid = []
                     setDefaults()
                     getVariablesFromConfig(window)
                     event, values = window.read(timeout=1250)
@@ -782,22 +804,21 @@ def main():
             # ---------------------
             # F5                               65474     0xFFC2
             elif event in (None, 'Save-n-Run') or event in (None, 'F5 pressed'):
-                #values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range=(0, 100),  resolution=1)". GRRR
-                if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                #values['addRandomParticleVector'] = int(values['addRandomParticleVector'])  # because slider returns FLOAT, even if "(range=(0, 100),  resolution=1)". GRRR
+                if particleColor == "None" or values['particleColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
                     values['particleColor'] = particleColor
-                if particleColorHue == "None" or values['particleColorHue'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if particleColorHue == "None" or values['particleColorHue'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     particleColorHue = float(config.get("SPARKLES", "particleColorHue"))  # Get last saved values
                     values['particleColorHue'] = particleColorHue
-                if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if fontColor == "None" or values['fontColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     fontColor = config.get("SPARKLES", "fontColor")  # Get last saved values
                     values['fontColor'] = fontColor
-                if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if outlineColor == "None" or values['outlineColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     outlineColor = config.get("SPARKLES", "outlineColor")  # Get last saved values
                     values['outlineColor'] = outlineColor
                 updateConfig(values)
                 print('All values saved to config.ini')
-                # print(values)
                 event, values = window.read(timeout=1000)
                 values['particleColor'] = config.get("SPARKLES", "particleColor")
                 particleColor = values['particleColor']
@@ -828,55 +849,74 @@ def main():
                     else:
                         window['image'].update(data=get_img_data(imagePath, first=True))
                         doesImageFileExist = True
-                if proc or otherProc:
-                    if psutil.pid_exists(pid):
-                        kill_proc_tree(pid=pid)
-                        print('Subprocess killed')
-                    else:
-                        print("Subprocess already dead")
-                proc = False
-                otherProc = False
+                numberPIDs = len(pid)
+                i = 0
+                while i < numberPIDs:
+                    if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i])
+                            print('Subprocess killed')
+                        else:
+                            print("Subprocess already dead")
+                    otherProc = False
+                    i += 1
+                    if i == numberPIDs:
+                        proc = []
+                        pid = []
                 if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                     if isCompiledToExe:
                         otherProc = Popen("other.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                     else:
                         otherProc = Popen("py other.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
-                    pid = otherProc.pid
+                    pid.append(otherProc.pid)
                     print('Subprocess Started')
                     print(otherProc, " with process id: ", pid)
                 elif not values['showColor'] and not values['showClock'] and not values['showCPU'] and not values['showRAM'] and not values['showImage']:
                     sg.popup_no_wait('Starting ... ', text_color='#00ff00', button_type=5, auto_close=True,
                                      auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
-                    if isCompiledToExe:
-                        proc = Popen("sparkles.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
-                    else:
-                        proc = Popen("py sparkles.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
-                    pid = proc.pid
-                    print('Subprocess Started')
-                    print(proc, " with process id: ", pid)
-                else:
-                    if proc or otherProc:
-                        if psutil.pid_exists(pid):
-                            kill_proc_tree(pid=pid)
-                            print('Subprocess killed')
+                    numberTasks = values['multitasking']
+                    if values['multitasking'] > values['numParticles'] and not values['dynamic']:
+                        numberTasks = values['numParticles']
+                    i = 0
+                    while i < numberTasks:
+                        if isCompiledToExe:
+                            proc[i] = Popen("sparkles.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                         else:
-                            print("Subprocess already dead")
-                    proc = False
-                    otherProc = False
+                            returnValue = Popen("py sparkles.pyw", shell=False, stdout=None, stdin=None, stderr=None, creationflags=CREATE_NO_WINDOW)
+                            proc.append(returnValue)
+                        pid.append(returnValue.pid)
+                        print('Subprocess Started')
+                        print(proc[i], " with process id: ", pid[i])
+                        i += 1
+                else:
+                    numberPIDs = len(pid)
+                    i = 0
+                    while i < numberPIDs:
+                        if proc[i] or otherProc:
+                            if psutil.pid_exists(pid[i]):
+                                kill_proc_tree(pid=pid[i])
+                                print('Subprocess killed')
+                            else:
+                                print("Subprocess already dead")
+                        otherProc = False
+                        i += 1
+                        if i == numberPIDs:
+                            proc = []
+                            pid = []
             # ---------------------
 
             elif event in (None, 'Save'):
-                #values['randomMod'] = int(values['randomMod'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
-                if particleColor == "None" or values['particleColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                #values['addRandomParticleVector'] = int(values['addRandomParticleVector'])  # because slider returns FLOAT, even if "(range = (0, 100),  resolution = 1)". GRRR
+                if particleColor == "None" or values['particleColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
                     values['particleColor'] = particleColor
-                if particleColorHue == "None" or values['particleColorHue'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if particleColorHue == "None" or values['particleColorHue'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     particleColorHue = float(config.get("SPARKLES", "particleColorHue"))  # Get last saved values
                     values['particleColorHue'] = particleColorHue
-                if fontColor == "None" or values['fontColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if fontColor == "None" or values['fontColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     fontColor = config.get("SPARKLES", "fontColor")  # Get last saved values
                     values['fontColor'] = fontColor
-                if outlineColor == "None" or values['outlineColor'] == "None" :  # check if no color was chosen in the popup. Happens when cancelled
+                if outlineColor == "None" or values['outlineColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     outlineColor = config.get("SPARKLES", "outlineColor")  # Get last saved values
                     values['outlineColor'] = outlineColor
                 updateConfig(values)
@@ -914,14 +954,20 @@ def main():
                         doesImageFileExist = True
             # ---------------------
             elif event in (None, 'Close') or event in (None, 'Escape pressed'):
-                if proc or otherProc:
-                    if psutil.pid_exists(pid):
-                        kill_proc_tree(pid=pid)
-                        print('Subprocess killed')
-                    else:
-                        print("Subprocess already dead")
-                proc = False
-                otherProc = False
+                numberPIDs = len(pid)
+                i = 0
+                while i < numberPIDs:
+                    if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i])
+                            print('Subprocess killed')
+                        else:
+                            print("Subprocess already dead")
+                    otherProc = False
+                    i += 1
+                    if i == numberPIDs:
+                        proc = []
+                        pid = []
 
             elif event in (None, 'Hide'):
                 window.hide()
@@ -929,14 +975,20 @@ def main():
 
             elif event in (None, 'Exit'):
                 tray.hide_icon()
-                if proc or otherProc:
-                    if psutil.pid_exists(pid):
-                        kill_proc_tree(pid=pid)
-                        print('Subprocess killed')
-                    else:
-                        print("Subprocess already dead")
-                proc = False
-                otherProc = False
+                numberPIDs = len(pid)
+                i = 0
+                while i < numberPIDs:
+                    if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i])
+                            print('Subprocess killed')
+                        else:
+                            print("Subprocess already dead")
+                    otherProc = False
+                    i += 1
+                    if i == numberPIDs:
+                        proc = []
+                        pid = []
                 break
 
             elif event in (None, sg.EVENT_SYSTEM_TRAY_ICON_DOUBLE_CLICKED):
@@ -949,14 +1001,20 @@ def main():
 
             elif event in ("Hide Window", sg.WIN_CLOSE_ATTEMPTED_EVENT):
                 tray.hide_icon()
-                if proc or otherProc:
-                    if psutil.pid_exists(pid):
-                        kill_proc_tree(pid=pid)
-                        print('Subprocess killed')
-                    else:
-                        print("Subprocess already dead")
-                proc = False
-                otherProc = False
+                numberPIDs = len(pid)
+                i = 0
+                while i < numberPIDs:
+                    if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i])
+                            print('Subprocess killed')
+                        else:
+                            print("Subprocess already dead")
+                    otherProc = False
+                    i += 1
+                    if i == numberPIDs:
+                        proc = []
+                        pid = []
                 break
 
             elif event in (None, 'particleColorHue'):
@@ -1049,21 +1107,37 @@ def main():
 
     finally:  # catch every exception and make sure to leave correctly
         tray.hide_icon()
-        if proc or otherProc:
-            if psutil.pid_exists(pid):
-                kill_proc_tree(pid=pid)
-                print('Subprocess killed err')
+        numberPIDs = len(pid)
+        i = 0
+        while i < numberPIDs:
+            if proc[i] or otherProc:
+                if psutil.pid_exists(pid[i]):
+                    kill_proc_tree(pid = pid[i])
+                    print('Subprocess killed')
+                else:
+                    print("Subprocess already dead")
+            otherProc = False
+            i += 1
+            if i == numberPIDs:
+                proc = []
+                pid = []
+
+    numberPIDs = len(pid)
+    i = 0
+    while i < numberPIDs:
+        if proc[i] or otherProc:
+            if psutil.pid_exists(pid[i]):
+                kill_proc_tree(pid = pid[i])
+                print('Subprocess killed')
             else:
-                print("Subprocess already dead err")
+                print("Subprocess already dead")
 
-    if proc or otherProc:
-        if psutil.pid_exists(pid):
-            kill_proc_tree(pid=pid)
-            print('Subprocess killed main')
-        else:
-            print("Subprocess already dead main")
-
-            print("killed last subprocess")
+        otherProc = False
+        i += 1
+        if i == numberPIDs:
+            proc = []
+            pid = []
+        print("killed last subprocess")
     print("close window")
     tray.hide_icon()  # sometimes doesn't have an effect and the icon stays ...
     tray.close()  # optional but without a close, the icon may "linger" until moused over | still with it
