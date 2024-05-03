@@ -1,0 +1,21 @@
+            - name: PyInstaller Build
+  # You may pin to the exact commit or the version.
+  # uses: eric2788/pyinstaller-build@28997858929e3dcf38a6d05018a2affc5b11383e
+  uses: eric2788/pyinstaller-build@0.1.3
+  with:
+    # the main python file (without .py)
+    main: main
+    # the dist path
+    dist: # optional, default is ./dist
+    # the version of python
+    python_version: 3.12 # optional, default is 3.9.7
+    # the version of pyinstaller
+    pyinstaller_version: # optional, default is 4.7
+    # the output exe name
+    artifact: # optional, default is main
+    # whether to install requirements.txt before build
+    use-dependencies: # optional, default is true
+    # whether to disppear console terminal
+    no-console: true # optional
+    # add the icon mark into your executable, the file path of your ico
+    icon: # optional, default is NONE
