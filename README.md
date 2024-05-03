@@ -7,7 +7,7 @@
                                                 (__ /
 ```
 ### Current problemsss:  
-#### ---> Color chooser has been removed (renamed idk?) from tkinter. (pysimplegui is based on it) Only hue slider works atm.  
+#### ---> Color chooser has been removed (renamed idk?) from tkinter. (pysimplegui is based on it) Only hue slider works atm. Or change in config.cfg or what it's called.   
 ###### ---> *PySimpleGUI has become expireware, trialware or/and registerware!!! I need to register. *procrastinate* ... :( Let's hope it won't become annoyware, crippleware or payware. ... hahahahaah*  
 ---B Then time for next "release", with executable. (packed python)  
 ###### c===8 Pictures and examples need to be redone  
