@@ -6,11 +6,12 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
-### Current problem:  
----> Color chooser has been removed (renamed idk?) from tkinter. (pysimplegui is based on it) Only hue slider works atm.  
----> # PySimpleGUI has become expireware, trialware or/and registerware!!! I need to register. *procrastinate* ... :( Let's hope it won't become annoyware, crippleware or payware. ... hahahahaah
----8 Then time for next "release", with executable. (packed python)
-
+### Current problemsss:  
+#### ---> Color chooser has been removed (renamed idk?) from tkinter. (pysimplegui is based on it) Only hue slider works atm.  
+###### ---> *PySimpleGUI has become expireware, trialware or/and registerware!!! I need to register. *procrastinate* ... :( Let's hope it won't become annoyware, crippleware or payware. ... hahahahaah*  
+---B Then time for next "release", with executable. (packed python)  
+###### c===8 Pictures and examples need to be redone  
+  
   
 ## Updates:
 -MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?: 
