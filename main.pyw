@@ -20,7 +20,7 @@
 import configparser
 from io import BytesIO
 #from json import (load as jsonload, dump as jsondump)
-import PySimpleGUI as sg
+import FreeySimpleGUI as sg
 from psgtray import SystemTray
 from subprocess import PIPE, Popen, CREATE_NO_WINDOW
 from PIL import Image, ImageTk
