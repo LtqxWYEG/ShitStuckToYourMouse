@@ -77,10 +77,10 @@ The intention for this is to build upon it to create something interesting - lik
 
 Here you can see what the GUI looks like. There are also small samples of the capabilities of this thing visible.
 
-![Current GUI](https://i.imgur.com/eDaJJLI.png?raw=true)  
-![Current GUI](https://i.imgur.com/powKnfT.png?raw=true)  
-![Current GUI](https://i.imgur.com/E73vlHL.png?raw=true)  
-![Current GUI](https://i.imgur.com/PQeCyuU.png?raw=true)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI.png)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI2.png)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI3.png)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI4.png)  
 
 
 ---
