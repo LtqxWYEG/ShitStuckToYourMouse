@@ -6,12 +6,6 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
-### Current problemsss:  
-#### ---> Color chooser has been removed (renamed idk?) from tkinter. (pysimplegui is based on it) Only hue slider works atm. Or change in config.cfg or what it's called.   
----B Then time for next "release", with executable. (packed python)  
-###### c===8 Pictures and examples need to be redone  
-  
-  
 ## Updates:
 -MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?: 
    - Performance now SOMETIMES multiplied by N of threads! SOMETIMES = Low amount of particles: 2 threads best; High amount: 4 best. Maybe the Windows desktop window manager craps on it?
@@ -83,12 +77,10 @@ The intention for this is to build upon it to create something interesting - lik
 
 Here you can see what the GUI looks like. There are also small samples of the capabilities of this thing visible.
 
---OLD NEEDS REDONE-- WAIT A MOMENT PLS.,bn
-
-![Current GUI](https://i.imgur.com/eDaJJLI.png?raw=true)  
-![Current GUI](https://i.imgur.com/powKnfT.png?raw=true)  
-![Current GUI](https://i.imgur.com/E73vlHL.png?raw=true)  
-![Current GUI](https://i.imgur.com/PQeCyuU.png?raw=true)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI.png)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI2.png)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI3.png)  
+![Current GUI](https://github.com/LtqxWYEG/ShitStuckToYourMouse/blob/main/GUI4.png)  
 
 
 ---
