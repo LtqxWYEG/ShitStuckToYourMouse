@@ -37,16 +37,6 @@ import acrylic
 # from functools import lru_cache
 
 
-"""
-Copyright (C) of font <Pixel LCD-7.ttf> by:
-fontSizenko Alexander
-Style-7
-http://www.styleseven.com
-Created: November 24 2012
-
-"""
-
-
 def cleanup_mei():
     """
     Rudimentary workaround for https://github.com/pyinstaller/pyinstaller/issues/2379
