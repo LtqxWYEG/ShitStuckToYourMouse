@@ -26,6 +26,7 @@ from os import path, listdir, getpid, kill, getcwd
 from os.path import exists
 from shutil import rmtree
 from subprocess import PIPE, Popen, run, CREATE_NO_WINDOW
+from time import sleep
 
 # from json import (load as jsonload, dump as jsondump)
 import FreeSimpleGUI as sg
@@ -284,7 +285,43 @@ def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, 
     return gone, alive
 
 
-def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compiled to exe
+def kill_all():
+    global pid, proc, otherproc
+    numberPIDs = len(pid)
+    i = 0
+    while i < numberPIDs:
+        # if proc[i] or otherProc:
+        if psutil.pid_exists(pid[i]):
+            kill_proc_tree(pid = pid[i], include_parent = True)
+            print("Subprocess " + str(pid[i]) + " killed")
+        else:
+            print("Subprocess already dead")
+        i += 1
+        if i == numberPIDs:
+            proc = []
+            pid = []
+            otherProc = False
+    print("Killed last subprocess")
+
+#  Old version
+    # numberPIDs = len(pid)
+    # i = 0
+    # while i < numberPIDs:
+    #     if proc[i] or otherProc:
+    #         if psutil.pid_exists(pid[i]):
+    #             kill_proc_tree(pid = pid[i])
+    #             print('Subprocess killed')
+    #         else:
+    #             print("Subprocess already dead")
+    #
+    #     otherProc = False
+    #     i += 1
+    #     if i == numberPIDs:
+    #         proc = []
+    #         pid = []
+
+
+def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compiled to exe // Apparently not. Mark for deletion
     kill(pid, sig)
     return
 
@@ -297,7 +334,7 @@ def make_window(theme):
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value=60, font=(globalFont, 16 + globalFontSizeModifier), k='FPS', enable_events=True),
                        sg.T('Frames per second. Also affects number of particles - as they are spawned per frame.')],
                       [sg.Spin([i for i in range(1, 128)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='multitasking', enable_events=True),
-                       sg.T("Number of Threads. (Multitasking) The more particles, the more benefit you'll get. Try 2 threads if more than 200 particles, try 4 if more than 400.")],
+                       sg.T("Number of simultaneous threads. Try 2 threads if more than 200 particles, try 4 if more than 400, etc.")],
                       [sg.Checkbox('Interpolate mouse movement', default=True, k='interpolateMouseMovement', enable_events=True)],
                       [sg.T('Exp.: Draw some particles between current position of the cursor and that of last frame. (Interpolation should have almost no effect on performance)', pad=(10, (0, 15)))],
                       [sg.Spin([i for i in range(1, 100)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='numParticles', enable_events=True), sg.T('Number of particles to spawn per frame'),
@@ -381,10 +418,10 @@ def make_window(theme):
     dynamic_layout = [[sg.Checkbox('Enable dynamic behavior (i.e. mouseSpeed dependant particle creation)', font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)), default = True, k = 'dynamic', enable_events = True)],
                       [sg.T('Exp.: No particles are created when mouse is held still. When moved, the faster the movement, the more particles are created.', pad = (10, (0, 15)))],
                       [sg.Frame('Number of particles:',
-                                [[sg.Spin([i for i in range(1, 100)], initial_value = 5, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
-                                  sg.Spin([i for i in range(1, 200)], initial_value = 8, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
-                                  sg.Spin([i for i in range(1, 300)], initial_value = 14, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
-                                  sg.Spin([i for i in range(1, 400)], initial_value = 20, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_4', disabled = False, enable_events = True),
+                                [[sg.Spin([i for i in range(2, 100)], initial_value = 4, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
+                                  sg.Spin([i for i in range(2, 200)], initial_value = 8, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
+                                  sg.Spin([i for i in range(2, 300)], initial_value = 16, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
+                                  sg.Spin([i for i in range(2, 400)], initial_value = 32, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_4', disabled = False, enable_events = True),
                                   sg.T('Level 4 - spawn this many particles per frame ...')]], )],
                       [sg.Frame('At mouse velocity in pixel per frame:',
                                 [[sg.Spin([i for i in range(1, 1000)], initial_value = 15, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelVelocity_1', disabled = False, enable_events = True), sg.T('Level 1'),
@@ -538,12 +575,12 @@ def make_window(theme):
 
 
 def main():
-    global config, particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath, globalFont, globalFontSizeModifier
+    global config, particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath, globalFont, globalFontSizeModifier, pid, proc, otherproc
     #sg.theme('Dark')  # redundant
     globalFont = "Segoe UI"  # default "Segoe UI"
     globalFontSizeModifier = 0
     sg.set_options(font=(globalFont, 10 + globalFontSizeModifier))  # global font
-    menu = ["", ["Show Window", "Hide Window", "---", "Exit"]]  # Tray-icon context-menu
+    #menu = ["", ["Show Window", "Hide Window", "---", "Exit"]]  # Tray-icon context-menu
     window = make_window('darkgrey15')  # Good one: Dark, darkgrey1, -2, -11, -13, -15, darkbrown1
     window.bind('<F5>', 'F5 pressed')
     window.bind('<Escape>', 'Escape pressed')
@@ -585,20 +622,7 @@ def main():
 
             if event in (None, 'Exit'):
                 updateConfig(values)
-                numberPIDs = len(pid)
-                i = 0
-                while i < numberPIDs:
-                    # if proc[i] or otherProc:
-                    if psutil.pid_exists(pid[i]):
-                        kill_proc_tree(pid = pid[i], include_parent = True)
-                        print("Subprocess " + str(pid[i]) + " killed")
-                    else:
-                        print("Subprocess already dead")
-                    i += 1
-                    if i == numberPIDs:
-                        proc = []
-                        pid = []
-                        otherProc = False
+                kill_all()
                 break
 
             # if values['multitasking'] > 1:
@@ -765,20 +789,7 @@ def main():
             if event in (None, 'Reset'):
                 answer = sg.popup_yes_no('Reset all settings to defaults?')
                 if answer == 'Yes' or answer == 'yes':
-                    numberPIDs = len(pid)
-                    i = 0
-                    while i < numberPIDs:
-                        # if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i], include_parent = True)
-                            print("Subprocess " + str(pid[i]) + " killed")
-                        else:
-                            print("Subprocess already dead")
-                        i += 1
-                        if i == numberPIDs:
-                            proc = []
-                            pid = []
-                            otherProc = False
+                    kill_all()
                     setDefaults()
                     getVariablesFromConfig(window)
                     event, values = window.read(timeout=1250)
@@ -856,25 +867,13 @@ def main():
                         window['image'].update(data=get_img_data(imagePath, first=True))
                         doesImageFileExist = True
 
-                numberPIDs = len(pid)
-                i = 0
-                while i < numberPIDs:
-                    # if proc[i] or otherProc:
-                    if psutil.pid_exists(pid[i]):
-                        kill_proc_tree(pid = pid[i], include_parent = True)
-                        print("Subprocess " + str(pid[i]) + " killed")
-                    else:
-                        print("Subprocess already dead")
-                    i += 1
-                    if i == numberPIDs:
-                        proc = []
-                        pid = []
-                        otherProc = False
+                kill_all()
+
                 if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                     if isCompiledToExe:
-                        otherProc = Popen("other.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
+                        otherProc = Popen("other.exe", shell=False, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                     else:
-                        otherProc = Popen("python other.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
+                        otherProc = Popen("python other.pyw", shell=False, creationflags=CREATE_NO_WINDOW)
                     pid.append(otherProc.pid)
                     print('Subprocess Started')
                     print(otherProc, " with process id: ", pid)
@@ -887,29 +886,18 @@ def main():
                     i = 0
                     while i < numberTasks:
                         if isCompiledToExe:
-                            proc[i] = Popen("sparkles.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
+                            returnValue = Popen("sparkles.exe", shell=False, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
+                            proc.append(returnValue)
+                            # sleep(2.0)  # some error occur when running multiple exe at the same time. Does not help
                         else:
-                            returnValue = Popen("python sparkles.pyw", shell=False, stdout=None, stdin=None, stderr=None, creationflags=CREATE_NO_WINDOW)
+                            returnValue = Popen("python sparkles.pyw", shell=False, creationflags=CREATE_NO_WINDOW)
                             proc.append(returnValue)
                         pid.append(returnValue.pid)
                         print('Subprocess Started')
                         print(proc[i], " with process id: ", pid[i])
                         i += 1
                 else:
-                    numberPIDs = len(pid)
-                    i = 0
-                    while i < numberPIDs:
-                        # if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i], include_parent = True)
-                            print("Subprocess " + str(pid[i]) + " killed")
-                        else:
-                            print("Subprocess already dead")
-                        i += 1
-                        if i == numberPIDs:
-                            proc = []
-                            pid = []
-                            otherProc = False
+                    kill_all()
             # ---------------------
 
             elif event in (None, 'Save'):
@@ -962,20 +950,7 @@ def main():
             # ---------------------
 
             elif event in (None, 'Close') or event in (None, 'Escape pressed'):
-                numberPIDs = len(pid)
-                i = 0
-                while i < numberPIDs:
-                    #if proc[i] or otherProc:
-                    if psutil.pid_exists(pid[i]):
-                        kill_proc_tree(pid = pid[i], include_parent = True)
-                        print("Subprocess " + str(pid[i]) + " killed")
-                    else:
-                        print("Subprocess already dead")
-                    i += 1
-                    if i == numberPIDs:
-                        proc = []
-                        pid = []
-                        otherProc = False
+                kill_all()
 
             # elif event in (None, 'Hide'):  # psgtray
             #     window.hide()
@@ -983,20 +958,7 @@ def main():
 
             elif event in (None, 'Exit'):
                 #tray.hide_icon()
-                numberPIDs = len(pid)
-                i = 0
-                while i < numberPIDs:
-                    #if proc[i] or otherProc:
-                    if psutil.pid_exists(pid[i]):
-                        kill_proc_tree(pid = pid[i], include_parent = True)
-                        print("Subprocess " + str(pid[i]) + " killed")
-                    else:
-                        print("Subprocess already dead")
-                    i += 1
-                    if i == numberPIDs:
-                        proc = []
-                        pid = []
-                        otherProc = False
+                kill_all()
                 break
 
             # elif event in (None, sg.EVENT_SYSTEM_TRAY_ICON_DOUBLE_CLICKED):
@@ -1009,20 +971,7 @@ def main():
             #
             elif event in ("Hide Window", sg.WIN_CLOSE_ATTEMPTED_EVENT):
                 #tray.hide_icon()
-                numberPIDs = len(pid)
-                i = 0
-                while i < numberPIDs:
-                    #if proc[i] or otherProc:
-                    if psutil.pid_exists(pid[i]):
-                        kill_proc_tree(pid = pid[i], include_parent = True)
-                        print("Subprocess " + str(pid[i]) + " killed")
-                    else:
-                        print("Subprocess already dead")
-                    i += 1
-                    if i == numberPIDs:
-                        proc = []
-                        pid = []
-                        otherProc = False
+                kill_all()
                 break
 
             elif event in (None, 'particleColorHue'):
@@ -1115,51 +1064,9 @@ def main():
 
     finally:  # catch every exception and make sure to leave correctly
         #tray.hide_icon()
-        numberPIDs = len(pid)
-        i = 0
-        while i < numberPIDs:
-            # if proc[i] or otherProc:
-            if psutil.pid_exists(pid[i]):
-                kill_proc_tree(pid = pid[i], include_parent = True)
-                print("Subprocess " + str(pid[i]) + " killed")
-            else:
-                print("Subprocess already dead")
-            i += 1
-            if i == numberPIDs:
-                proc = []
-                pid = []
-                otherProc = False
+        kill_all()
 
-    numberPIDs = len(pid)
-    i = 0
-    while i < numberPIDs:
-        # if proc[i] or otherProc:
-        if psutil.pid_exists(pid[i]):
-            kill_proc_tree(pid = pid[i], include_parent = True)
-            print("Subprocess " + str(pid[i]) + " killed")
-        else:
-            print("Subprocess already dead")
-        i += 1
-        if i == numberPIDs:
-            proc = []
-            pid = []
-            otherProc = False
-    # numberPIDs = len(pid)
-    # i = 0
-    # while i < numberPIDs:
-    #     if proc[i] or otherProc:
-    #         if psutil.pid_exists(pid[i]):
-    #             kill_proc_tree(pid = pid[i])
-    #             print('Subprocess killed')
-    #         else:
-    #             print("Subprocess already dead")
-    #
-    #     otherProc = False
-    #     i += 1
-    #     if i == numberPIDs:
-    #         proc = []
-    #         pid = []
-        print("killed last subprocess")
+    kill_all()
     print("close window")
     #tray.hide_icon()  # sometimes doesn't have an effect and the icon stays ...
     #tray.close()  # optional but without a close, the icon may "linger" until moused over | still with it

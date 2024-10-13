@@ -247,11 +247,11 @@ class ParticleClass(Particle):
                     self.rotationRate = uniform(-settings["vectorRotation"], settings["vectorRotation"]) / 20  # Add slider to adjust!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if settings["cumulativeVectorRotation"]: # and not settings["particleVectorRotation"]:
                     self.rotationRate += self.rotationRate * 0.01  # Add slider to adjust!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                self.secondVector.rotate_ip_rad(self.rotationRate)
+                self.secondVector.rotate_rad_ip(self.rotationRate)
             if settings["particleVectorRotation"]:  # randomRotation for particle vector is in __init__
                 if settings["cumulativeVectorRotation"]: # and not (settings["secondVectorRotation"] and settings["particleVectorRotation"]):
                     self.rotationRate += self.rotationRate * 0.01  # Add slider to adjust!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Popupmenu???? Add rotation decay!!!
-                self.particleVector.rotate_ip_rad(self.rotationRate)
+                self.particleVector.rotate_rad_ip(self.rotationRate)
             self.rotationRate = clamp(self.rotationRate, -359, 359)
 
         # if self.particleVector.length > settings['softClampVelocityVector']:  # Clamp any huge velocities
@@ -731,10 +731,14 @@ if __name__ == "__main__":
     i = 0
     if settings["multitasking"] > 1:
         settings["numParticles"] = int(settings["numParticles"] / settings["multitasking"])
-        if settings["numParticles"] < 1:
+        if settings["numParticles"] == 0:
             settings["numParticles"] = 1
+        #print("numParticles = ", settings["numParticles"])
         while i < 4:
             settings["levelNumParticles"][i] = int(settings["levelNumParticles"][i] / settings["multitasking"])
+            if settings["levelNumParticles"][i] == 0:
+                settings["levelNumParticles"][i] = 1
+            #print("levelNumParticles ", i, " = ", settings["levelNumParticles"][i])
             i += 1
 
     #colorRGB = colorRGB

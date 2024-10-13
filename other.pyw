@@ -650,8 +650,8 @@ windowHeight = int(displayInfo.current_h)
 
 # ----------------- Other
 clock = pygame.time.Clock()  # for FPS limiting
-font = pygame.font.Font(resource_path("./fonts/Nouveau_IBM_Stretch.TTF"), settings["fontSize"])  # Set Font and font size
-outlineFont = pygame.font.Font(resource_path("./fonts/Nouveau_IBM_Stretch.TTF"), settings["fontSize"])
+font = pygame.font.Font(resource_path(".\\fonts\\Nouveau_IBM_Stretch.TTF"), settings["fontSize"])  # Set Font and font size
+outlineFont = pygame.font.Font(resource_path(".\\fonts\\Nouveau_IBM_Stretch.TTF"), settings["fontSize"])
 # font = pygame.freetype.Font("./fonts/Nouveau_IBM_Stretch.TTF", settings['fontSize'])
 # font.antialiased = False
 # font.style = 0 #  0 = normal. otherwise could become italic
