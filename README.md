@@ -6,7 +6,12 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
-## Updates late 2023:
+
+## Current issue: 
+- My multithreading solution causes n subprocesses of sparkles to spawn. This happens too fast when it's all compiled to a executable. Therefore I had to add a 1.5 second delay between launches of the sparkles subprocesses.
+- This is not an issue when run from code! (.pyw file)
+
+## Latest updates (2023+2024):
 -MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?: 
    - Performance now SOMETIMES multiplied by N of threads! SOMETIMES = Low amount of particles: 2 threads best; High amount: 4 best. Maybe the Windows desktop window manager craps on it?
    - Can now spawn particles in the neighborhood of 300 - per frame - other with no FPS reduction. (Yea, I still don't understand time dilation. I'm not a physicist.)
@@ -19,7 +24,7 @@
 - Internal: Variables now have much better names
 
 ---
-
+# ShitStuckToYourMouse?!
 Yea boy! You like the 00s? Radical! Get some _*very elegant*_ shit stuck to your mouse - *like ppl did in the early 00s! Yay!!* Waste some CPU-cycles with nice visuals! ... The 00s!! Who cares about 5% CPU! Sense? 00! Get this shit stuck to your mouse cursor! Now! NOW!
 
 Draws a very nice looking sparkle/glitter/smoke/fire effect following/on your mouse.
