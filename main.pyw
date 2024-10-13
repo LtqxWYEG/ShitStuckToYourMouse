@@ -321,9 +321,9 @@ def kill_all():
     #         pid = []
 
 
-def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compiled to exe // Apparently not. Mark for deletion
-    kill(pid, sig)
-    return
+# def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compiled to exe // Apparently not. Mark for deletion
+#     kill(pid, sig)
+#     return
 
 
 def make_window(theme):
@@ -334,7 +334,8 @@ def make_window(theme):
     general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value=60, font=(globalFont, 16 + globalFontSizeModifier), k='FPS', enable_events=True),
                        sg.T('Frames per second. Also affects number of particles - as they are spawned per frame.')],
                       [sg.Spin([i for i in range(1, 128)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='multitasking', enable_events=True),
-                       sg.T("Number of simultaneous threads. Try 2 threads if more than 200 particles, try 4 if more than 400, etc.")],
+                       sg.T("Number of simultaneous threads. - More is not always better! - Start with one.")],
+                      [sg.T("Try adding a thread if you see particles slow down when you quickly swish the mouse diagonally over the whole screen, or in big circles.")],
                       [sg.Checkbox('Interpolate mouse movement', default=True, k='interpolateMouseMovement', enable_events=True)],
                       [sg.T('Exp.: Draw some particles between current position of the cursor and that of last frame. (Interpolation should have almost no effect on performance)', pad=(10, (0, 15)))],
                       [sg.Spin([i for i in range(1, 100)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='numParticles', enable_events=True), sg.T('Number of particles to spawn per frame'),
@@ -888,7 +889,8 @@ def main():
                         if isCompiledToExe:
                             returnValue = Popen("sparkles.exe", shell=False, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                             proc.append(returnValue)
-                            # sleep(2.0)  # some error occur when running multiple exe at the same time. Does not help
+                            if numberTasks > 1:
+                                sleep(1.5)  # random errors occur when running multiple exe at the same time. Sleep does help
                         else:
                             returnValue = Popen("python sparkles.pyw", shell=False, creationflags=CREATE_NO_WINDOW)
                             proc.append(returnValue)
@@ -1079,7 +1081,7 @@ if __name__ == '__main__':
     #  -------------------------------
 
     isCompiledToExe = False
-
+    
     #  -------------------------------
     # --------- DEV FLAGS ----------
 
