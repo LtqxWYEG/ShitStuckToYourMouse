@@ -6,7 +6,7 @@
 (_/               (_/                  (_/       )   /             (_/   '                    
                                                 (__ /
 ```
-## Updates:
+## Updates late 2023:
 -MULTITHREADING! YAY!! But it's done in the easiest way possible: Launch N amount of sparkles.pyw and divide number of particles by number of threads. Hehe. Why didn't I come up with that earlier?: 
    - Performance now SOMETIMES multiplied by N of threads! SOMETIMES = Low amount of particles: 2 threads best; High amount: 4 best. Maybe the Windows desktop window manager craps on it?
    - Can now spawn particles in the neighborhood of 300 - per frame - other with no FPS reduction. (Yea, I still don't understand time dilation. I'm not a physicist.)
@@ -61,7 +61,8 @@ The intention for this is to build upon it to create something interesting - lik
 ---
 
 ## Prerequisites:
-- Windows (I used Windows 10 21H2)
+- Windows (I used Windows 10 22H2)
+- Python 3.12
 - Pillow
 - configparser 
 - pywin32
@@ -70,7 +71,7 @@ The intention for this is to build upon it to create something interesting - lik
 - pyinstaller
 - pefile
 - setuptools
-- PySimpleGUI
+- FreeSimpleGUI
 - acrylic - Only for the RYB complemantary color
 
 ---
