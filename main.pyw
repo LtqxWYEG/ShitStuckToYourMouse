@@ -1,5 +1,5 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-#  Copyright (c) 2021.                                                         \
+#  Copyright (c) 2024.                                                         \
 #  LtqxWYEG <distelzombie@protonmail.com>                                      \
 #                                                                              \
 #  This program is free software: you can redistribute it and/or modify        \
@@ -17,21 +17,23 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
+import base64
 import configparser
+import signal
+import sys
 from io import BytesIO
-#from json import (load as jsonload, dump as jsondump)
-import FreeySimpleGUI as sg
-from psgtray import SystemTray
-from subprocess import PIPE, Popen, CREATE_NO_WINDOW
-from PIL import Image, ImageTk
 from os import path, listdir, getpid, kill, getcwd
 from os.path import exists
-import sys
 from shutil import rmtree
-import psutil
-import signal
-import base64
+from subprocess import PIPE, Popen, run, CREATE_NO_WINDOW
+
+# from json import (load as jsonload, dump as jsondump)
+import FreeSimpleGUI as sg
 import acrylic
+import psutil
+from PIL import Image, ImageTk
+
+#from psgtray import SystemTray
 
 poopImage = base64.b64decode("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")
 poopImage2 = "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"
@@ -259,7 +261,7 @@ def get_img_data(f, maxsize=(1200, 850), first=False):
         return ImageTk.PhotoImage(img)
     except:  # yes yes yes, later. not yet
         sg.popup_no_wait('Error: Image does not exist', text_color='#ffc000', button_type=5, auto_close=True,
-                         auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
+                         auto_close_duration=3, non_blocking=True, font=(globalFont, 26 + globalFontSizeModifier), no_titlebar=True, keep_on_top=True)
         print('Error: %s does not exist' % imagePath)
         return
 
@@ -279,7 +281,7 @@ def kill_proc_tree(pid, sig=signal.SIGTERM, include_parent=False, timeout=None, 
     for p in children:
         p.send_signal(sig)
     gone, alive = psutil.wait_procs(children, timeout=timeout, callback=on_terminate)
-    return gone, alive  # Thank you very much Mr. PySimpleGUI :)
+    return gone, alive
 
 
 def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compiled to exe
@@ -288,46 +290,47 @@ def killProcessUsingOsKill(pid, sig=signal.SIGTERM):  # Use this for when compil
 
 
 def make_window(theme):
-    global particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath
+    global particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath, globalFont, globalFontSizeModifier
     sg.theme(theme)
     file_types = [("Images", "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"), ("All files (*.*)", "*.*")]
 
-    general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value=60, font=("Segoe UI", 16), k='FPS', enable_events=True),
+    general_layout = [[sg.Spin([i for i in range(1, 400)], initial_value=60, font=(globalFont, 16 + globalFontSizeModifier), k='FPS', enable_events=True),
                        sg.T('Frames per second. Also affects number of particles - as they are spawned per frame.')],
-                      [sg.Spin([i for i in range(1, 128)], initial_value=1, font=("Segoe UI", 16), k='multitasking', enable_events=True), sg.T("Number of Threads. (Multitasking) The more particles, the more benefit you'll get.")],
+                      [sg.Spin([i for i in range(1, 128)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='multitasking', enable_events=True),
+                       sg.T("Number of Threads. (Multitasking) The more particles, the more benefit you'll get. Try 2 threads if more than 200 particles, try 4 if more than 400.")],
                       [sg.Checkbox('Interpolate mouse movement', default=True, k='interpolateMouseMovement', enable_events=True)],
                       [sg.T('Exp.: Draw some particles between current position of the cursor and that of last frame. (Interpolation should have almost no effect on performance)', pad=(10, (0, 15)))],
-                      [sg.Spin([i for i in range(1, 100)], initial_value=1, font=("Segoe UI", 16), k='numParticles', enable_events=True), sg.T('Number of particles to spawn per frame'),
-                      sg.Spin([i for i in range(1, 11)], initial_value=2, font=("Segoe UI", 16), k='particleSize', enable_events=True), sg.T('Particle size in pixel')],
+                      [sg.Spin([i for i in range(1, 100)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='numParticles', enable_events=True), sg.T('Number of particles to spawn per frame'),
+                      sg.Spin([i for i in range(1, 11)], initial_value=2, font=(globalFont, 16 + globalFontSizeModifier), k='particleSize', enable_events=True), sg.T('Particle size in pixel')],
 
                       [sg.Frame('Offsets', [[sg.Checkbox('Add offset to the position of the particle origin', default=False, k='useOffset', enable_events=True),
                        sg.Checkbox('Mark position of particle origin. Use for offset tuning', default=False, k='markPosition', disabled=False, enable_events=True)],
-                      [sg.T('X='), sg.Spin([i for i in range(-99, 99)], initial_value=20, font=("Segoe UI", 16), k='offsetX', disabled=False, enable_events=True),
-                       sg.T('Y='), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=("Segoe UI", 16), k='offsetY', disabled=False, enable_events=True),
+                      [sg.T('X='), sg.Spin([i for i in range(-99, 99)], initial_value=20, font=(globalFont, 16 + globalFontSizeModifier), k='offsetX', disabled=False, enable_events=True),
+                       sg.T('Y='), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=(globalFont, 16 + globalFontSizeModifier), k='offsetY', disabled=False, enable_events=True),
                        sg.T('Offset in pixel. (0, 0=tip of cursor)')]],)],
 
-                      [sg.Spin([i for i in range(1, 1000)], initial_value = 20, font = ("Segoe UI", 16), k = 'softClampVelocityVector', enable_events = True),
+                      [sg.Spin([i for i in range(1, 1000)], initial_value = 20, font = (globalFont, 16 + globalFontSizeModifier), k = 'softClampVelocityVector', enable_events = True),
                        sg.T('Soft LIMIT on velocity of particle vector. Allows exceeding. Is used as factor on velocity.')],
-                      [sg.Spin([i for i in range(0, 100)], initial_value=12, font=("Segoe UI", 16), k='ageBrightnessNoise', enable_events=True),
+                      [sg.Spin([i for i in range(0, 100)], initial_value=12, font=(globalFont, 16 + globalFontSizeModifier), k='ageBrightnessNoise', enable_events=True),
                        sg.T('Adds random noise (twinkling) to brightness: brightness = random(+|-value). Deactivate with 0'),
                        sg.T('                                     Scroll down      |')],
-                      [sg.Spin([i for i in range(1, 1000)], initial_value=60, font=("Segoe UI", 16), k='particleAge', enable_events=True), sg.T('Particle age (in frames) OR modifier for time until brightness < 7 (death)'),
+                      [sg.Spin([i for i in range(1, 1000)], initial_value=60, font=(globalFont, 16 + globalFontSizeModifier), k='particleAge', enable_events=True), sg.T('Particle age (in frames) OR modifier for time until brightness < 7 (death)'),
                        sg.T('                                                                                           v')],
                       [sg.T('Increase slider to >1.00 to slow down brightness decline. Faster dimming leads to earlier death. (Exponential) Deactivate with 0.', pad=(10, (15, 0)))],
-                      [sg.Slider(range=(0.00, 29.95), default_value=5.300, font=("Segoe UI", 14), resolution=.05, size=(73.5, 10), pad=(5, (0, 25)),
+                      [sg.Slider(range=(0.00, 29.95), default_value=5.300, font=(globalFont, 14 + globalFontSizeModifier), resolution=.05, size=(73.5, 10), pad=(5, (0, 25)),
                                  orientation='horizontal', k='ageBrightnessMod', enable_events=True)],
                       [sg.HorizontalSeparator()],
                       [sg.HorizontalSeparator()],
 
-                      [sg.T('Explanation of how all this behaves: ', font = ("Segoe UI", 13), pad = (10, (25, 0)))],
-                      [sg.T('Every particle has a vector. Here, a vector is a motion with velocity(N) in direction(X,Y) from position(X,Y).', font = ("Segoe UI", 11), pad = (10, (0, 10)))],
-                      [sg.T('There are mainly two different ways to affect the vector: By manipulating velocity or direction either directly or by adding a second vector.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
-                      [sg.T("You can set that the vector and amount of created particles to be influenced by mouse movement or not. This is done in the Dynamic tab.", font = ("Segoe UI", 8), pad = (10, (2, 0)))],
-                      [sg.T('A vector can be manipulated once at time of particle genesis or every frame. See indicator in titles.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
-                      [sg.T('A second vector that will be added to the inherent first one can be manipulated with some sliders.', font = ("Segoe UI", 8), pad = (10, (2, 0)))],
+                      [sg.T('Explanation of how all this behaves: ', font = (globalFont, 13 + globalFontSizeModifier), pad = (10, (25, 0)))],
+                      [sg.T('Every particle has a vector. Here, a vector is a motion with velocity(N) in direction(X,Y) from position(X,Y).', font = (globalFont, 11 + globalFontSizeModifier), pad = (10, (0, 10)))],
+                      [sg.T('There are mainly two different ways to affect the vector: By manipulating velocity or direction either directly or by adding a second vector.', font = (globalFont, 8 + globalFontSizeModifier), pad = (10, (2, 0)))],
+                      [sg.T("You can set that the vector and amount of created particles to be influenced by mouse movement or not. This is done in the Dynamic tab.", font = (globalFont, 8 + globalFontSizeModifier), pad = (10, (2, 0)))],
+                      [sg.T('A vector can be manipulated once at time of particle genesis or every frame. See indicator in titles.', font = (globalFont, 8 + globalFontSizeModifier), pad = (10, (2, 0)))],
+                      [sg.T('A second vector that will be added to the inherent first one can be manipulated with some sliders.', font = (globalFont, 8 + globalFontSizeModifier), pad = (10, (2, 0)))],
                       [sg.HorizontalSeparator()],
 
-                      [sg.T("(Any Vector) ONCE/PER FRAME: Add degrees of rotation into any vector.", font = ("Segoe UI", 15),  pad = (10, (15, 0)))],
+                      [sg.T("(Any Vector) ONCE/PER FRAME: Add degrees of rotation into any vector.", font = (globalFont, 15 + globalFontSizeModifier),  pad = (10, (15, 0)))],
                       [sg.T("--Deactivate with 0 or uncheck all boxes--", pad = (10, (10, 0)))],
                       [sg.T("When added to particle vector, particles will turn around with N amount of strength.", pad = (10, (0, 0)))],
                       [sg.T("When added to second vector, particles can spiral in one direction, making the rotation independent of its initial direction.", pad = (10, (0, 0)))],
@@ -336,148 +339,150 @@ def make_window(theme):
                        sg.Checkbox('ADD to particle vector', default = False, k = 'particleVectorRotation', enable_events = True),
                        sg.Checkbox('ADD to second vector', default = True, k = 'secondVectorRotation', enable_events = True),
                        sg.Checkbox('Randomize rotation for particles', default = True, k = 'randomRotation', enable_events = True)],
-                      [sg.Slider(range = (0.0, 100.0), default_value = 1, font = ("Segoe UI", 14), resolution = 0.1, size = (73.5, 10),
+                      [sg.Slider(range = (0.0, 100.0), default_value = 1, font = (globalFont, 14 + globalFontSizeModifier), resolution = 0.1, size = (73.5, 10),
                                  orientation = 'horizontal', disabled = False, k = 'vectorRotation', enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.HorizontalSeparator()],
                       [sg.HorizontalSeparator()],
 
-                      [sg.T('NOTE: These next sliders will be influenced by sliders from the "dynamic" tab.', font = ("Segoe UI", 15), pad = (100, (15, 0)))],
+                      [sg.T('NOTE: These next sliders will be influenced by sliders from the "dynamic" tab.', font = (globalFont, 15 + globalFontSizeModifier), pad = (100, (15, 0)))],
                       [sg.HorizontalSeparator()],
-                      [sg.T('(Second Vector) PER FRAME: INITIALIZE and ADD with these values. --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (10, 0)))],
-                      [sg.T('-- IGNORED if last slider is not at position 0 and without "ADD" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('(Second Vector) PER FRAME: INITIALIZE and ADD with these values. --Deactivate with 0--', font = (globalFont, 15 + globalFontSizeModifier), pad=(10, (10, 0)))],
+                      [sg.T('-- IGNORED if last slider is not at position 0 and without "ADD" checkbox checked --', font = (globalFont, 13 + globalFontSizeModifier), pad = (10, (0, 0)))],
                       [sg.T('Can simulate gravity or wind force. (i.e. For gravity: X=0.0, Y=0.1) - Results in a constant motion downwards motion with a speed of 0.1 to all particles.', pad=(10, (10, 0)))],
                       [sg.T('( vector2(X/Y) = vector2(X/Y) + VALUE(X/Y) )', pad=(10, (0, 0)))],
-                      [sg.Slider(range=(-9.95, 9.95), default_value=0.00, font=("Segoe UI", 14), resolution=.05, size=(36.5, 10),
+                      [sg.Slider(range=(-3.00, 3.00), default_value=0.00, font=(globalFont, 14 + globalFontSizeModifier), resolution=.01, size=(36.5, 10),
                                  orientation='horizontal', k="manualSecondVector_X", enable_events=True),
-                       sg.Slider(range=(-3.00, 3.00), default_value=0.00, font=("Segoe UI", 14), resolution=.01, size=(36.5, 10),
+                       sg.Slider(range=(-3.00, 3.00), default_value=0.00, font=(globalFont, 14 + globalFontSizeModifier), resolution=.01, size=(36.5, 10),
                                  orientation='horizontal', k="manualSecondVector_Y", enable_events=True)],
+                      [sg.T('X', pad = (216, (0, 0)), font=(globalFont, 14 + globalFontSizeModifier)),
+                       sg.T('Y', pad = (218, (0, 0)), font=(globalFont, 14 + globalFontSizeModifier))],
 
-                      [sg.T('(Second Vector) ONCE: RESET with random values. (SMOOTH) --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
-                      [sg.T('-- IGNORED if last slider is not at position 0 and without "ADD" checkbox checked --', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('(Second Vector) ONCE: RESET with random values. (SMOOTH) --Deactivate with 0--', font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)))],
+                      [sg.T('-- IGNORED if last slider is not at position 0 and without "ADD" checkbox checked --', font = (globalFont, 13 + globalFontSizeModifier), pad = (10, (0, 0)))],
                       [sg.T('Once at time of particle generation. Spreads them apart.', pad = (10, (10, 0)))],
                       [sg.T('( vector2(X/Y) = random_between(+-VALUE) )', pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.00, 1.00), default_value = 0.1, font = ("Segoe UI", 14), resolution = 0.001, size = (73.5, 10),
+                      [sg.Slider(range = (0.00, 1.00), default_value = 0.1, font = (globalFont, 14 + globalFontSizeModifier), resolution = 0.001, size = (73.5, 10),
                                  orientation = 'horizontal', disabled = False, k = 'randomSecondVector', enable_events = True, trough_color = sg.theme_slider_color())],
 
-                      [sg.T('(Second Vector) PER FRAME: RESET with - or ADD random values. (CHAOTIC) --Deactivate with 0--', font = ("Segoe UI", 15), pad=(10, (15, 0)))],
-                      [sg.T('-- OVERRIDES last two sliders if not at position 0 and without "ADD" checkbox checked--', font = ("Segoe UI", 13), pad = (10, (0, 0)))],
+                      [sg.T('(Second Vector) PER FRAME: RESET with - or ADD random values. (CHAOTIC) --Deactivate with 0--', font = (globalFont, 15 + globalFontSizeModifier), pad=(10, (15, 0)))],
+                      [sg.T('-- OVERRIDES last two sliders if not at position 0 and without "ADD" checkbox checked--', font = (globalFont, 13 + globalFontSizeModifier), pad = (10, (0, 0)))],
                       [sg.T('Particles turn in other direction every frame. Makes it look like a angry swarm of bees or brownian motion.', pad = (10, (10, 0)))],
                       [sg.T('( vector2(X/Y) = random_between(+-VALUE) )', pad = (10, (0, 0)))],
                       [sg.Checkbox('ADD to second vector instead replace. Use to add chaotic movement to other motion. By nature cumulative.', default = False, k = 'addChaosSecondVector',
                                    enable_events = True, pad = (5, (0, 0)))],
                       [sg.Checkbox('LIMITS second vector velocity to "some dynamic value". Useful when ADD funktion is enabled. Off if 0.',
                                    default = False, k = 'clampVelocitySecondVector', enable_events = True, pad = (5, (0, 0)))],
-                      [sg.Slider(range=(0.00, 1.0), default_value= 0.2, font=("Segoe UI", 14), resolution=0.001, size=(73.5, 10),
+                      [sg.Slider(range=(0.00, 2.0), default_value= 0.2, font=(globalFont, 14 + globalFontSizeModifier), resolution=0.001, size=(73.5, 10),
                                  orientation='horizontal', disabled=False, k='chaoticSecondVector', enable_events=True, trough_color=sg.theme_slider_color())],
                       [sg.T('', pad = (10, (0, 0)))],
                       [sg.T('', pad = (10, (0, 0)))],
                       ]
 
-    dynamic_layout = [[sg.Checkbox('Enable dynamic behavior (i.e. mouseSpeed dependant particle creation)', font = ("Segoe UI", 15), pad = (10, (15, 0)), default = True, k = 'dynamic', enable_events = True)],
+    dynamic_layout = [[sg.Checkbox('Enable dynamic behavior (i.e. mouseSpeed dependant particle creation)', font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)), default = True, k = 'dynamic', enable_events = True)],
                       [sg.T('Exp.: No particles are created when mouse is held still. When moved, the faster the movement, the more particles are created.', pad = (10, (0, 15)))],
                       [sg.Frame('Number of particles:',
-                                [[sg.Spin([i for i in range(1, 100)], initial_value = 5, font = ("Segoe UI", 16), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
-                                  sg.Spin([i for i in range(1, 200)], initial_value = 8, font = ("Segoe UI", 16), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
-                                  sg.Spin([i for i in range(1, 300)], initial_value = 14, font = ("Segoe UI", 16), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
-                                  sg.Spin([i for i in range(1, 400)], initial_value = 20, font = ("Segoe UI", 16), k = 'levelNumParticles_4', disabled = False, enable_events = True),
+                                [[sg.Spin([i for i in range(1, 100)], initial_value = 5, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_1', disabled = False, enable_events = True), sg.T('Level 1 '),
+                                  sg.Spin([i for i in range(1, 200)], initial_value = 8, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_2', disabled = False, enable_events = True), sg.T('Level 2 '),
+                                  sg.Spin([i for i in range(1, 300)], initial_value = 14, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_3', disabled = False, enable_events = True), sg.T('Level 3'),
+                                  sg.Spin([i for i in range(1, 400)], initial_value = 20, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelNumParticles_4', disabled = False, enable_events = True),
                                   sg.T('Level 4 - spawn this many particles per frame ...')]], )],
                       [sg.Frame('At mouse velocity in pixel per frame:',
-                                [[sg.Spin([i for i in range(1, 1000)], initial_value = 15, font = ("Segoe UI", 16), k = 'levelVelocity_1', disabled = False, enable_events = True), sg.T('Level 1'),
-                                  sg.Spin([i for i in range(1, 1000)], initial_value = 30, font = ("Segoe UI", 16), k = 'levelVelocity_2', disabled = False, enable_events = True), sg.T('Level 2'),
-                                  sg.Spin([i for i in range(1, 1000)], initial_value = 65, font = ("Segoe UI", 16), k = 'levelVelocity_3', disabled = False, enable_events = True), sg.T('Level 3 '),
-                                  sg.Spin([i for i in range(1, 1000)], initial_value = 130, font = ("Segoe UI", 16), k = 'levelVelocity_4', disabled = False, enable_events = True),
+                                [[sg.Spin([i for i in range(1, 1000)], initial_value = 15, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelVelocity_1', disabled = False, enable_events = True), sg.T('Level 1'),
+                                  sg.Spin([i for i in range(1, 1000)], initial_value = 30, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelVelocity_2', disabled = False, enable_events = True), sg.T('Level 2'),
+                                  sg.Spin([i for i in range(1, 1000)], initial_value = 65, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelVelocity_3', disabled = False, enable_events = True), sg.T('Level 3 '),
+                                  sg.Spin([i for i in range(1, 1000)], initial_value = 130, font = (globalFont, 16 + globalFontSizeModifier), k = 'levelVelocity_4', disabled = False, enable_events = True),
                                   sg.T('Level 4 - if mouse is moving this fast in pixels per frame ...')]], )],
                       [sg.T('Exp.: Sets the number of particles created per frame at the specified speed of mouse movement. (Below "Level 1" is defined in the General tab.', pad = (10, (0, 15)))],
                       [sg.HorizontalSeparator()],
                       [sg.HorizontalSeparator()],
 
-                      [sg.T('(Particle Vector) ONCE: Add random velocity to vector. --Only dynamic OFF // Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('(Particle Vector) ONCE: Add random velocity to vector. --Only dynamic OFF // Deactivate with 0--', font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)))],
                       [sg.T('Kick particles apart in RANDOM directions right after creation.', pad = (10, (10, 0)))],
                       [sg.T('( vector(X/Y) = vector(X/Y) + random_between(+-VALUE)', pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 100.0), default_value = 10, font = ("Segoe UI", 14), resolution = 0.5, size = (73.5, 10),
+                      [sg.Slider(range = (0.0, 100.0), default_value = 10, font = (globalFont, 14 + globalFontSizeModifier), resolution = 0.5, size = (73.5, 10),
                                  orientation = 'horizontal', disabled = False, k = 'addRandomParticleVector', enable_events = True, trough_color = sg.theme_slider_color())],
 
                       [sg.Checkbox('(Particle Vector) ONCE: Influence vector randomly by how fast you have moved the mouse.', default = False,
-                                   k = 'addRandomMouseInfluenceVector', disabled = False, enable_events = True, font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                                   k = 'addRandomMouseInfluenceVector', disabled = False, enable_events = True, font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)))],
                       [sg.T("( vector(X/Y) = vector(X/Y) + random_between(+-mouseSpeed) )", pad = (10, (0, 0)))],
-                      [sg.T("Control strength of influence. (Random velocity in random direction) --Only dynamic ON--", font = ("Segoe UI", 14), pad = (10, (5, 0)))],
+                      [sg.T("Control strength of influence. (Random velocity in random direction) --Only dynamic ON--", font = (globalFont, 14 + globalFontSizeModifier), pad = (10, (5, 0)))],
                       [sg.T("Kicks particles apart without much regards to direction.", pad = (10, (0, 0)))],
                       [sg.T("( vector(X/Y) = vector(X/Y) + random_between(+-mouseSpeed * VALUE) )", pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 2.0), default_value = 0.160, font = ("Segoe UI", 14), resolution = .001, size = (73.5, 10),
+                      [sg.Slider(range = (0.0, 2.0), default_value = 0.160, font = (globalFont, 14 + globalFontSizeModifier), resolution = .001, size = (73.5, 10),
                                  orientation = 'horizontal', k = 'strengthMouseInfluenceVector', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
                       [sg.HorizontalSeparator()],
 
-                      [sg.T('(Particle Vector) ONCE: Multiply velocity by VALUE. --Deactivate Vector with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('(Particle Vector) ONCE: Multiply velocity by VALUE. --Deactivate Vector with 0--', font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)))],
                       [sg.T('Push particles apart, but keep direction. Applied once at particle genesis, at vector conversion into velocity. Equal to mouse movement at 1.', pad = (10, (10, 0)))],
                       [sg.T('( velocity * VALUE )', pad = (10, (0, 0)))],
-                      [sg.Slider(range = (0.0, 1.0), default_value = 1.00, font = ("Segoe UI", 14), resolution = .001 , size = (73.5, 10),
+                      [sg.Slider(range = (0.0, 1.0), default_value = 1.00, font = (globalFont, 14 + globalFontSizeModifier), resolution = .001 , size = (73.5, 10),
                                  orientation = 'horizontal', k = 'velocityFactorVector', enable_events = True)],
 
-                      [sg.T('(Particle Vector) PER FRAME: Multiply velocity by VALUE. --Deactivate with 0--', font = ("Segoe UI", 15), pad = (10, (15, 0)))],
+                      [sg.T('(Particle Vector) PER FRAME: Multiply velocity by VALUE. --Deactivate with 0--', font = (globalFont, 15 + globalFontSizeModifier), pad = (10, (15, 0)))],
                       [sg.T('Can simulate drag or drive: Like air does to you in windy weather. Every frame velocity is multiplied by this value.', pad = (10, (10, 0)))],
                       [sg.T('If it is bigger than 1.0 then particles will speed up instead. If it is 0, all particles stand still.', pad=(10, (0, 0)))],
                       [sg.T('( velocity * VALUE )', pad=(10, (0, 0)))],
-                      [sg.Slider(range = (0.5, 1.5), default_value = 0.990, font = ("Segoe UI", 14), resolution = .001, size = (73.5, 10),
+                      [sg.Slider(range = (0.5, 1.5), default_value = 0.990, font = (globalFont, 14 + globalFontSizeModifier), resolution = .001, size = (73.5, 10),
                                  orientation = 'horizontal', k = 'drag', enable_events = True)]
                       ]
 
     color_layout = [[sg.Input(visible=False, enable_events=True, k='particleColor'), sg.ColorChooserButton('Particle color picker: %s' % particleColor, button_color=("#010101", particleColor),
-                              size=(25, 2), font=("Segoe UI", 16), k='color picker button'),
-                    sg.Frame('', border_width = 0, layout =[[sg.T('Hue slider', expand_x = True, justification='center', font=("Segoe UI", 16))],
-                                                            [sg.Slider(range=(0.00, 360.00), default_value=particleColorHue, font=("Segoe UI", 14), resolution=0.01, size=(45, 10),
+                              size=(25, 2), font=(globalFont, 16+ globalFontSizeModifier), k='color picker button'),
+                    sg.Frame('', border_width = 0, layout =[[sg.T('Hue slider', expand_x = True, justification='center', font=(globalFont, 16 + globalFontSizeModifier))],
+                                                            [sg.Slider(range=(0.00, 359.88), default_value=particleColorHue, font=(globalFont, 14 + globalFontSizeModifier), resolution=0.01, size=(45, 10),
                                                                        orientation='horizontal', k='particleColorHue', disabled=False, enable_events=True)]],)],  # , trough_color=particleColor
                     [sg.Checkbox('Randomize particle color.', default=False, k='particleColorRandom', enable_events=True)],
                     [sg.Checkbox('Rollover from hue = 360 to 0 or the other way around. (Depending on if positive or negative aging is used.', default=False, k='colorRollover', enable_events=True)],
 
                     [sg.HorizontalSeparator()],
-                    [sg.Spin([i for i in range(0, 200)], initial_value=50, font=("Segoe UI", 16), k='ageColorNoise', enable_events=True),
+                    [sg.Spin([i for i in range(0, 200)], initial_value=50, font=(globalFont, 16 + globalFontSizeModifier), k='ageColorNoise', enable_events=True),
                     sg.Frame('', border_width = 0, layout =[[sg.T('Add randomness to hue. (inject noise) A number between range +-value is added at time of creation.', pad=(0, (0, 0)))],
                                                             [sg.T('Use to combat too uniform looking particle color change. Deactivate with 0.', pad=(0, (0, 0))), ]])],
                     [sg.T('Skew this number with a bias more towards positive or negative values: 0 = only negative noise | 0.5 = balanced | 1.0 = only positive noise', pad=(10, (15, 0)))],
-                    [sg.Slider(range=(0.00, 1.00), default_value=0.42, font=("Segoe UI", 14), resolution=.01, size=(73.5, 10),
+                    [sg.Slider(range=(0.00, 1.00), default_value=0.42, font=(globalFont, 14 + globalFontSizeModifier), resolution=.01, size=(73.5, 10),
                                orientation='horizontal', k='ageColorNoiseMod', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
-                    [sg.Checkbox('Change hue over time. (hue - age * VALUE)', font = ("Segoe UI", 15), default=True, k='ageColor', enable_events=True)],
+                    [sg.Checkbox('Change hue over time. (hue - age * VALUE)', font = (globalFont, 15 + globalFontSizeModifier), default=True, k='ageColor', enable_events=True)],
                     [sg.T('Hue aging speed factor. Negative values decrease hue over time, positive increase it. (i.e. if Cyan, then Neg: towards green, Pos: towards blue)', pad=(10, (0, 0)))],
-                    [sg.Slider(range=(-19.99, 19.99), default_value=-5.50, font=("Segoe UI", 14), resolution=.10, size=(73.5, 10),
+                    [sg.Slider(range=(-19.99, 19.99), default_value=-5.50, font=(globalFont, 14 + globalFontSizeModifier), resolution=.10, size=(73.5, 10),
                                orientation='horizontal', k='ageColorSpeed', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
-                    [sg.T('Fine adjustment: ', font=("Segoe UI", 14)),
-                     sg.Slider(range=(ageColorSpeed-1.00, ageColorSpeed+1.00), default_value=ageColorSpeed, font=("Segoe UI", 14), resolution=.005, size=(56.9, 10),
+                    [sg.T('Fine adjustment: ', font=(globalFont, 14 + globalFontSizeModifier)),
+                     sg.Slider(range=(ageColorSpeed-1.00, ageColorSpeed+1.00), default_value=ageColorSpeed, font=(globalFont, 14 + globalFontSizeModifier), resolution=.005, size=(56.9, 10),
                                orientation='horizontal', k='ageColorSpeedFine', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())],
 
                     [sg.HorizontalSeparator()],
                     [sg.Checkbox('Linear aging instead  (hue - time)', default = True, k = 'ageLinear', enable_events = True)],
                     [sg.T('Speed of linear aging')],
-                    [sg.Slider(range = (-30.0, 30.0), default_value = .5, font = ("Segoe UI", 14), resolution = .1, size = (73.5, 10),
+                    [sg.Slider(range = (-30.0, 30.0), default_value = .5, font = (globalFont, 14 + globalFontSizeModifier), resolution = .1, size = (73.5, 10),
                                orientation = 'horizontal', k = 'ageLinearSpeed', disabled = False, enable_events = True, trough_color = sg.theme_slider_color())],
 
                     [sg.Checkbox('Age on a concave downward curve: At the start slower, but then increasingly faster change of hue value.', default=True, k='ageColorSlope', disabled=False, enable_events=True)],
                     [sg.T('(i.e. Longer stay of earlier colors. May be "logarithmic" aging.)', pad=(10, (0, 0)))],
                     [sg.T('Increase concavity of the downward slope that represents hue over time. (Think: https://i.stack.imgur.com/bGi9k.jpg)', pad=(10, (0, 0)))],
-                    [sg.Slider(range=(-2.00, 2.00), default_value=0.420, font=("Segoe UI", 14), resolution=.01, size=(73.5, 10),
+                    [sg.Slider(range=(-2.00, 2.00), default_value=0.420, font=(globalFont, 14 + globalFontSizeModifier), resolution=.01, size=(73.5, 10),
                                orientation='horizontal', k='ageColorSlopeConcavity', disabled=False, enable_events=True, trough_color=sg.theme_slider_color())]
                     ]
 
-    other_layout = [[sg.Text("Anything else one could find interesting to adhere to your mouse cursor!", font=("Segoe UI", 16))],
+    other_layout = [[sg.Text("Anything else one could find interesting to adhere to your mouse cursor!", font=(globalFont, 16 + globalFontSizeModifier))],
                     [sg.Text('Notice: FPS and the origin-offset from the "General"-tab are also used here:'),
                      sg.Checkbox('Add offset to the position of the upper-right corner of these stupid things', default=False, k='useOffset2', enable_events=True)],
-                    [sg.T('X '), sg.Spin([i for i in range(-99, 99)], initial_value=20, font=("Segoe UI", 16), k='offsetX2', disabled=False, enable_events=True),
-                     sg.T('Y '), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=("Segoe UI", 16), k='offsetY2', disabled=False, enable_events=True),
+                    [sg.T('X '), sg.Spin([i for i in range(-99, 99)], initial_value=20, font=(globalFont, 16 + globalFontSizeModifier), k='offsetX2', disabled=False, enable_events=True),
+                     sg.T('Y '), sg.Spin([i for i in range(-99, 99)], initial_value=10, font=(globalFont, 16 + globalFontSizeModifier), k='offsetY2', disabled=False, enable_events=True),
                      sg.T('Offset in pixel. (0, 0=tip of cursor)')],
 
                     [sg.HorizontalSeparator()],
                     [sg.Input(visible=False, enable_events=True, k='fontColor'),
-                     sg.ColorChooserButton('Font color picker: %s' % fontColor, button_color=("#010101", fontColor), size=(25, 1), font=("Segoe UI", 16), k='font color picker button'),
+                     sg.ColorChooserButton('Font color picker: %s' % fontColor, button_color=("#010101", fontColor), size=(25, 1), font=(globalFont, 16 + globalFontSizeModifier), k='font color picker button'),
                     sg.Input(visible=False, enable_events=True, k='outlineColor'),
-                     sg.ColorChooserButton('Outline color picker: %s' % outlineColor, button_color=("#808080", outlineColor), size=(25, 1), font=("Segoe UI", 16), k='outline color picker button')],
-                    [sg.Spin([i for i in range(1, 100)], initial_value=10, font=("Segoe UI", 16), k='fontSize', enable_events=True),
+                     sg.ColorChooserButton('Outline color picker: %s' % outlineColor, button_color=("#808080", outlineColor), size=(25, 1), font=(globalFont, 16 + globalFontSizeModifier), k='outline color picker button')],
+                    [sg.Spin([i for i in range(1, 100)], initial_value=10, font=(globalFont, 16 + globalFontSizeModifier), k='fontSize', enable_events=True),
                      sg.T('Font size in pt.'),
-                    sg.Spin([i for i in range(0, 10)], initial_value=1, font=("Segoe UI", 16), k='outlineThickness', enable_events=True),
+                    sg.Spin([i for i in range(0, 10)], initial_value=1, font=(globalFont, 16 + globalFontSizeModifier), k='outlineThickness', enable_events=True),
                      sg.T('Thickness of the outline in pixel. Use "0" to deactivate the outline')],
                     [sg.Checkbox("Enable antialiasing for the font. (''Pixel-smearing'' of the edges to reduce blockiness. Can be blurry)", default=False, k='fontAntialiasing', disabled=False, enable_events=True)],
                     [sg.HorizontalSeparator()],
-                    [sg.T('Untick all in order to activate the sparkly particles again.', font=("Segoe UI", 16))],
+                    [sg.T('Untick all in order to activate the sparkly particles again.', font=(globalFont, 16 + globalFontSizeModifier))],
                     [sg.Checkbox('Show RGB value of the color of the pixel under the cursor. Also draws a 40x40 square in that color.', default=False, k='showColor', disabled=False, enable_events=True)],
                     [sg.Checkbox('Show complementary color instead', default=False, k='complementaryColor', disabled=False, enable_events=True)],
                     [sg.Radio('rgb complement', 'compSwitch', default=True, k='rgbComplement', disabled=False, enable_events=True),
@@ -490,7 +495,7 @@ def make_window(theme):
                     [sg.Checkbox("Draw an image somewhere around the cursor (gifs don't move)", default=False, k='showImage', disabled=False, enable_events=True)],
                     [sg.Text('Choose Image'), sg.InputText(size=(65, 1), k='imagePath'),
                      sg.FileBrowse('Browse', size=(10, 1), file_types=file_types, enable_events=True)],
-                    [sg.T('(Only ".png", ".jpg", ".jpeg", ".tiff" ".gif" or ".bmp" supported.)', font=("Segoe UI", 10))],
+                    [sg.T('(Only ".png", ".jpg", ".jpeg", ".tiff" ".gif" or ".bmp" supported.)', font=(globalFont, 10 + globalFontSizeModifier))],
                     [sg.Image(data=get_img_data(imagePath, first=True), k='image')]
                     ]
 
@@ -498,7 +503,7 @@ def make_window(theme):
     #                   [sg.T('scatter plot with color map that changes?? X is time, Y is brightness (to death) and the color is color, of course?')],
     #                   [sg.T('')]]
 
-    console_layout = [[sg.Output(size=(120, 33), font=("Segoe UI", 10))],
+    console_layout = [[sg.Output(size=(120, 33), font=(globalFont, 10 + globalFontSizeModifier))],
                       [sg.T("Please don't look under the rug.")]]
 
     tabs_layout = [[sg.TabGroup([[sg.Tab('General particle settings', general_layout),
@@ -508,19 +513,19 @@ def make_window(theme):
                                   #sg.Tab('Preview', preview_layout),
                                   sg.Tab('Console output', console_layout)]])]]
 
-    layout = [[sg.T('ShitStuckToYourMouse', size=(74, 1), justification='center', font=("Segoe UI", 16), relief=sg.RELIEF_RIDGE)],
+    layout = [[sg.T('ShitStuckToYourMouse', size=(74, 1), justification='center', font=(globalFont, 16 + globalFontSizeModifier), relief=sg.RELIEF_RIDGE)],
               [sg.Column(tabs_layout, scrollable=True, vertical_scroll_only=True, size=(900, 600))],
               [sg.Button('Save and Run', k='Save-n-Run', enable_events=True), sg.T('  '),
                sg.Button('Save', k='Save', enable_events=True), sg.T('  '),
                sg.Button('Close child process', k='Close', enable_events=True), sg.T('  '),
                sg.Button('Reset to defaults', k='Reset', enable_events=True)],
               [sg.Button('Exit', k='Exit', enable_events=True),
-               sg.Button('Hide Window', k='Hide', enable_events=True),
+               #sg.Button('Hide Window', k='Hide', enable_events=True),
                sg.T('Press "F5" to Save and Run or "Esc" to Close')]]
 
     return sg.Window('ShitStuckToYourMouse configuration', layout, icon=poopImage, finalize=True, enable_close_attempted_event=True)
 
-# import re
+# import re  # forgot what that was for
 # str='#ffffff' # Your Hex
 #
 # match=re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', str)
@@ -533,15 +538,16 @@ def make_window(theme):
 
 
 def main():
-    global config, particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath
+    global config, particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath, globalFont, globalFontSizeModifier
     #sg.theme('Dark')  # redundant
-    sg.set_options(font=("Segoe UI", 10))  # global font
+    globalFont = "Segoe UI"  # default "Segoe UI"
+    globalFontSizeModifier = 0
+    sg.set_options(font=(globalFont, 10 + globalFontSizeModifier))  # global font
     menu = ["", ["Show Window", "Hide Window", "---", "Exit"]]  # Tray-icon context-menu
-    window = make_window('darkbrown1')  # not dark enough // Good one: Dark, darkgrey1, 11, 13, 15, darkbrown1
-    # add them browser? naaaah
+    window = make_window('darkgrey15')  # Good one: Dark, darkgrey1, -2, -11, -13, -15, darkbrown1
     window.bind('<F5>', 'F5 pressed')
     window.bind('<Escape>', 'Escape pressed')
-    tray = SystemTray(menu, single_click_events=False, window=window, tooltip="ShitStuckToYourMouse", icon=resource_path(".\poop.ico"))
+    #tray = SystemTray(menu, single_click_events=False, window=window, tooltip="ShitStuckToYourMouse", icon=resource_path(".\poop.ico"))
     print(sg.get_versions())
     proc = []  # Initiate variable for check if subprocess.Popen == True
     otherProc = False
@@ -582,17 +588,17 @@ def main():
                 numberPIDs = len(pid)
                 i = 0
                 while i < numberPIDs:
-                    if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i])
-                            print('Subprocess killed')
-                        else:
-                            print("Subprocess already dead")
-                    otherProc = False
+                    # if proc[i] or otherProc:
+                    if psutil.pid_exists(pid[i]):
+                        kill_proc_tree(pid = pid[i], include_parent = True)
+                        print("Subprocess " + str(pid[i]) + " killed")
+                    else:
+                        print("Subprocess already dead")
                     i += 1
                     if i == numberPIDs:
                         proc = []
                         pid = []
+                        otherProc = False
                 break
 
             # if values['multitasking'] > 1:
@@ -734,9 +740,9 @@ def main():
                 window['offsetX2'].update(disabled=True)
                 window['offsetY2'].update(disabled=True)
 
-            if event == tray.key:
-                #print(f"System Tray Event = ", values[event])  # create key-error
-                event = values[event]
+            # if event == tray.key:
+            #     #print(f"System Tray Event = ", values[event])  # create key-error
+            #     event = values[event]
 
             if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
                 print('\n============ Event=', event, ' ==============')
@@ -751,7 +757,7 @@ def main():
                 else:
                     window['image'].update(data='')
                     sg.popup_no_wait('Error: File does not exist', text_color='#ffc000', button_type=5, auto_close=True,
-                                     auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
+                                     auto_close_duration=3, non_blocking=True, font=(globalFont, 26 + globalFontSizeModifier), no_titlebar=True, keep_on_top=True)
                     doesImageFileExist = False
                     print('Error: %s does not exist' % imagePath)
             #----------------------
@@ -762,17 +768,17 @@ def main():
                     numberPIDs = len(pid)
                     i = 0
                     while i < numberPIDs:
-                        if proc[i] or otherProc:
-                            if psutil.pid_exists(pid[i]):
-                                kill_proc_tree(pid = pid[i])
-                                print('Subprocess killed')
-                            else:
-                                print("Subprocess already dead")
-                        otherProc = False
+                        # if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i], include_parent = True)
+                            print("Subprocess " + str(pid[i]) + " killed")
+                        else:
+                            print("Subprocess already dead")
                         i += 1
                         if i == numberPIDs:
                             proc = []
                             pid = []
+                            otherProc = False
                     setDefaults()
                     getVariablesFromConfig(window)
                     event, values = window.read(timeout=1250)
@@ -843,46 +849,47 @@ def main():
                     if not exists(imagePath) or imagePath == '':
                         window['image'].update(data='')
                         sg.popup_no_wait('Error: File does not exist', text_color='#ffc000', button_type=5, auto_close=True,
-                                         auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
+                                         auto_close_duration=3, non_blocking=True, font=(globalFont, 26 + globalFontSizeModifier), no_titlebar=True, keep_on_top=True)
                         doesImageFileExist = False
                         print('Error: %s does not exist' % imagePath)
                     else:
                         window['image'].update(data=get_img_data(imagePath, first=True))
                         doesImageFileExist = True
+
                 numberPIDs = len(pid)
                 i = 0
                 while i < numberPIDs:
-                    if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i])
-                            print('Subprocess killed')
-                        else:
-                            print("Subprocess already dead")
-                    otherProc = False
+                    # if proc[i] or otherProc:
+                    if psutil.pid_exists(pid[i]):
+                        kill_proc_tree(pid = pid[i], include_parent = True)
+                        print("Subprocess " + str(pid[i]) + " killed")
+                    else:
+                        print("Subprocess already dead")
                     i += 1
                     if i == numberPIDs:
                         proc = []
                         pid = []
+                        otherProc = False
                 if values['showColor'] or values['showClock'] or values['showCPU'] or values['showRAM'] or (values['showImage'] and doesImageFileExist):
                     if isCompiledToExe:
                         otherProc = Popen("other.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                     else:
-                        otherProc = Popen("py other.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
+                        otherProc = Popen("python other.pyw", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW)
                     pid.append(otherProc.pid)
                     print('Subprocess Started')
                     print(otherProc, " with process id: ", pid)
                 elif not values['showColor'] and not values['showClock'] and not values['showCPU'] and not values['showRAM'] and not values['showImage']:
                     sg.popup_no_wait('Starting ... ', text_color='#00ff00', button_type=5, auto_close=True,
-                                     auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
+                                        auto_close_duration=3, non_blocking=True, font=(globalFont, 26 + globalFontSizeModifier), no_titlebar=True, keep_on_top=True)
                     numberTasks = values['multitasking']
                     if values['multitasking'] > values['numParticles'] and not values['dynamic']:
-                        numberTasks = values['numParticles']
+                        numberTasks = values['numParticles']  # Don't create more threads than there are particles
                     i = 0
                     while i < numberTasks:
                         if isCompiledToExe:
                             proc[i] = Popen("sparkles.exe", shell=False, stdout=PIPE, stdin=PIPE, stderr=PIPE, creationflags=CREATE_NO_WINDOW, cwd=getcwd())
                         else:
-                            returnValue = Popen("py sparkles.pyw", shell=False, stdout=None, stdin=None, stderr=None, creationflags=CREATE_NO_WINDOW)
+                            returnValue = Popen("python sparkles.pyw", shell=False, stdout=None, stdin=None, stderr=None, creationflags=CREATE_NO_WINDOW)
                             proc.append(returnValue)
                         pid.append(returnValue.pid)
                         print('Subprocess Started')
@@ -892,17 +899,17 @@ def main():
                     numberPIDs = len(pid)
                     i = 0
                     while i < numberPIDs:
-                        if proc[i] or otherProc:
-                            if psutil.pid_exists(pid[i]):
-                                kill_proc_tree(pid=pid[i])
-                                print('Subprocess killed')
-                            else:
-                                print("Subprocess already dead")
-                        otherProc = False
+                        # if proc[i] or otherProc:
+                        if psutil.pid_exists(pid[i]):
+                            kill_proc_tree(pid = pid[i], include_parent = True)
+                            print("Subprocess " + str(pid[i]) + " killed")
+                        else:
+                            print("Subprocess already dead")
                         i += 1
                         if i == numberPIDs:
                             proc = []
                             pid = []
+                            otherProc = False
             # ---------------------
 
             elif event in (None, 'Save'):
@@ -946,75 +953,76 @@ def main():
                     if not exists(imagePath) or imagePath == '':
                         window['image'].update(data='')
                         sg.popup_no_wait('Error: File does not exist', text_color='#ffc000', button_type=5, auto_close=True,
-                                         auto_close_duration=3, non_blocking=True, font=("Segoe UI", 26), no_titlebar=True, keep_on_top=True)
+                                         auto_close_duration=3, non_blocking=True, font=(globalFont, 26 + globalFontSizeModifier), no_titlebar=True, keep_on_top=True)
                         doesImageFileExist = False
                         print('Error: %s does not exist' % imagePath)
                     else:
                         window['image'].update(data=get_img_data(imagePath, first=True))
                         doesImageFileExist = True
             # ---------------------
+
             elif event in (None, 'Close') or event in (None, 'Escape pressed'):
                 numberPIDs = len(pid)
                 i = 0
                 while i < numberPIDs:
-                    if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i])
-                            print('Subprocess killed')
-                        else:
-                            print("Subprocess already dead")
-                    otherProc = False
+                    #if proc[i] or otherProc:
+                    if psutil.pid_exists(pid[i]):
+                        kill_proc_tree(pid = pid[i], include_parent = True)
+                        print("Subprocess " + str(pid[i]) + " killed")
+                    else:
+                        print("Subprocess already dead")
                     i += 1
                     if i == numberPIDs:
                         proc = []
                         pid = []
+                        otherProc = False
 
-            elif event in (None, 'Hide'):
-                window.hide()
-                tray.show_icon()
+            # elif event in (None, 'Hide'):  # psgtray
+            #     window.hide()
+            #     tray.show_icon()
 
             elif event in (None, 'Exit'):
-                tray.hide_icon()
+                #tray.hide_icon()
                 numberPIDs = len(pid)
                 i = 0
                 while i < numberPIDs:
-                    if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i])
-                            print('Subprocess killed')
-                        else:
-                            print("Subprocess already dead")
-                    otherProc = False
+                    #if proc[i] or otherProc:
+                    if psutil.pid_exists(pid[i]):
+                        kill_proc_tree(pid = pid[i], include_parent = True)
+                        print("Subprocess " + str(pid[i]) + " killed")
+                    else:
+                        print("Subprocess already dead")
                     i += 1
                     if i == numberPIDs:
                         proc = []
                         pid = []
+                        otherProc = False
                 break
 
-            elif event in (None, sg.EVENT_SYSTEM_TRAY_ICON_DOUBLE_CLICKED):
-                window.un_hide()
-                window.bring_to_front()
-
-            elif event in ("Show Window", sg.EVENT_SYSTEM_TRAY_ICON_DOUBLE_CLICKED):
-                window.un_hide()
-                window.bring_to_front()
-
+            # elif event in (None, sg.EVENT_SYSTEM_TRAY_ICON_DOUBLE_CLICKED):
+            #     window.un_hide()
+            #     window.bring_to_front()
+            #
+            # elif event in ("Show Window", sg.EVENT_SYSTEM_TRAY_ICON_DOUBLE_CLICKED):
+            #     window.un_hide()
+            #     window.bring_to_front()
+            #
             elif event in ("Hide Window", sg.WIN_CLOSE_ATTEMPTED_EVENT):
-                tray.hide_icon()
+                #tray.hide_icon()
                 numberPIDs = len(pid)
                 i = 0
                 while i < numberPIDs:
-                    if proc[i] or otherProc:
-                        if psutil.pid_exists(pid[i]):
-                            kill_proc_tree(pid = pid[i])
-                            print('Subprocess killed')
-                        else:
-                            print("Subprocess already dead")
-                    otherProc = False
+                    #if proc[i] or otherProc:
+                    if psutil.pid_exists(pid[i]):
+                        kill_proc_tree(pid = pid[i], include_parent = True)
+                        print("Subprocess " + str(pid[i]) + " killed")
+                    else:
+                        print("Subprocess already dead")
                     i += 1
                     if i == numberPIDs:
                         proc = []
                         pid = []
+                        otherProc = False
                 break
 
             elif event in (None, 'particleColorHue'):
@@ -1106,41 +1114,55 @@ def main():
             #             print(line.decode("utf8"))
 
     finally:  # catch every exception and make sure to leave correctly
-        tray.hide_icon()
+        #tray.hide_icon()
         numberPIDs = len(pid)
         i = 0
         while i < numberPIDs:
-            if proc[i] or otherProc:
-                if psutil.pid_exists(pid[i]):
-                    kill_proc_tree(pid = pid[i])
-                    print('Subprocess killed')
-                else:
-                    print("Subprocess already dead")
-            otherProc = False
+            # if proc[i] or otherProc:
+            if psutil.pid_exists(pid[i]):
+                kill_proc_tree(pid = pid[i], include_parent = True)
+                print("Subprocess " + str(pid[i]) + " killed")
+            else:
+                print("Subprocess already dead")
             i += 1
             if i == numberPIDs:
                 proc = []
                 pid = []
+                otherProc = False
 
     numberPIDs = len(pid)
     i = 0
     while i < numberPIDs:
-        if proc[i] or otherProc:
-            if psutil.pid_exists(pid[i]):
-                kill_proc_tree(pid = pid[i])
-                print('Subprocess killed')
-            else:
-                print("Subprocess already dead")
-
-        otherProc = False
+        # if proc[i] or otherProc:
+        if psutil.pid_exists(pid[i]):
+            kill_proc_tree(pid = pid[i], include_parent = True)
+            print("Subprocess " + str(pid[i]) + " killed")
+        else:
+            print("Subprocess already dead")
         i += 1
         if i == numberPIDs:
             proc = []
             pid = []
+            otherProc = False
+    # numberPIDs = len(pid)
+    # i = 0
+    # while i < numberPIDs:
+    #     if proc[i] or otherProc:
+    #         if psutil.pid_exists(pid[i]):
+    #             kill_proc_tree(pid = pid[i])
+    #             print('Subprocess killed')
+    #         else:
+    #             print("Subprocess already dead")
+    #
+    #     otherProc = False
+    #     i += 1
+    #     if i == numberPIDs:
+    #         proc = []
+    #         pid = []
         print("killed last subprocess")
     print("close window")
-    tray.hide_icon()  # sometimes doesn't have an effect and the icon stays ...
-    tray.close()  # optional but without a close, the icon may "linger" until moused over | still with it
+    #tray.hide_icon()  # sometimes doesn't have an effect and the icon stays ...
+    #tray.close()  # optional but without a close, the icon may "linger" until moused over | still with it
     window.close()
 
 

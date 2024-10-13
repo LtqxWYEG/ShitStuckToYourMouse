@@ -1,5 +1,5 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-#  Copyright (c) 2021.                                                         \
+#  Copyright (c) 2024.                                                         \
 #  LtqxWYEG <distelzombie@protonmail.com>                                      \
 #                                                                              \
 #  This program is free software: you can redistribute it and/or modify        \

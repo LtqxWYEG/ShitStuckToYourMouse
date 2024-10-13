@@ -1,5 +1,5 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-#  Copyright (c) 2021.                                                         \
+#  Copyright (c) 2024.                                                         \
 #  LtqxWYEG <distelzombie@protonmail.com>                                      \
 #                                                                              \
 #  This program is free software: you can redistribute it and/or modify        \
@@ -511,6 +511,98 @@ def loop(first_Run, transparent_Color, interpolate_Mouse_Movement, particle_Cont
                 partsXcoordinates = list((0, 0))  # at least initialize if no movement/particles
                 partsYcoordinates = list((0, 0))
 
+            # -------------------- SPACIAL HASHING TRIAL -------------------------------
+
+            #r# ---------------------------- START ---------------------------------------
+            #
+            #             # numTiles = 16 + 9
+            #             # n = 0
+            #             # while n < numTiles:
+            #             # tile_map = []
+            #                 # n += 1
+            #             # tileSize = 120  # [1920 / 16, 1080 / 9]
+            #             # tile_map = [[[0, 0], [tileSize, tileSize]]]  # list of rects
+            #             # origin = [0, 0]
+            #             # counte
+            # counterY = 0
+            # counterN = 1
+            # while counterX < 16:
+            #     tile_map[counterN].append([[counterX * tileSize, counterY * tileSize], [tileSize, tileSize]])
+            #     counterX += 1
+            #     counterY = 0
+            #     counterN += 1
+            #     while counterY < 9 and (counterX * tileSize) > 1920:
+            #         tile_map[counterN].append([[counterX * tileSize, counterY * tileSize], [tileSize, tileSize]])
+            #         counterY += 1
+            #         counterN += 1
+            #
+            # for particle in particle_Container:
+            #     particle[0][0] += particle[1][0]
+            #     loc_str = str(int(particle[0][0] / tileSize)) + ';' + str(int(particle[0][1] / tileSize))
+            #     if loc_str in tile_map:
+            #         particle[1][0] = -0.7 * particle[1][0]
+            #         particle[1][1] *= 0.95
+            #         particle[0][0] += particle[1][0] * 2
+            #     particle[0][1] += particle[1][1]
+            #     loc_str = str(int(particle[0][0] / tileSize)) + ';' + str(int(particle[0][1] / tileSize))
+            #     if loc_str in tile_map:
+            #         particle[1][1] = -0.7 * particle[1][1]
+            #         particle[1][0] *= 0.95
+            #         particle[0][1] += particle[1][1] * 2
+            #     particle[2] -= 0.035
+            #     particle[1][1] += 0.15
+            #
+            # for tile in tile_map:
+            #     activeRect.append(tile_map[tile][2])
+            #
+            # pygame.display.update((oldActiveRect, activeRect))
+            # oldActiveRect = pygame.Rect((activeRect[0] - 2, activeRect[1] - 2), (activeRect[2] + 4, activeRect[3] + 4))
+            # display_window.fill(transparent_Color, oldActiveRect)  # instead of filling the whole screen, fill only a small rect
+
+            #     pygame.draw.circle(screen, (255, 255, 255), [int(particle[0][0]), int(particle[0][1])], int(particle[2]))
+            #     if particle[2] <= 0:
+            #         particle_Container.remove(particle)
+            #
+            # # Render Tiles ------------------------------------------- #
+            # for tile in tile_map:
+            #     pygame.draw.rect(screen, tile_map[tile][2], pygame.Rect(tile_map[tile][0] * tileSize, tile_map[tile][1] * tileSize, tileSize, tileSize))
+
+            # -------------------- SPACIAL HASHING TRIAL -------------------------------
+            # bin_size = 3  # ??
+            # shift = bin_size
+            # bins = {}
+            #
+            # for part in particle_Container:
+            #     key = part.pos.x >> shift, part.pos.y >> shift
+            #     if key not in bins:
+            #         bins[key] = []
+            #     bins[key].append(part)
+            #
+            # side = int(2 ** shift)  # power of two = 3??
+            # bounding_box = [int(x) - side, int(y) - side,
+            #                 int(x) + side, int(y) + side]
+            # bounding_box = [int(x) - side, int(y) - side,
+            #                 int(x) + side, int(y) + side]
+            # min_x, min_y, max_x, max_y = bounding_box
+            # min_hash_x, min_hash_y = min_x >> shift, min_y >> shift
+            # max_hash_x, max_hash_y = max_x >> shift, max_y >> shift
+            #
+            # activeRect = []
+            # for hash_x in range(min_hash_x, max_hash_x + 1):
+            #     for hash_y in range(min_hash_y, max_hash_y + 1):
+            #         if (hash_x, hash_y) in bins:
+            #             activeRect.extend(bins[(hash_x, hash_y)])
+            #
+            # activeRect.extend(oldActiveRect)
+            #
+            # pygame.display.update(activeRect)
+            # oldActiveRect = pygame.Rect(activeRect)
+            # display_window.fill(transparent_Color, oldActiveRect)  # instead of filling the whole screen, fill only a small rect
+
+            # -------------------- SPACIAL HASHING TRIAL -------------------------------
+
+            # ----------------------------- END ----------------------------------------
+
             rightestPart = max(partsXcoordinates)
             leftestPart = min(partsXcoordinates)
             lowestPart = max(partsYcoordinates)
@@ -536,8 +628,10 @@ def loop(first_Run, transparent_Color, interpolate_Mouse_Movement, particle_Cont
             oldActiveRect = pygame.Rect((activeRect[0] - 2, activeRect[1] - 2), (activeRect[2] + 4, activeRect[3] + 4))
             display_window.fill(transparent_Color, oldActiveRect)  # instead of filling the whole screen, fill only a small rect
 
-            # pygame.display.update()  # old. Keep for now
+
             # display_window.fill(transparent_Color)
+            # pygame.display.update()  # old. Keep for now
+
 
             if devMeasureLoop:  # Activates a timer and exec ceiling for this loop
                 if timer == devMeasureLoopLength:

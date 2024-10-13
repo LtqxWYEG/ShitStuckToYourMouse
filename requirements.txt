@@ -1,8 +1,7 @@
-﻿FreeySimpleGUI
+﻿FreeSimpleGUI
 Pillow
 configparser
 psutil
-psgtray
 pygame
 pywin32
 acrylic
