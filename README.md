@@ -67,7 +67,7 @@ The intention for this is to build upon it to create something interesting - lik
 
 ## Prerequisites:
 - Windows (I used Windows 10 22H2)
-- Python 3.12
+- Python 3.13
 - Pillow
 - configparser 
 - pywin32
