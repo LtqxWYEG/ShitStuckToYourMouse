@@ -119,6 +119,7 @@ def getVariablesFromConfig(window):
     window['dynamic'].update(config.getboolean("SPARKLES", "dynamic"))
 
     window['particleColor'].update(str(config.get("SPARKLES", "particleColor")))
+    window['useColorUnderMouse'].update(config.getboolean("SPARKLES", "useColorUnderMouse"))
     window['particleColorHue'].update(float(config.get("SPARKLES", "particleColorHue")))
     window['particleColorRandom'].update(config.getboolean("SPARKLES", "particleColorRandom"))
     window['ageColor'].update(config.getboolean("SPARKLES", "ageColor"))
@@ -194,6 +195,7 @@ def updateConfig(values):
     config.set("SPARKLES", "dynamic", str(values['dynamic']))
 
     config.set("SPARKLES", "particleColor", values['particleColor'])
+    config.set("SPARKLES", "useColorUnderMouse", str(values['useColorUnderMouse']))
     config.set("SPARKLES", "particleColorHue", str(values['particleColorHue']))
     config.set("SPARKLES", "particleColorRandom", str(values['particleColorRandom']))
     config.set("SPARKLES", "ageColor", str(values['ageColor']))
@@ -327,7 +329,7 @@ def kill_all():
 
 
 def make_window(theme):
-    global particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath, globalFont, globalFontSizeModifier
+    global particleColor, particleColorHue, fontColor, outlineColor, ageColorSpeed, imagePath, globalFont, globalFontSizeModifier, useColorUnderMouse
     sg.theme(theme)
     file_types = [("Images", "*.png *.jpg *.jpeg *.tiff *.bmp *.gif"), ("All files (*.*)", "*.*")]
 
@@ -469,7 +471,9 @@ def make_window(theme):
                     sg.Frame('', border_width = 0, layout =[[sg.T('Hue slider', expand_x = True, justification='center', font=(globalFont, 16 + globalFontSizeModifier))],
                                                             [sg.Slider(range=(0.00, 359.88), default_value=particleColorHue, font=(globalFont, 14 + globalFontSizeModifier), resolution=0.01, size=(45, 10),
                                                                        orientation='horizontal', k='particleColorHue', disabled=False, enable_events=True)]],)],  # , trough_color=particleColor
-                    [sg.Checkbox('Randomize particle color.', default=False, k='particleColorRandom', enable_events=True)],
+                    [sg.Radio('Use color picker.', 'colorSwitch', default=False, k=None, enable_events=True)],
+                    [sg.Radio('Randomize particle color. (Control bightness with color picker)', 'colorSwitch', default=False, k='particleColorRandom', enable_events=True),
+                     sg.Radio('Use color under mouse. (Very slow. Use with one thread only)', 'colorSwitch',  default=False, k='useColorUnderMouse', enable_events=True)],
                     [sg.Checkbox('Rollover from hue = 360 to 0 or the other way around. (Depending on if positive or negative aging is used.', default=False, k='colorRollover', enable_events=True)],
 
                     [sg.HorizontalSeparator()],
@@ -625,9 +629,6 @@ def main():
                 updateConfig(values)
                 kill_all()
                 break
-
-            # if values['multitasking'] > 1:
-            #     values['numParticles']
 
             if values['showColor'] or values['showImage']:
                 window['showClock'].update(disabled=True)
@@ -980,28 +981,27 @@ def main():
                 if particleColorHue == "None" or values['particleColorHue'] == "None":  # maybe??
                     particleColorHue = float(config.get("SPARKLES", "particleColorHue"))  # Get last saved values
                     values['particleColorHue'] = particleColorHue
-
                 #particleColorHue = values['particleColorHue']
                 colorHSV = acrylic.Color(hex = particleColor).hsv  # get S and V values for next step
                 colorHEX = acrylic.Color(hsv = [particleColorHue, colorHSV.s, colorHSV.v]).hex
                 particleColor = colorHEX  # convert hsv to hex
                 values['particleColor'] = colorHEX
-
-                #window['particleColorHue'].update(values['particleColorHue'])  # , trough_color=particleColor
                 window['particleColor'].update(values['particleColor'])
                 window['color picker button'].update(values['particleColor'])
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
+                # background_color: str = None,
+                # text_color: str = None,
+                # trough_color: str = None
+                #window['particleColorHue'].update(background_color = particleColor)  # Crash
 
             elif event in (None, 'particleColor'):  # Update color and text of the color-picker button
                 if particleColor == "None" or values['particleColor'] == "None":  # check if no color was chosen in the popup. Happens when cancelled
                     particleColor = config.get("SPARKLES", "particleColor")  # Get last saved values
                     values['particleColor'] = particleColor
-
                 #particleColor = values['particleColor']
                 colorHSV = acrylic.Color(hex = particleColor).hsv  # convert hex to hsv
                 particleColorHue = colorHSV.h  # extract hue
                 values['particleColorHue'] = particleColorHue
-
                 window['particleColorHue'].update(values['particleColorHue'])  # , trough_color=particleColor
                 window['color picker button'].update(('Particle color picker: %s' % particleColor), button_color=("#010101", particleColor))
 

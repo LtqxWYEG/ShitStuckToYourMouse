@@ -193,7 +193,7 @@ def _circlepoints(r):
     return points
 
 
-# slow but very good looking if outline >1
+# slow but very goodlooking if outline >1
 def textWithOutline2(text, font_face, font_Color, outline_Color, outline_Thickness):
     if settings["fontAntialiasing"]:
         textSurface = font_face.render(text, True, font_Color)
@@ -253,19 +253,19 @@ def textWithOutline(text, font_face, font_Color, outline_Color, outline_Thicknes
 
 
 # Slow and bad looking, don't use
-def textWithOutline3(text, font_face, font_Color, outline_Color, outline_width):
-    text_surface = font_face.render(text, True, font_Color)
-    text_outline_surface = font_face.render(text, True, outline_Color)
-    # There is no good way to get an outline with pygame, so we draw
-    # the text at 8 points around the main text to simulate an outline.
-    directions = [(outline_width, outline_width), (0, outline_width), (-outline_width, outline_width), (outline_width, 0), (-outline_width, 0), (outline_width, -outline_width), (0, -outline_width), (-outline_width, -outline_width)]
-    textRect = text_surface.get_rect()
-    for direction in directions:
-        text_surface.blit(text_outline_surface, (textRect[0] - direction[0], textRect[1] - direction[1]))
-    # blit foreground image to the screen
-    innerText = font_face.render(text, False, font_Color)
-    text_surface.blit(innerText, innerText.get_rect(center=textRect.center))
-    return text_surface
+# def textWithOutline3(text, font_face, font_Color, outline_Color, outline_width):
+#     text_surface = font_face.render(text, True, font_Color)
+#     text_outline_surface = font_face.render(text, True, outline_Color)
+#     # There is no good way to get an outline with pygame, so we draw
+#     # the text at 8 points around the main text to simulate an outline.
+#     directions = [(outline_width, outline_width), (0, outline_width), (-outline_width, outline_width), (outline_width, 0), (-outline_width, 0), (outline_width, -outline_width), (0, -outline_width), (-outline_width, -outline_width)]
+#     textRect = text_surface.get_rect()
+#     for direction in directions:
+#         text_surface.blit(text_outline_surface, (textRect[0] - direction[0], textRect[1] - direction[1]))
+#     # blit foreground image to the screen
+#     innerText = font_face.render(text, False, font_Color)
+#     text_surface.blit(innerText, innerText.get_rect(center=textRect.center))
+#     return text_surface
 
 
 # def textWithOutline4(text, font_face, font_Color, outline_Color, outline_Thickness):

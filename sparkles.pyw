@@ -25,10 +25,11 @@ from ctypes import byref, c_int, Structure, windll
 import pygame
 import pygame.gfxdraw
 import pygame.math
+import colorsys
 #from pygame.math import Vector2
 from os import path, listdir, environ
 from pygame.locals import *  # for Color
-from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, SetWindowPos
+from win32gui import SetWindowLong, SetLayeredWindowAttributes, GetWindowLong, SetWindowPos, GetDC
 from win32con import HWND_TOPMOST, GWL_EXSTYLE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TRANSPARENT, LWA_COLORKEY, WS_EX_LAYERED, WS_EX_TOOLWINDOW
 from win32api import RGB
 from time import sleep, process_time
@@ -106,6 +107,7 @@ def readVariables():
     settings["addRandomParticleVector"] = float(config.get("SPARKLES", "addRandomParticleVector"))
 
     settings["particleColor"] = str(config.get("SPARKLES", "particleColor"))
+    settings["useColorUnderMouse"] = config.getboolean("SPARKLES", "useColorUnderMouse")
     settings["particleColorRandom"] = config.getboolean("SPARKLES", "particleColorRandom")
     settings["ageColor"] = config.getboolean("SPARKLES", "ageColor")
     settings["colorRollover"] = config.getboolean("SPARKLES", "colorRollover")
@@ -220,6 +222,7 @@ class ParticleClass(Particle):
         self.drag = settings["drag"]
         self.age = settings["particleAge"]
 
+
     def updateParticle(self):
         #self.particleVector = (self.particleVector + self.secondVector) * self.drag
         self.particleVector *= self.drag
@@ -303,7 +306,7 @@ class ParticleClass(Particle):
         hue = clamp(hue, 1, 357)  # Clamp hue within limits. Has to be 357, otherwise it will roll over with high ageBrightnessNoise for some reason
 
         self.age -= 1
-        if brightness < 7 or self.age == 0:  # If brightness falls below 7, remove particle
+        if brightness < 1 or self.age == 0:  # If brightness falls below 7, remove particle
             try:  # It's possible this particle was removed already.
                 self.color.hsva = (0, 0, 0)  # , alpha)
                 self.container.remove(self)
@@ -350,7 +353,6 @@ def clamp(val, minval, maxval):
         return maxval
     return val
 
-
 def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
     windll.user32.SetWindowLongPtrW(hwnd, GWL_EXSTYLE, windll.user32.GetWindowLongPtrW(hwnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW)  # no taskbar button
     SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT,)
@@ -365,15 +367,19 @@ def setWindowAttributes(hwnd):  # set all kinds of option for win32 windows
     # WS_EX_LAYERED: The window is a layered window, so that we can set attributes like color with SetLayeredWindowAttributes ...
     # LWA_COLORKEY: ... and make that color the transparent color of the window.
 
-
 def HEXtoRGB(hexa):
     rgb = []
     hexa = hexa.removeprefix('#')  # hexa.replace('#', '');  # = filter(lambda ch: ch not in "#", hexa) not working
     for n in (0, 2, 4):
         decimal = int(hexa[n:n + 2], 16)
         rgb.append(decimal)
-
     return tuple(rgb)
+
+def rgbIntToTuple(RGBint):
+    red = RGBint & 255
+    green = (RGBint >> 8) & 255
+    blue = (RGBint >> 16) & 255
+    return red, green, blue
 
 
 # @lru_cache(maxsize = 1024)  # TypeError: unhashable type: 'list' because particleContainer?
@@ -444,30 +450,33 @@ def loop(first_Run, transparent_Color, interpolate_Mouse_Movement, particle_Cont
 
             # ------------
 
+            if settings["useColorUnderMouse"]:
+                particle_Color = rgbIntToTuple(windll.gdi32.GetPixel(handleDeviceContext, mousePosition.x, mousePosition.y))
+
             x = 0
             y = 0
             while x < num_Particles and draw_Particles:
                 if settings["particleColorRandom"]:
                     random_Hue = randrange(360)
                 if not interpolate_Mouse_Movement:
-                    #print("pool")
                     particle_Container_append(ParticleClass(display_window, first_Pos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
-                    y = -1
-                elif y == 0:
-                    particle_Container_append(ParticleClass(display_window, second_Pos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
-                    y = 1
-                elif y == 1:
-                    particle_Container_append(ParticleClass(display_window, firstMiddlePos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
-                    y = 2
-                elif y == 2:
-                    particle_Container_append(ParticleClass(display_window, secondMiddlePos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
-                    y = 3
-                # elif y == 3:
-                #     particle_Container_append(ParticleClass(display_window, thirdMiddlePos, mouse_Vector, particle_Container, particle_Color, mouse_Speed_Pixel_Per_Frame))
-                #     y = 4
-                elif y == 3:
-                    particle_Container_append(ParticleClass(display_window, first_Pos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
-                    y = 0
+                else:
+                    match y:
+                        case 0:
+                            particle_Container_append(ParticleClass(display_window, second_Pos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
+                            y = 1
+                        case 1:
+                            particle_Container_append(ParticleClass(display_window, firstMiddlePos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
+                            y = 2
+                        case 2:
+                            particle_Container_append(ParticleClass(display_window, secondMiddlePos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
+                            y = 3
+                        # case 3:
+                        #     particle_Container_append(ParticleClass(display_window, thirdMiddlePos, mouse_Vector, particle_Container, particle_Color, mouse_Speed_Pixel_Per_Frame))
+                        #     y = 4
+                        case 3:
+                            particle_Container_append(ParticleClass(display_window, first_Pos, mouse_Vector, particle_Container, particle_Color, random_Hue, mouse_Speed_Pixel_Per_Frame))
+                            y = 0
                 x += 1
 
             for part in particle_Container:
@@ -745,6 +754,8 @@ if __name__ == "__main__":
     colorRGB = Color(HEXtoRGB(settings["particleColor"]))
     hsva = colorRGB.hsva  # Limits: H = [0, 360], S = [0, 100], V = [0, 100], A = [0, 100]
     randomHue = hsva[0]
+    if settings["useColorUnderMouse"]:
+        handleDeviceContext = GetDC(0)
 
     numParticlesBackup = settings["numParticles"]
     mousePosition = POINT()
